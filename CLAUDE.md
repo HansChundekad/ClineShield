@@ -1,0 +1,169 @@
+# CLAUDE.md
+
+**ClineShield** - VS Code extension adding safety guardrails to Cline AI through hooks and quality checks.
+
+## Development Philosophy
+
+### KISS + YAGNI + Sequential Phases
+- Simple solutions first (bash script + Node.js, not microservices)
+- Build only what's needed (no feature flags until Phase 3)
+- **DO NOT skip phases** - each validates assumptions for the next
+- Prove, then scale (Phase 0 logs stdin before building AST analyzer)
+
+## Critical Rules
+
+### Hook Scripts
+- **<2s execution** - Hooks block Cline's workflow
+- **Exit 0 always** - Non-zero exit = Cline error (use `"cancel": true` instead)
+- **stderr for logs, stdout for JSON** - Never mix them
+- **Atomic writes** - Temp file + rename for shared state
+
+### The Shared Contract: metrics.json
+**ALL features communicate through this file.**
+
+```typescript
+// Type: src/types/metrics.ts
+interface MetricsEvent {
+  timestamp: string;  // ISO 8601
+  type: 'edit-blocked' | 'sanity-passed' | 'sanity-failed' | 'risk-assessed';
+  data: { file: string; [key: string]: any; };
+}
+```
+
+**Rules**: Append-only, include timestamp, validate on read
+
+```typescript
+// ✅ GOOD: Append to metrics.json
+const newEvent = { timestamp: new Date().toISOString(), type: 'edit-blocked', data };
+const existing = JSON.parse(await fs.readFile(metricsPath, 'utf-8'));
+await fs.writeFile(metricsPath, JSON.stringify([...existing, newEvent], null, 2));
+
+// ✅ GOOD: Handle missing LLM gracefully
+const models = await vscode.lm.selectChatModels();
+if (models.length === 0) return { rulesOnly: true, reasoning: null };
+```
+
+### Hook Responses
+```json
+// PreToolUse - blocks edit
+{"cancel": true, "errorMessage": "ClineShield: 47% change. Make smaller edits."}
+
+// PostToolUse - guides fix
+{"contextModification": "CLINESHIELD: Fix errors:\n- Line 23: Missing semicolon\nAttempt 1/3"}
+```
+
+## File Organization
+
+```
+src/
+├── extension/
+│   ├── extension.ts              // <100 lines - activation only
+│   ├── hookGenerator.ts          // <200 lines - YAML → scripts
+│   ├── metricsWatcher.ts         // <150 lines - file watcher
+│   ├── sidebar/provider.ts       // <200 lines - webview logic
+│   ├── changeMap/provider.ts     // <250 lines - TreeView logic
+│   └── riskAnalysis/
+│       ├── rulesEngine.ts        // <150 lines - scoring logic
+│       └── llmAnalyzer.ts        // <100 lines - vscode.lm wrapper
+└── hooks/
+    ├── preToolUse.template.sh    // <150 lines - hook scaffold
+    ├── postToolUse.template.sh   // <200 lines - sanity + risk
+    └── analyze.template.js       // <200 lines - AST diff logic
+```
+
+## Testing Requirements
+
+Write tests before implementation (TDD). Focus on:
+- **Unit**: Test functions in isolation (80%+ coverage target)
+- **Integration**: Test hook stdin/stdout, metrics.json updates
+- **E2E**: Real Cline edits in test workspace (manual initially)
+
+## Phase-Specific Focus
+
+### Phase 0: Foundation
+**What Claude should focus on**:
+1. Creating minimal hook scripts that **just log stdin**
+2. Verifying Cline's actual hook inputs (don't assume docs are complete)
+3. Building metrics.json read/write utilities with **validation**
+4. Extension scaffold with **file watcher only** (no UI yet)
+
+**What Claude should NOT do**:
+- Build AST analyzer before verifying hook inputs
+- Create UI components before data flow works
+- Write config parser before hooks are stable
+
+### Phase 1-2: Hooks Working
+**What Claude should focus on**:
+1. **Hardcode everything** (thresholds, tool paths, protected files)
+2. Make hooks **fast** (<2s)
+3. Test with **real Cline edits** (create test files, trigger Cline)
+4. Verify metrics.json **actually updates**
+
+**What Claude should NOT do**:
+- Add YAML config (that's Phase 3)
+- Build UI (that's Phase 4+)
+- Optimize prematurely (get it working first)
+
+### Phase 3+: Making It Real
+**What Claude should focus on**:
+1. **Validate YAML schema** (prevent injection attacks)
+2. **Template substitution security** (escape user input)
+3. **Error handling** (graceful degradation)
+4. **User feedback** (clear error messages)
+
+## Common Pitfalls
+
+**Append-only metrics.json** (never overwrite entire file):
+```typescript
+const existing = JSON.parse(await fs.readFile(metricsPath, 'utf-8'));
+await fs.writeFile(metricsPath, JSON.stringify([...existing, newEvent], null, 2));
+```
+
+**Check LLM availability** (Copilot may not be installed):
+```typescript
+const models = await vscode.lm.selectChatModels();
+if (models.length === 0) return { rulesOnly: true };
+```
+
+**Async file operations** (extension host must not block):
+```typescript
+const config = yaml.load(await fs.promises.readFile('.cline-shield.yml', 'utf-8'));
+```
+
+## Security Checklist
+
+- Validate YAML input (use allowlist for config values)
+- Validate file paths (prevent `../../etc/passwd` injection)
+- Sanitize diffs before LLM (remove secrets)
+- Timeout hooks after 30s
+- Use `child_process.spawn` with explicit args (not shell)
+
+## When to Ask for Help
+
+**Stop immediately if**:
+- Cline's hook API doesn't match documentation
+- metrics.json schema needs to change (breaks other features)
+- Performance target missed (<2s hooks, <100ms UI)
+- Security concern (file access, LLM input, YAML parsing)
+
+## Git Workflow
+
+**Branch naming**: `phase-X/feature-name` (e.g., `phase-0/foundation`, `fix/metrics-race`)
+
+**Commit format**: 
+```
+<type>(<scope>): <subject>
+
+- Detail 1
+- Detail 2
+
+Closes #X
+```
+
+**Types**: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`
+
+**Never include**: "claude code", "written by claude", "AI-generated"
+
+---
+
+**Remember**: Build one phase at a time. Test hooks independently. metrics.json is append-only. Simple beats clever.
