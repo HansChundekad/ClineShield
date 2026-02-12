@@ -1,0 +1,4 @@
+This is a sample file for testing ClineShield hooks.
+Line 2: MODIFIED BY CLINE
+modified by cline
+modified and written by cline the AI coder
