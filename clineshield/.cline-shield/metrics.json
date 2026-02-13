@@ -1,2 +1,95 @@
-
+[
+  {
+    "timestamp": "2025-02-12T10:15:00.000Z",
+    "sessionId": "abc-123",
+    "type": "edit-blocked",
+    "data": {
+      "file": "src/auth.ts",
+      "reason": "47% structural change",
+      "structuralChangePercent": 47,
+      "functionsDeleted": 5,
+      "exportsDeleted": 2
+    }
+  },
+  {
+    "timestamp": "2025-02-12T10:17:30.000Z",
+    "sessionId": "abc-123",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth.ts",
+      "structuralChangePercent": 18,
+      "functionsDeleted": 1,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2025-02-12T10:17:32.000Z",
+    "sessionId": "abc-123",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/auth.ts",
+      "tool": "tsc",
+      "errors": [
+        "Line 47: Property 'authenticate' does not exist",
+        "Line 52: Type 'string | undefined' not assignable"
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2025-02-12T10:18:45.000Z",
+    "sessionId": "abc-123",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/auth.ts",
+      "tools": ["eslint", "prettier", "tsc"],
+      "duration": 1.2
+    }
+  },
+  {
+    "timestamp": "2025-02-12T10:18:50.000Z",
+    "sessionId": "abc-123",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth.ts",
+      "rulesScore": 60,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "auth_paths",
+          "points": 25,
+          "description": "File touches auth paths"
+        },
+        {
+          "rule": "deleted_functions",
+          "points": 20,
+          "description": "1 function deleted"
+        },
+        {
+          "rule": "sanity_retry",
+          "points": 10,
+          "description": "Needed 1 retry to pass sanity"
+        },
+        {
+          "rule": "no_test_file",
+          "points": 15,
+          "description": "No test file exists for src/auth.ts"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2025-02-12T10:19:05.000Z",
+    "sessionId": "abc-123",
+    "type": "llm-analysis",
+    "data": {
+      "file": "src/auth.ts",
+      "relatedRiskEventTimestamp": "2025-02-12T10:18:50.000Z",
+      "reasoning": "This edit removes password validation while adding external API calls. High risk of authentication bypass.",
+      "model": "gpt-4",
+      "duration": 2.5
+    }
+  }
+]
 
