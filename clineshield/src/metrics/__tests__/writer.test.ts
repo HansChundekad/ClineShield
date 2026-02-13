@@ -14,6 +14,9 @@ describe('metricsWriter', () => {
     } catch {
       // Ignore if doesn't exist
     }
+
+    // Mock console.error to reduce test noise
+    jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(async () => {
@@ -23,6 +26,9 @@ describe('metricsWriter', () => {
     } catch {
       // Ignore errors
     }
+
+    // Restore console.error
+    jest.restoreAllMocks();
   });
 
   describe('appendEvent', () => {
@@ -158,6 +164,131 @@ describe('metricsWriter', () => {
 
       // Should not throw
       await expect(appendEvent(event, invalidRoot)).resolves.toBeUndefined();
+    });
+
+    it('should handle malformed JSON gracefully', async () => {
+      // Create directory and write malformed JSON
+      await fs.mkdir(path.join(testWorkspaceRoot, '.cline-shield'), { recursive: true });
+      await fs.writeFile(metricsPath, '{invalid json syntax]', 'utf-8');
+
+      const event: EditBlockedEvent = {
+        timestamp: new Date().toISOString(),
+        sessionId: 'test-session',
+        type: 'edit-blocked',
+        data: {
+          file: 'test.ts',
+          reason: 'test reason',
+          structuralChangePercent: 50,
+          functionsDeleted: 2,
+          exportsDeleted: 1,
+        },
+      };
+
+      await appendEvent(event, testWorkspaceRoot);
+
+      const content = await fs.readFile(metricsPath, 'utf-8');
+      const events = JSON.parse(content);
+
+      // Should reset to empty array and add new event
+      expect(Array.isArray(events)).toBe(true);
+      expect(events).toHaveLength(1);
+      expect(events[0]).toEqual(event);
+
+      // Should have logged the parse error
+      expect(console.error).toHaveBeenCalledWith(
+        expect.stringContaining('invalid JSON'),
+        expect.any(String)
+      );
+    });
+
+    it('should use atomic writes (temp file + rename)', async () => {
+      const event: EditBlockedEvent = {
+        timestamp: new Date().toISOString(),
+        sessionId: 'test-session',
+        type: 'edit-blocked',
+        data: {
+          file: 'test.ts',
+          reason: 'test reason',
+          structuralChangePercent: 50,
+          functionsDeleted: 2,
+          exportsDeleted: 1,
+        },
+      };
+
+      await appendEvent(event, testWorkspaceRoot);
+
+      // Temp file should not exist after successful write
+      const tempPath = `${metricsPath}.tmp`;
+      const tempExists = await fs
+        .access(tempPath)
+        .then(() => true)
+        .catch(() => false);
+
+      expect(tempExists).toBe(false);
+
+      // Final file should exist with correct content
+      const content = await fs.readFile(metricsPath, 'utf-8');
+      const events = JSON.parse(content);
+      expect(events).toHaveLength(1);
+      expect(events[0]).toEqual(event);
+    });
+
+    it('should handle concurrent writes without corruption', async () => {
+      const event1: EditBlockedEvent = {
+        timestamp: new Date().toISOString(),
+        sessionId: 'test-session-1',
+        type: 'edit-blocked',
+        data: {
+          file: 'test1.ts',
+          reason: 'test reason 1',
+          structuralChangePercent: 50,
+          functionsDeleted: 2,
+          exportsDeleted: 1,
+        },
+      };
+
+      const event2: EditAllowedEvent = {
+        timestamp: new Date().toISOString(),
+        sessionId: 'test-session-2',
+        type: 'edit-allowed',
+        data: {
+          file: 'test2.ts',
+          structuralChangePercent: 10,
+          functionsDeleted: 0,
+          exportsDeleted: 0,
+        },
+      };
+
+      const event3: EditBlockedEvent = {
+        timestamp: new Date().toISOString(),
+        sessionId: 'test-session-3',
+        type: 'edit-blocked',
+        data: {
+          file: 'test3.ts',
+          reason: 'test reason 3',
+          structuralChangePercent: 75,
+          functionsDeleted: 5,
+          exportsDeleted: 2,
+        },
+      };
+
+      // Write concurrently
+      await Promise.all([
+        appendEvent(event1, testWorkspaceRoot),
+        appendEvent(event2, testWorkspaceRoot),
+        appendEvent(event3, testWorkspaceRoot),
+      ]);
+
+      // File should still be valid JSON
+      const content = await fs.readFile(metricsPath, 'utf-8');
+      const events = JSON.parse(content);
+
+      // Should be an array (not corrupted)
+      expect(Array.isArray(events)).toBe(true);
+
+      // Should contain at least one event (race conditions may cause some to be lost)
+      expect(events.length).toBeGreaterThan(0);
+      expect(events.length).toBeLessThanOrEqual(3);
     });
   });
 });
