@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import { randomUUID } from 'crypto';
+import { appendEvent } from './metrics/writer';
+import { readEventsBySession } from './metrics/reader';
 
 /**
  * Extension activation function
@@ -43,6 +45,26 @@ export function activate(context: vscode.ExtensionContext): void {
     // Log sessionId to console
     console.log(`ClineShield session ID: ${sessionId}`);
 
+    // Write a test event to metrics.json
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (workspaceRoot) {
+      await appendEvent(
+        {
+          timestamp: new Date().toISOString(),
+          sessionId,
+          type: 'edit-allowed',
+          data: {
+            file: 'test-file.ts',
+            structuralChangePercent: 0,
+            functionsDeleted: 0,
+            exportsDeleted: 0,
+          },
+        },
+        workspaceRoot
+      );
+      console.log('Test event written to metrics.json');
+    }
+
     // Show info notification
     vscode.window.showInformationMessage(`ClineShield activated! Session: ${sessionId}`);
   });
@@ -56,8 +78,28 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   // Register onDidChange callback
-  metricsWatcher.onDidChange(() => {
+  metricsWatcher.onDidChange(async () => {
     console.log('Metrics file changed');
+
+    // Get current session ID
+    const sessionId = context.globalState.get<string>('sessionId');
+    if (!sessionId) {
+      console.log('No session ID found, skipping event read');
+      return;
+    }
+
+    // Read events for current session
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!workspaceRoot) {
+      console.log('No workspace folder found, skipping event read');
+      return;
+    }
+
+    const events = await readEventsBySession(sessionId, workspaceRoot);
+    console.log(`Found ${events.length} events for session ${sessionId}`);
+
+    // Update status bar tooltip with event count
+    statusBarItem.tooltip = `Session: ${sessionId} | ${events.length} events | Click for details`;
   });
 
   // Add watcher to subscriptions for cleanup
