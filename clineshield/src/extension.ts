@@ -20,9 +20,9 @@ export function activate(context: vscode.ExtensionContext): void {
   // Check for existing session ID and set tooltip
   const existingSessionId = context.globalState.get<string>('sessionId');
   if (existingSessionId) {
-    statusBarItem.tooltip = `Session: ${existingSessionId} | Click for details`;
+    statusBarItem.tooltip = `Session: ${existingSessionId} | Events: 0`;
   } else {
-    statusBarItem.tooltip = 'No active session | Click for details';
+    statusBarItem.tooltip = 'No active session | Events: 0';
   }
 
   // Show status bar item immediately
@@ -33,40 +33,47 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Register command: ClineShield: Activate
   const activateCommand = vscode.commands.registerCommand('clineshield.activate', async () => {
-    // Generate UUID for session
-    const sessionId = randomUUID();
+    try {
+      // Generate UUID for session
+      const sessionId = randomUUID();
 
-    // Store sessionId in global state
-    await context.globalState.update('sessionId', sessionId);
+      // Store sessionId in global state
+      await context.globalState.update('sessionId', sessionId);
 
-    // Update status bar tooltip with new session ID
-    statusBarItem.tooltip = `Session: ${sessionId} | Click for details`;
+      // Update status bar tooltip with new session ID
+      statusBarItem.tooltip = `Session: ${sessionId} | Events: 0`;
 
-    // Log sessionId to console
-    console.log(`ClineShield session ID: ${sessionId}`);
+      // Log sessionId to console
+      console.log(`ClineShield session ID: ${sessionId}`);
 
-    // Write a test event to metrics.json
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (workspaceRoot) {
-      await appendEvent(
-        {
-          timestamp: new Date().toISOString(),
-          sessionId,
-          type: 'edit-allowed',
-          data: {
-            file: 'test-file.ts',
-            structuralChangePercent: 0,
-            functionsDeleted: 0,
-            exportsDeleted: 0,
+      // Write a test event to metrics.json
+      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      if (workspaceRoot) {
+        await appendEvent(
+          {
+            timestamp: new Date().toISOString(),
+            sessionId,
+            type: 'edit-allowed',
+            data: {
+              file: 'test-file.ts',
+              structuralChangePercent: 0,
+              functionsDeleted: 0,
+              exportsDeleted: 0,
+            },
           },
-        },
-        workspaceRoot
-      );
-      console.log('Test event written to metrics.json');
-    }
+          workspaceRoot
+        );
+        console.log('Test event written to metrics.json');
+      } else {
+        console.warn('No workspace folder found, skipping test event write');
+      }
 
-    // Show info notification
-    vscode.window.showInformationMessage(`ClineShield activated! Session: ${sessionId}`);
+      // Show info notification
+      vscode.window.showInformationMessage(`ClineShield activated! Session: ${sessionId}`);
+    } catch (error) {
+      console.error('Error activating ClineShield:', error);
+      vscode.window.showErrorMessage(`Failed to activate ClineShield: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   });
 
   // Add command to subscriptions for cleanup
@@ -79,27 +86,31 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Register onDidChange callback
   metricsWatcher.onDidChange(async () => {
-    console.log('Metrics file changed');
+    try {
+      console.log('Metrics file changed');
 
-    // Get current session ID
-    const sessionId = context.globalState.get<string>('sessionId');
-    if (!sessionId) {
-      console.log('No session ID found, skipping event read');
-      return;
+      // Get current session ID
+      const sessionId = context.globalState.get<string>('sessionId');
+      if (!sessionId) {
+        console.log('No session ID found, skipping event read');
+        return;
+      }
+
+      // Read events for current session
+      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      if (!workspaceRoot) {
+        console.log('No workspace folder found, skipping event read');
+        return;
+      }
+
+      const events = await readEventsBySession(sessionId, workspaceRoot);
+      console.log(`Found ${events.length} events for session ${sessionId}`);
+
+      // Update status bar tooltip with event count
+      statusBarItem.tooltip = `Session: ${sessionId} | Events: ${events.length}`;
+    } catch (error) {
+      console.error('Error reading metrics events:', error);
     }
-
-    // Read events for current session
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!workspaceRoot) {
-      console.log('No workspace folder found, skipping event read');
-      return;
-    }
-
-    const events = await readEventsBySession(sessionId, workspaceRoot);
-    console.log(`Found ${events.length} events for session ${sessionId}`);
-
-    // Update status bar tooltip with event count
-    statusBarItem.tooltip = `Session: ${sessionId} | ${events.length} events | Click for details`;
   });
 
   // Add watcher to subscriptions for cleanup
@@ -113,9 +124,15 @@ export function activate(context: vscode.ExtensionContext): void {
 /**
  * Extension deactivation function
  * Called when the extension is deactivated
+ *
+ * Note: Resources added to context.subscriptions are automatically disposed
  */
 export function deactivate(): void {
   console.log('ClineShield extension is now deactivated');
+  console.log('Status bar item and file watcher disposed automatically');
 
-  // Future: Cleanup resources here
+  // All disposables in context.subscriptions are cleaned up automatically:
+  // - Status bar item
+  // - File watcher
+  // - Command registrations
 }
