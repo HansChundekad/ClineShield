@@ -8,6 +8,27 @@ import { randomUUID } from 'crypto';
 export function activate(context: vscode.ExtensionContext): void {
   console.log('ClineShield extension is now active');
 
+  // Create status bar item
+  const statusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    100
+  );
+  statusBarItem.text = '🛡️ ClineShield Active';
+
+  // Check for existing session ID and set tooltip
+  const existingSessionId = context.globalState.get<string>('sessionId');
+  if (existingSessionId) {
+    statusBarItem.tooltip = `Session: ${existingSessionId} | Click for details`;
+  } else {
+    statusBarItem.tooltip = 'No active session | Click for details';
+  }
+
+  // Show status bar item immediately
+  statusBarItem.show();
+
+  // Add status bar item to subscriptions for cleanup
+  context.subscriptions.push(statusBarItem);
+
   // Register command: ClineShield: Activate
   const activateCommand = vscode.commands.registerCommand('clineshield.activate', async () => {
     // Generate UUID for session
@@ -15,6 +36,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Store sessionId in global state
     await context.globalState.update('sessionId', sessionId);
+
+    // Update status bar tooltip with new session ID
+    statusBarItem.tooltip = `Session: ${sessionId} | Click for details`;
 
     // Log sessionId to console
     console.log(`ClineShield session ID: ${sessionId}`);
