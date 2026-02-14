@@ -50,8 +50,20 @@ export function activate(context: vscode.ExtensionContext): void {
   // Add command to subscriptions for cleanup
   context.subscriptions.push(activateCommand);
 
+  // Create file watcher for metrics.json
+  const metricsWatcher = vscode.workspace.createFileSystemWatcher(
+    '**/.cline-shield/metrics.json'
+  );
+
+  // Register onDidChange callback
+  metricsWatcher.onDidChange(() => {
+    console.log('Metrics file changed');
+  });
+
+  // Add watcher to subscriptions for cleanup
+  context.subscriptions.push(metricsWatcher);
+
   // Future: Initialize components here
-  // - Metrics file watcher
   // - Hook generators
   // - Sidebar/UI providers
 }
