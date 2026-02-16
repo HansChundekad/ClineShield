@@ -6,11 +6,11 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}",
-        "${workspaceFolder}/../test-workspace"
+        "--extensionDevelopmentPath=${workspaceFolder}/clineshield",
+        "${workspaceFolder}/test-workspace"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
+        "${workspaceFolder}/clineshield/dist/**/*.js"
       ],
       "preLaunchTask": "${defaultBuildTask}"
     },
@@ -19,11 +19,11 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/dist/test/suite/index"
+        "--extensionDevelopmentPath=${workspaceFolder}/clineshield",
+        "--extensionTestsPath=${workspaceFolder}/clineshield/dist/test/suite/index"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/test/**/*.js"
+        "${workspaceFolder}/clineshield/dist/test/**/*.js"
       ],
       "preLaunchTask": "${defaultBuildTask}"
     }
