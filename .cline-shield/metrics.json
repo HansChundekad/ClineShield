@@ -1,0 +1,90 @@
+[
+  {
+    "timestamp": "2026-02-14T04:24:01.059Z",
+    "sessionId": "b27fc2d3-f9d4-4cef-96fa-ae1ea3e6128c",
+    "type": "edit-allowed",
+    "data": {
+      "file": "test-file.ts",
+      "structuralChangePercent": 0,  
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-14T04:32:08.603Z",
+    "sessionId": "903aed74-5e6f-46d3-a52e-8df4f0d035a5",
+    "type": "edit-allowed",
+    "data": {
+      "file": "test-file.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-14T04:32:12.790Z",
+    "sessionId": "c278f5a0-e1cf-4e76-a3c9-8abd4973774f",
+    "type": "edit-allowed",
+    "data": {
+      "file": "test-file.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-14T04:35:59.781Z",
+    "sessionId": "d99e85ef-fad5-41a0-a635-97f2d77cd19e",
+    "type": "edit-allowed",
+    "data": {
+      "file": "test-file.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-14T04:36:17.551Z",
+    "sessionId": "6bca83e1-af73-4b2b-8d55-89fa60e9b12a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "test-file.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-14T04:36:31.487Z",
+    "sessionId": "f6cae760-6eb8-44c7-91a3-4c42f5c9cfff",
+    "type": "edit-allowed",
+    "data": {
+      "file": "test-file.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-14T04:38:02.822Z",
+    "sessionId": "0f9bd1a7-c784-4c67-86a5-ac96a950d2ab",
+    "type": "edit-allowed",
+    "data": {
+      "file": "test-file.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-14T04:38:07.987Z",
+    "sessionId": "fdcef192-b2a6-48e7-8540-b32e378dcf64",
+    "type": "edit-allowed",
+    "data": {
+      "file": "test-file.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  }
+]
