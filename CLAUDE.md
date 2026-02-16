@@ -19,29 +19,8 @@
 - **Atomic writes** - Temp file + rename for shared state
 
 ### The Shared Contract: metrics.json
-**ALL features communicate through this file.**
+**ALL features communicate through this file. SCHEMA IS FIXED. Never change the shape of metrics.json events.**
 
-```typescript
-// Type: src/types/metrics.ts
-interface MetricsEvent {
-  timestamp: string;  // ISO 8601
-  type: 'edit-blocked' | 'sanity-passed' | 'sanity-failed' | 'risk-assessed';
-  data: { file: string; [key: string]: any; };
-}
-```
-
-**Rules**: Append-only, include timestamp, validate on read
-
-```typescript
-// ✅ GOOD: Append to metrics.json
-const newEvent = { timestamp: new Date().toISOString(), type: 'edit-blocked', data };
-const existing = JSON.parse(await fs.readFile(metricsPath, 'utf-8'));
-await fs.writeFile(metricsPath, JSON.stringify([...existing, newEvent], null, 2));
-
-// ✅ GOOD: Handle missing LLM gracefully
-const models = await vscode.lm.selectChatModels();
-if (models.length === 0) return { rulesOnly: true, reasoning: null };
-```
 
 ### Hook Responses
 ```json
@@ -113,22 +92,9 @@ Write tests before implementation (TDD). Focus on:
 
 ## Common Pitfalls
 
-**Append-only metrics.json** (never overwrite entire file):
-```typescript
-const existing = JSON.parse(await fs.readFile(metricsPath, 'utf-8'));
-await fs.writeFile(metricsPath, JSON.stringify([...existing, newEvent], null, 2));
-```
-
-**Check LLM availability** (Copilot may not be installed):
-```typescript
-const models = await vscode.lm.selectChatModels();
-if (models.length === 0) return { rulesOnly: true };
-```
-
-**Async file operations** (extension host must not block):
-```typescript
-const config = yaml.load(await fs.promises.readFile('.cline-shield.yml', 'utf-8'));
-```
+- **Check LLM availability** - Extension must work without LLM (Copilot may not be installed)
+- **Use async file operations** - Extension host must not block
+- **Atomic writes for shared state** - Use temp file + rename pattern
 
 ## Security Checklist
 
@@ -166,4 +132,4 @@ Closes #X
 
 ---
 
-**Remember**: Build one phase at a time. Test hooks independently. metrics.json is append-only. Simple beats clever.
+**Remember**: Build one phase at a time. Test hooks independently. Simple beats clever.

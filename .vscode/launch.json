@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/clineshield",
+        "${workspaceFolder}/test-workspace"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/clineshield/dist/**/*.js"
+      ],
+      "preLaunchTask": "${defaultBuildTask}"
+    },
+    {
+      "name": "Extension Tests",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/clineshield",
+        "--extensionTestsPath=${workspaceFolder}/clineshield/dist/test/suite/index"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/clineshield/dist/test/**/*.js"
+      ],
+      "preLaunchTask": "${defaultBuildTask}"
+    }
+  ]
+}

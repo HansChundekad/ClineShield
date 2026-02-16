@@ -1,0 +1,131 @@
+import * as vscode from 'vscode';
+import { randomUUID } from 'crypto';
+import { appendEvent } from './metrics/writer';
+import { readEventsBySession } from './metrics/reader';
+
+// Store current session ID at module level for file watcher access
+let currentSessionId: string | undefined;
+
+/**
+ * Extension activation function
+ * Called when the extension is activated (on VS Code startup)
+ */
+export function activate(context: vscode.ExtensionContext): void {
+  console.log('ClineShield extension is now active');
+
+  // Generate fresh session ID on each activation (no persistence)
+  currentSessionId = randomUUID();
+  console.log(`ClineShield session ID: ${currentSessionId}`);
+
+  // Create status bar item
+  const statusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    100
+  );
+  statusBarItem.text = '🛡️ ClineShield';
+  statusBarItem.tooltip = `Session: ${currentSessionId} | Events: 0`;
+
+  // Show status bar item immediately
+  statusBarItem.show();
+
+  // Add status bar item to subscriptions for cleanup
+  context.subscriptions.push(statusBarItem);
+
+  // Write initial session-start event to metrics.json
+  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (workspaceRoot) {
+    void appendEvent(
+      {
+        timestamp: new Date().toISOString(),
+        sessionId: currentSessionId,
+        type: 'edit-allowed',
+        data: {
+          file: 'session-start',
+          structuralChangePercent: 0,
+          functionsDeleted: 0,
+          exportsDeleted: 0,
+        },
+      },
+      workspaceRoot
+    ).then(() => {
+      console.log('Session-start event written to metrics.json');
+    }).catch((error) => {
+      console.error('Failed to write session-start event:', error);
+    });
+  } else {
+    console.warn('No workspace folder found, skipping session-start event');
+  }
+
+  // Register command: ClineShield: Deactivate (stub for Phase 3)
+  const deactivateCommand = vscode.commands.registerCommand('clineshield.deactivate', async () => {
+    // TODO: Phase 3 - Implement full deactivation:
+    // - Disable hook scripts
+    // - Stop file watcher
+    // - Hide UI elements
+    // - Write session-end event
+    vscode.window.showInformationMessage(
+      'ClineShield deactivate - Full implementation coming in Phase 3'
+    );
+  });
+
+  // Add deactivate command to subscriptions
+  context.subscriptions.push(deactivateCommand);
+
+  // Create file watcher for metrics.json
+  const metricsWatcher = vscode.workspace.createFileSystemWatcher(
+    '**/.cline-shield/metrics.json'
+  );
+
+  // Register onDidChange callback
+  metricsWatcher.onDidChange(async () => {
+    try {
+      console.log('Metrics file changed');
+
+      // Use module-level session ID
+      if (!currentSessionId) {
+        console.log('No session ID found, skipping event read');
+        return;
+      }
+
+      // Read events for current session
+      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      if (!workspaceRoot) {
+        console.log('No workspace folder found, skipping event read');
+        return;
+      }
+
+      const events = await readEventsBySession(currentSessionId, workspaceRoot);
+      console.log(`Found ${events.length} events for session ${currentSessionId}`);
+
+      // Update status bar tooltip with event count
+      statusBarItem.tooltip = `Session: ${currentSessionId} | Events: ${events.length}`;
+    } catch (error) {
+      console.error('Error reading metrics events:', error);
+    }
+  });
+
+  // Add watcher to subscriptions for cleanup
+  context.subscriptions.push(metricsWatcher);
+
+  // Future: Initialize components here
+  // - Hook generators
+  // - Sidebar/UI providers
+}
+
+/**
+ * Extension deactivation function
+ * Called when the extension is deactivated
+ *
+ * Note: Resources added to context.subscriptions are automatically disposed
+ */
+export function deactivate(): void {
+  console.log('ClineShield extension deactivated');
+
+  // Clear session ID from module scope
+  currentSessionId = undefined;
+
+  // All disposables in context.subscriptions are cleaned up automatically:
+  // - Status bar item
+  // - File watcher
+  // - Command registrations
+}
