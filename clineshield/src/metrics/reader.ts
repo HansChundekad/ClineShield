@@ -1,11 +1,3 @@
-/**
- * reader.ts
- *
- * Reads events from metrics.json
- *
- * @param workspaceRoot - The workspace root directory
- * @returns Array of metrics events
- */
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import type { MetricsEvent } from '../types/metrics';

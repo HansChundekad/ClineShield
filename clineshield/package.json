@@ -18,8 +18,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "clineshield.activate",
-        "title": "ClineShield: Activate"
+        "command": "clineshield.deactivate",
+        "title": "ClineShield: Deactivate (Coming in Phase 3)"
       }
     ]
   },

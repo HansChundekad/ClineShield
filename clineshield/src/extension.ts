@@ -3,6 +3,9 @@ import { randomUUID } from 'crypto';
 import { appendEvent } from './metrics/writer';
 import { readEventsBySession } from './metrics/reader';
 
+// Store current session ID at module level for file watcher access
+let currentSessionId: string | undefined;
+
 /**
  * Extension activation function
  * Called when the extension is activated (on VS Code startup)
@@ -10,20 +13,17 @@ import { readEventsBySession } from './metrics/reader';
 export function activate(context: vscode.ExtensionContext): void {
   console.log('ClineShield extension is now active');
 
+  // Generate fresh session ID on each activation (no persistence)
+  currentSessionId = randomUUID();
+  console.log(`ClineShield session ID: ${currentSessionId}`);
+
   // Create status bar item
   const statusBarItem = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Right,
     100
   );
-  statusBarItem.text = '🛡️ ClineShield Active';
-
-  // Check for existing session ID and set tooltip
-  const existingSessionId = context.globalState.get<string>('sessionId');
-  if (existingSessionId) {
-    statusBarItem.tooltip = `Session: ${existingSessionId} | Events: 0`;
-  } else {
-    statusBarItem.tooltip = 'No active session | Events: 0';
-  }
+  statusBarItem.text = '🛡️ ClineShield';
+  statusBarItem.tooltip = `Session: ${currentSessionId} | Events: 0`;
 
   // Show status bar item immediately
   statusBarItem.show();
@@ -31,53 +31,45 @@ export function activate(context: vscode.ExtensionContext): void {
   // Add status bar item to subscriptions for cleanup
   context.subscriptions.push(statusBarItem);
 
-  // Register command: ClineShield: Activate
-  const activateCommand = vscode.commands.registerCommand('clineshield.activate', async () => {
-    try {
-      // Generate UUID for session
-      const sessionId = randomUUID();
+  // Write initial session-start event to metrics.json
+  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (workspaceRoot) {
+    void appendEvent(
+      {
+        timestamp: new Date().toISOString(),
+        sessionId: currentSessionId,
+        type: 'edit-allowed',
+        data: {
+          file: 'session-start',
+          structuralChangePercent: 0,
+          functionsDeleted: 0,
+          exportsDeleted: 0,
+        },
+      },
+      workspaceRoot
+    ).then(() => {
+      console.log('Session-start event written to metrics.json');
+    }).catch((error) => {
+      console.error('Failed to write session-start event:', error);
+    });
+  } else {
+    console.warn('No workspace folder found, skipping session-start event');
+  }
 
-      // Store sessionId in global state
-      await context.globalState.update('sessionId', sessionId);
-
-      // Update status bar tooltip with new session ID
-      statusBarItem.tooltip = `Session: ${sessionId} | Events: 0`;
-
-      // Log sessionId to console
-      console.log(`ClineShield session ID: ${sessionId}`);
-
-      // Write a test event to metrics.json
-      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-      if (workspaceRoot) {
-        await appendEvent(
-          {
-            timestamp: new Date().toISOString(),
-            sessionId,
-            type: 'edit-allowed',
-            data: {
-              file: 'test-file.ts',
-              structuralChangePercent: 0,
-              functionsDeleted: 0,
-              exportsDeleted: 0,
-            },
-          },
-          workspaceRoot
-        );
-        console.log('Test event written to metrics.json');
-      } else {
-        console.warn('No workspace folder found, skipping test event write');
-      }
-
-      // Show info notification
-      vscode.window.showInformationMessage(`ClineShield activated! Session: ${sessionId}`);
-    } catch (error) {
-      console.error('Error activating ClineShield:', error);
-      vscode.window.showErrorMessage(`Failed to activate ClineShield: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+  // Register command: ClineShield: Deactivate (stub for Phase 3)
+  const deactivateCommand = vscode.commands.registerCommand('clineshield.deactivate', async () => {
+    // TODO: Phase 3 - Implement full deactivation:
+    // - Disable hook scripts
+    // - Stop file watcher
+    // - Hide UI elements
+    // - Write session-end event
+    vscode.window.showInformationMessage(
+      'ClineShield deactivate - Full implementation coming in Phase 3'
+    );
   });
 
-  // Add command to subscriptions for cleanup
-  context.subscriptions.push(activateCommand);
+  // Add deactivate command to subscriptions
+  context.subscriptions.push(deactivateCommand);
 
   // Create file watcher for metrics.json
   const metricsWatcher = vscode.workspace.createFileSystemWatcher(
@@ -89,9 +81,8 @@ export function activate(context: vscode.ExtensionContext): void {
     try {
       console.log('Metrics file changed');
 
-      // Get current session ID
-      const sessionId = context.globalState.get<string>('sessionId');
-      if (!sessionId) {
+      // Use module-level session ID
+      if (!currentSessionId) {
         console.log('No session ID found, skipping event read');
         return;
       }
@@ -103,11 +94,11 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      const events = await readEventsBySession(sessionId, workspaceRoot);
-      console.log(`Found ${events.length} events for session ${sessionId}`);
+      const events = await readEventsBySession(currentSessionId, workspaceRoot);
+      console.log(`Found ${events.length} events for session ${currentSessionId}`);
 
       // Update status bar tooltip with event count
-      statusBarItem.tooltip = `Session: ${sessionId} | Events: ${events.length}`;
+      statusBarItem.tooltip = `Session: ${currentSessionId} | Events: ${events.length}`;
     } catch (error) {
       console.error('Error reading metrics events:', error);
     }
@@ -128,8 +119,10 @@ export function activate(context: vscode.ExtensionContext): void {
  * Note: Resources added to context.subscriptions are automatically disposed
  */
 export function deactivate(): void {
-  console.log('ClineShield extension is now deactivated');
-  console.log('Status bar item and file watcher disposed automatically');
+  console.log('ClineShield extension deactivated');
+
+  // Clear session ID from module scope
+  currentSessionId = undefined;
 
   // All disposables in context.subscriptions are cleaned up automatically:
   // - Status bar item
