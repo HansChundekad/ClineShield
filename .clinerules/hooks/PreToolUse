@@ -25,32 +25,92 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # Parse tool and parameters
-TOOL=$(echo "$INPUT" | jq -r '.preToolUse.tool // "unknown"')
+TOOL=$(echo "$INPUT" | jq -r '.preToolUse.toolName // "unknown"')
 
-# Log all tool usage
-echo "[ClineShield] Tool: $TOOL" >&2
+# Log all tool usage (with timestamp for visibility)
+LOG_FILE="/tmp/clineshield-hook.log"
+echo "===========================================" | tee -a "$LOG_FILE" >&2
+echo "[ClineShield] $(date '+%H:%M:%S') - Tool: $TOOL" | tee -a "$LOG_FILE" >&2
+echo "[ClineShield] DEBUG: Full input JSON:" | tee -a "$LOG_FILE" >&2
+echo "$INPUT" | jq '.' | tee -a "$LOG_FILE" >&2
+echo "===========================================" | tee -a "$LOG_FILE" >&2
 
-# Handle file edit operations
-if [[ "$TOOL" == "edit_file" ]]; then
-  # Extract edit parameters
-  FILE_PATH=$(echo "$INPUT" | jq -r '.preToolUse.parameters.file_path // "unknown"')
-  OLD_STRING=$(echo "$INPUT" | jq -r '.preToolUse.parameters.old_string // ""')
-  NEW_STRING=$(echo "$INPUT" | jq -r '.preToolUse.parameters.new_string // ""')
-  REPLACE_ALL=$(echo "$INPUT" | jq -r '.preToolUse.parameters.replace_all // false')
+# Handle file edit operations (apply_patch)
+if [[ "$TOOL" == "apply_patch" ]]; then
+  # Extract patch input
+  PATCH_INPUT=$(echo "$INPUT" | jq -r '.preToolUse.parameters.input // ""')
 
-  # Calculate content sizes for logging
-  OLD_SIZE=${#OLD_STRING}
-  NEW_SIZE=${#NEW_STRING}
+  # Extract file path from patch (format: "*** Update File: path")
+  FILE_PATH=$(echo "$PATCH_INPUT" | grep "^\*\*\* Update File:" | sed 's/\*\*\* Update File: //' | head -1)
 
-  echo "[ClineShield] === EDIT_FILE DETECTED ===" >&2
-  echo "[ClineShield] File: $FILE_PATH" >&2
-  echo "[ClineShield] Old content size: $OLD_SIZE chars" >&2
-  echo "[ClineShield] New content size: $NEW_SIZE chars" >&2
-  echo "[ClineShield] Replace all: $REPLACE_ALL" >&2
+  echo "[ClineShield] === APPLY_PATCH DETECTED ===" | tee -a "$LOG_FILE" >&2
+  echo "[ClineShield] File: $FILE_PATH" | tee -a "$LOG_FILE" >&2
 
-  # Phase 1: Log only, don't analyze yet
-  # Phase 2 will call clineshield-analyze.js here
-  echo "[ClineShield] Phase 1: Logging only (analysis in Phase 2)" >&2
+  # Phase 2: AST Analysis Integration
+  # Only analyze TypeScript/JavaScript files
+  if [[ "$FILE_PATH" =~ \.(ts|tsx|js|jsx)$ ]] && [[ -f "$FILE_PATH" ]]; then
+    # For apply_patch, we need to:
+    # - Read current file content as "before"
+    # - Apply patch to get "after" content
+
+    # Create temp files
+    TEMP_BEFORE="/tmp/clineshield-before-$$.ts"
+    TEMP_AFTER="/tmp/clineshield-after-$$.ts"
+    PATCH_FILE="/tmp/clineshield-patch-$$.patch"
+
+    # Ensure cleanup on exit
+    trap "rm -f '$TEMP_BEFORE' '$TEMP_AFTER' '$PATCH_FILE'" EXIT
+
+    # Read current file as "before"
+    cp "$FILE_PATH" "$TEMP_BEFORE"
+
+    # Extract the actual patch content (skip headers, get the diff)
+    echo "$PATCH_INPUT" | sed -n '/^@@/,/\*\*\* End Patch/p' | grep -v "^\*\*\*" > "$PATCH_FILE"
+
+    # Apply patch to create "after" version
+    cp "$TEMP_BEFORE" "$TEMP_AFTER"
+    if patch -s "$TEMP_AFTER" "$PATCH_FILE" 2>/dev/null; then
+      echo "[ClineShield] Patch applied successfully" | tee -a "$LOG_FILE" >&2
+    else
+      echo "[ClineShield] Warning: Patch may not apply cleanly" | tee -a "$LOG_FILE" >&2
+    fi
+
+    # Find the analyzer script (relative to hook location)
+    ANALYZER_PATH="$(dirname "$0")/../../clineshield/src/hooks/clineshield-analyze.js"
+
+    if [[ -f "$ANALYZER_PATH" ]]; then
+      # Run AST analyzer
+      echo "[ClineShield] Running AST analysis..." | tee -a "$LOG_FILE" >&2
+      ANALYSIS_RESULT=$(node "$ANALYZER_PATH" "$TEMP_BEFORE" "$TEMP_AFTER" 2>/dev/null)
+
+      if [[ $? -eq 0 ]]; then
+        # Parse results
+        STRUCTURAL_CHANGE=$(echo "$ANALYSIS_RESULT" | jq -r '.structuralChangePercent // 0')
+        DELETED_FUNCTIONS=$(echo "$ANALYSIS_RESULT" | jq -r '.deletedFunctions // 0')
+        DELETED_EXPORTS=$(echo "$ANALYSIS_RESULT" | jq -r '.deletedExports // 0')
+
+        echo "[ClineShield] === ANALYSIS RESULTS ===" | tee -a "$LOG_FILE" >&2
+        echo "[ClineShield] Structural change: ${STRUCTURAL_CHANGE}%" | tee -a "$LOG_FILE" >&2
+        echo "[ClineShield] Deleted functions: $DELETED_FUNCTIONS" | tee -a "$LOG_FILE" >&2
+        echo "[ClineShield] Deleted exports: $DELETED_EXPORTS" | tee -a "$LOG_FILE" >&2
+
+        # Phase 2: Log only (no blocking yet)
+        # Phase 3 will add threshold-based blocking
+        if [[ $STRUCTURAL_CHANGE -gt 50 ]]; then
+          echo "[ClineShield] ⚠️  WARNING: Large structural change (>${STRUCTURAL_CHANGE}%)" | tee -a "$LOG_FILE" >&2
+        fi
+        if [[ $DELETED_FUNCTIONS -gt 3 ]]; then
+          echo "[ClineShield] ⚠️  WARNING: Multiple functions deleted ($DELETED_FUNCTIONS)" | tee -a "$LOG_FILE" >&2
+        fi
+      else
+        echo "[ClineShield] Analysis failed, allowing edit" | tee -a "$LOG_FILE" >&2
+      fi
+    else
+      echo "[ClineShield] Analyzer not found at: $ANALYZER_PATH" | tee -a "$LOG_FILE" >&2
+    fi
+  else
+    echo "[ClineShield] Skipping analysis (not a TS/JS file)" >&2
+  fi
 fi
 
 # Handle file write operations
