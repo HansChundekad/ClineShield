@@ -1,38 +1,82 @@
 #!/bin/bash
 #
-# PreToolUse Hook
-# 
+# ClineShield PreToolUse Hook - Phase 1
+#
 # Executes before any tool is used (read_file, write_to_file, execute_command, etc.)
-# 
+#
 # Input: { taskId, preToolUse: { tool: string, parameters: object }, ... }
 # Output: { cancel: boolean, contextModification?: string, errorMessage?: string }
-# 
-# Use cases:
-# - Block dangerous operations
-# - Add safety checks before file modifications
-# - Log tool usage
-# - Validate parameters before execution
+#
+# Phase 1: Detection & Logging
+# - Detect edit_file operations
+# - Log file paths and content changes
+# - Prepare for Phase 2 AST analysis integration
+#
+# CRITICAL: Must exit 0 always (hook errors break Cline workflow)
 
 # Read JSON input from stdin
 INPUT=$(cat)
 
-# Parse input using jq (or fallback to basic parsing)
-if command -v jq &> /dev/null; then
-  TOOL=$(echo "$INPUT" | jq -r '.preToolUse.tool')
-  COMMAND=$(echo "$INPUT" | jq -r '.preToolUse.parameters.command // empty')
-else
-  TOOL="<tool>"
-  COMMAND=""
-fi
-
-# Example: Block dangerous operations
-if [[ "$TOOL" == "execute_command" ]] && [[ "$COMMAND" == *"rm -rf /"* ]]; then
-  echo '{"cancel":true,"errorMessage":"Dangerous command blocked by PreToolUse hook"}'
+# Ensure jq is available (required for robust JSON parsing)
+if ! command -v jq &> /dev/null; then
+  echo "[ClineShield] WARNING: jq not found, hook disabled" >&2
+  echo '{"cancel":false}'
   exit 0
 fi
 
-# Example: Log tool usage
-echo "[PreToolUse] Tool about to execute: $TOOL" >&2
+# Parse tool and parameters
+TOOL=$(echo "$INPUT" | jq -r '.preToolUse.tool // "unknown"')
 
-# Allow execution
-echo '{"cancel":false,"contextModification":"","errorMessage":""}'
+# Log all tool usage
+echo "[ClineShield] Tool: $TOOL" >&2
+
+# Handle file edit operations
+if [[ "$TOOL" == "edit_file" ]]; then
+  # Extract edit parameters
+  FILE_PATH=$(echo "$INPUT" | jq -r '.preToolUse.parameters.file_path // "unknown"')
+  OLD_STRING=$(echo "$INPUT" | jq -r '.preToolUse.parameters.old_string // ""')
+  NEW_STRING=$(echo "$INPUT" | jq -r '.preToolUse.parameters.new_string // ""')
+  REPLACE_ALL=$(echo "$INPUT" | jq -r '.preToolUse.parameters.replace_all // false')
+
+  # Calculate content sizes for logging
+  OLD_SIZE=${#OLD_STRING}
+  NEW_SIZE=${#NEW_STRING}
+
+  echo "[ClineShield] === EDIT_FILE DETECTED ===" >&2
+  echo "[ClineShield] File: $FILE_PATH" >&2
+  echo "[ClineShield] Old content size: $OLD_SIZE chars" >&2
+  echo "[ClineShield] New content size: $NEW_SIZE chars" >&2
+  echo "[ClineShield] Replace all: $REPLACE_ALL" >&2
+
+  # Phase 1: Log only, don't analyze yet
+  # Phase 2 will call clineshield-analyze.js here
+  echo "[ClineShield] Phase 1: Logging only (analysis in Phase 2)" >&2
+fi
+
+# Handle file write operations
+if [[ "$TOOL" == "write_to_file" ]]; then
+  FILE_PATH=$(echo "$INPUT" | jq -r '.preToolUse.parameters.file_path // "unknown"')
+  CONTENT=$(echo "$INPUT" | jq -r '.preToolUse.parameters.content // ""')
+  CONTENT_SIZE=${#CONTENT}
+
+  echo "[ClineShield] === WRITE_FILE DETECTED ===" >&2
+  echo "[ClineShield] File: $FILE_PATH" >&2
+  echo "[ClineShield] Content size: $CONTENT_SIZE chars" >&2
+  echo "[ClineShield] Phase 1: Logging only (new file creation)" >&2
+fi
+
+# Handle dangerous commands (existing protection)
+if [[ "$TOOL" == "execute_command" ]]; then
+  COMMAND=$(echo "$INPUT" | jq -r '.preToolUse.parameters.command // ""')
+
+  # Block destructive operations
+  if [[ "$COMMAND" == *"rm -rf /"* ]] || [[ "$COMMAND" == *"sudo rm"* ]]; then
+    echo "[ClineShield] BLOCKED: Dangerous command detected" >&2
+    echo '{"cancel":true,"errorMessage":"⛔ ClineShield: Dangerous command blocked"}'
+    exit 0
+  fi
+fi
+
+# Allow execution (Phase 1: no blocking on edits)
+echo '{"cancel":false}'
+exit 0
