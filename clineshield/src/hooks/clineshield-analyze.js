@@ -117,10 +117,45 @@ function analyzeStructuralChange(beforePath, afterPath) {
         }
       });
 
+      // Count added functions (exist in after but not in before)
+      let addedFunctions = 0;
+      afterFunctions.forEach(fnName => {
+        if (!beforeFunctions.has(fnName)) {
+          addedFunctions++;
+        }
+      });
+
+      // Calculate structural change percentage
+      // Change = (additions + deletions) / total functions
+      const totalFunctions = beforeFunctions.size + afterFunctions.size;
+      const structuralChangePercent = totalFunctions > 0
+        ? Math.round(((addedFunctions + deletedFunctions) / totalFunctions) * 100)
+        : 0;
+
+      // Extract export names from before file
+      const beforeExports = new Set();
+      beforeSource.getExportedDeclarations().forEach((_declarations, exportName) => {
+        beforeExports.add(exportName);
+      });
+
+      // Extract export names from after file
+      const afterExports = new Set();
+      afterSource.getExportedDeclarations().forEach((_declarations, exportName) => {
+        afterExports.add(exportName);
+      });
+
+      // Count deleted exports (exist in before but not in after)
+      let deletedExports = 0;
+      beforeExports.forEach(exportName => {
+        if (!afterExports.has(exportName)) {
+          deletedExports++;
+        }
+      });
+
       return {
-        structuralChangePercent: 0, // TODO: Phase 3
+        structuralChangePercent,
         deletedFunctions,
-        deletedExports: 0 // TODO: Phase 3
+        deletedExports
       };
 
     } catch (parseError) {
