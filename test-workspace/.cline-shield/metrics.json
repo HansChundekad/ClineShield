@@ -18,7 +18,212 @@
       "file": "session-start",
       "structuralChangePercent": 0,
       "functionsDeleted": 0,
-      "exportsDeleted": 0 
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-16T04:04:20.645Z",
+    "sessionId": "295af9fb-3d55-4e9c-a610-e746043e26f0",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-16T04:07:31.589Z",
+    "sessionId": "34ec91b7-365b-4c58-bcc1-f735a79d74fb",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T07:08:29.152Z",
+    "sessionId": "4d93b0ac-ceb3-4f36-8d8b-94b97927847e",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T07:13:03.573Z",
+    "sessionId": "ad01445f-90a4-4e2b-b4f6-e3ee13f30aa5",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T07:26:02.732Z",
+    "sessionId": "ca8aff9d-2557-4a7c-bb2f-e82ec1950c47",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T07:26:43.000Z",
+    "sessionId": "unknown-session",
+    "type": "edit-blocked",
+    "data": {
+      "file": "complex.ts",
+      "reason": "ClineShield: 5 functions deleted, 72% structural change. Make smaller targeted edits (max 3 functions, 25% change).",
+      "structuralChangePercent": 72,
+      "functionsDeleted": 5
+    }
+  },
+  {
+    "timestamp": "2026-02-17T07:28:22.000Z",
+    "sessionId": "unknown-session",
+    "type": "edit-blocked",
+    "data": {
+      "file": "complex.ts",
+      "reason": "ClineShield: 1 functions deleted, 36% structural change. Make smaller targeted edits (max 3 functions, 25% change).",
+      "structuralChangePercent": 36,
+      "functionsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-17T07:30:03.000Z",
+    "sessionId": "unknown-session",
+    "type": "edit-blocked",
+    "data": {
+      "file": "simple.ts",
+      "reason": "ClineShield: 0 functions deleted, 50% structural change. Make smaller targeted edits (max 3 functions, 25% change).",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T07:32:31.996Z",
+    "sessionId": "69aa3ddf-08e0-4ef7-9d00-0166178d09a3",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T07:32:50.000Z",
+    "sessionId": "unknown-session",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T07:32:51.000Z",
+    "sessionId": "unknown-session",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T07:52:29.780Z",
+    "sessionId": "7a722d20-abf9-471e-bd76-f77175b4515e",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T07:53:28.000Z",
+    "sessionId": "7a722d20-abf9-471e-bd76-f77175b4515e",
+    "type": "edit-blocked",
+    "data": {
+      "file": "complex.ts",
+      "reason": "ClineShield: 5 functions deleted, 72% structural change. Make smaller targeted edits (max 3 functions, 50% change).",
+      "structuralChangePercent": 72,
+      "functionsDeleted": 5
+    }
+  },
+  {
+    "timestamp": "2026-02-17T08:04:59.000Z",
+    "sessionId": "7a722d20-abf9-471e-bd76-f77175b4515e",
+    "type": "edit-blocked",
+    "data": {
+      "file": "simple.ts",
+      "reason": "ClineShield: 0 functions deleted, 100% structural change. Make smaller targeted edits (max 3 functions, 50% change).",
+      "structuralChangePercent": 100,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T08:13:38.943Z",
+    "sessionId": "96e6b32d-1ac1-48dd-ae25-2570b9023962",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T08:13:58.000Z",
+    "sessionId": "96e6b32d-1ac1-48dd-ae25-2570b9023962",
+    "type": "edit-blocked",
+    "data": {
+      "file": "simple.ts",
+      "reason": "ClineShield: 2 functions deleted, 82% structural change. Make smaller targeted edits (max 3 functions, 75% change for patches > 10 lines).",
+      "structuralChangePercent": 82,
+      "functionsDeleted": 2
+    }
+  },
+  {
+    "timestamp": "2026-02-17T08:18:42.129Z",
+    "sessionId": "0206fcd4-c9f8-45a3-94f4-4ff046c1145b",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T08:19:02.000Z",
+    "sessionId": "0206fcd4-c9f8-45a3-94f4-4ff046c1145b",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 61,
+      "functionsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-17T08:20:16.000Z",
+    "sessionId": "0206fcd4-c9f8-45a3-94f4-4ff046c1145b",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 61,
+      "functionsDeleted": 1
     }
   }
 ]

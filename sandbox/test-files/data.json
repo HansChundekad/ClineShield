@@ -1,9 +1,0 @@
-{
-  "test": true,
-  "purpose": "Hook testing",
-  "items": [
-    "item1",
-    "item2",
-    "item3"
-  ]
-}

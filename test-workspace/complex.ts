@@ -1,5 +1,6 @@
 // Complex TypeScript file for testing large structural changes
 // Phase 1-2: Test high structural change % scenarios and function deletions
+// Uses standalone named functions (no classes) for regex pattern detection
 
 export interface User {
   id: string;
@@ -7,24 +8,25 @@ export interface User {
   email: string;
 }
 
-export class UserService {
-  private users: User[] = [];
+const users: User[] = [];
 
-  addUser(user: User): void {
-    this.users.push(user);
-  }
+// User Management Functions (7 total - deleting 4+ should trigger block)
 
-  removeUser(id: string): void {
-    this.users = this.users.filter(u => u.id !== id);
-  }
+export function addUser(user: User): void {
+  users.push(user);
+}
 
-  findUser(id: string): User | undefined {
-    return this.users.find(u => u.id === id);
-  }
+export function removeUser(id: string): void {
+  const index = users.findIndex(u => u.id === id);
+  if (index !== -1) users.splice(index, 1);
+}
 
-  getAllUsers(): User[] {
-    return [...this.users];
-  }
+export function findUser(id: string): User | undefined {
+  return users.find(u => u.id === id);
+}
+
+export function getAllUsers(): User[] {
+  return [...users];
 }
 
 export function validateEmail(email: string): boolean {
