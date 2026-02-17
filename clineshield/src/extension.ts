@@ -17,6 +17,9 @@ export function activate(context: vscode.ExtensionContext): void {
   currentSessionId = randomUUID();
   console.log(`ClineShield session ID: ${currentSessionId}`);
 
+  // Set environment variable for hooks to access sessionId
+  process.env.CLINESHIELD_SESSION_ID = currentSessionId;
+
   // Create status bar item
   const statusBarItem = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Right,
@@ -121,8 +124,9 @@ export function activate(context: vscode.ExtensionContext): void {
 export function deactivate(): void {
   console.log('ClineShield extension deactivated');
 
-  // Clear session ID from module scope
+  // Clear session ID from module scope and environment
   currentSessionId = undefined;
+  delete process.env.CLINESHIELD_SESSION_ID;
 
   // All disposables in context.subscriptions are cleaned up automatically:
   // - Status bar item
