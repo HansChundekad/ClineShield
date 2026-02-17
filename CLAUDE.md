@@ -2,6 +2,8 @@
 
 **ClineShield** - VS Code extension adding safety guardrails to Cline AI through hooks and quality checks.
 
+PROGRESS.md tracks completed work and current status, make sure to update it once a feature or step is completed
+
 metrics.json:
 - Format: JSON array (NOT JSONL)
 - Location: {workspace}/.cline-shield/metrics.json
