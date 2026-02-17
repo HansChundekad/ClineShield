@@ -17,7 +17,8 @@
 
 # Hardcoded thresholds
 MAX_DELETED_FUNCTIONS=3
-MAX_STRUCTURAL_CHANGE=50  # 50% to allow small legitimate edits
+MAX_STRUCTURAL_CHANGE=75  # 75% threshold for large patches
+MIN_PATCH_LINES=10        # Only apply % check if patch > 10 lines
 
 # Metrics configuration
 METRICS_DIR=".cline-shield"
@@ -159,8 +160,9 @@ if [[ "$TOOL" == "apply_patch" ]]; then
     ADDED_FUNCTIONS=0
 
     # Function signature patterns (grep -E compatible)
-    # Matches: function foo(), async function foo(), foo(), foo(): Type {, async foo(), const foo = () =>
-    FUNC_PATTERN='(function\s+\w+\s*\(|^\s*(async\s+)?\w+\s*\([^)]*\)\s*(:|{)|const\s+\w+\s*=\s*.*=>)'
+    # Matches: function foo(), async function foo(), export function foo(), const foo = () =>
+    # Excludes: if/while/for/switch control flow statements
+    FUNC_PATTERN='(function\s+\w+\s*\(|^\s*export\s+(async\s+)?function\s+\w+|const\s+\w+\s*=\s*.*=>)'
 
     # Parse patch line by line
     while IFS= read -r line; do
@@ -209,13 +211,30 @@ if [[ "$TOOL" == "apply_patch" ]]; then
     echo "[ClineShield] Deleted: ${DELETED_LINES} lines, ${DELETED_FUNCTIONS} functions" | tee -a "$LOG_FILE" >&2
 
     # Phase 3: Block destructive edits
-    if [[ $DELETED_FUNCTIONS -gt $MAX_DELETED_FUNCTIONS ]] || [[ $STRUCTURAL_CHANGE -gt $MAX_STRUCTURAL_CHANGE ]]; then
-      echo "[ClineShield] ⛔ BLOCKING EDIT" | tee -a "$LOG_FILE" >&2
+    # Check if should block based on thresholds
+    SHOULD_BLOCK=false
+    BLOCK_REASON=""
+
+    # Always check function deletion count
+    if [[ $DELETED_FUNCTIONS -gt $MAX_DELETED_FUNCTIONS ]]; then
+      SHOULD_BLOCK=true
+      BLOCK_REASON="function deletion"
+    fi
+
+    # Only check structural change % if patch is large enough (> 10 lines)
+    if [[ $TOTAL_LINES -gt $MIN_PATCH_LINES ]] && [[ $STRUCTURAL_CHANGE -gt $MAX_STRUCTURAL_CHANGE ]]; then
+      SHOULD_BLOCK=true
+      BLOCK_REASON="${BLOCK_REASON:+$BLOCK_REASON and }structural change"
+    fi
+
+    if [[ "$SHOULD_BLOCK" == "true" ]]; then
+      echo "[ClineShield] ⛔ BLOCKING EDIT ($BLOCK_REASON)" | tee -a "$LOG_FILE" >&2
       echo "[ClineShield] Deleted functions: $DELETED_FUNCTIONS (max: $MAX_DELETED_FUNCTIONS)" | tee -a "$LOG_FILE" >&2
-      echo "[ClineShield] Structural change: ${STRUCTURAL_CHANGE}% (max: ${MAX_STRUCTURAL_CHANGE}%)" | tee -a "$LOG_FILE" >&2
+      echo "[ClineShield] Structural change: ${STRUCTURAL_CHANGE}% (max: ${MAX_STRUCTURAL_CHANGE}% for patches > ${MIN_PATCH_LINES} lines)" | tee -a "$LOG_FILE" >&2
+      echo "[ClineShield] Patch size: ${TOTAL_LINES} lines" | tee -a "$LOG_FILE" >&2
 
       # Write EditBlockedEvent to metrics.json
-      ERROR_MSG="ClineShield: ${DELETED_FUNCTIONS} functions deleted, ${STRUCTURAL_CHANGE}% structural change. Make smaller targeted edits (max ${MAX_DELETED_FUNCTIONS} functions, ${MAX_STRUCTURAL_CHANGE}% change)."
+      ERROR_MSG="ClineShield: ${DELETED_FUNCTIONS} functions deleted, ${STRUCTURAL_CHANGE}% structural change. Make smaller targeted edits (max ${MAX_DELETED_FUNCTIONS} functions, ${MAX_STRUCTURAL_CHANGE}% change for patches > ${MIN_PATCH_LINES} lines)."
       write_metrics_event "edit-blocked" "$FILE_PATH" "$STRUCTURAL_CHANGE" "$DELETED_FUNCTIONS" "$ERROR_MSG"
 
       echo "{\"cancel\":true,\"errorMessage\":\"⛔ ${ERROR_MSG}\"}"
