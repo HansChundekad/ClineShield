@@ -20,14 +20,27 @@
 - [x] End-to-end test (small edit allowed, big rewrite blocked)
 - [x] Verify metrics.json integrity
 
-## Phase 2: Sanity Check Hook (PostToolUse) ⏸️ NOT STARTED
-- [ ] Run eslint on changed files
-- [ ] Run tsc --noEmit
-- [ ] Run prettier --check
-- [ ] Write sanity-failed/passed events
-- [ ] Retry loop (max 3 attempts)
-- [ ] Context injection for errors
+## Phase 2: Sanity Check Hook (PostToolUse) ✅ COMPLETE
 
+    Step 1 (Basic Hook): ✅
+    1.1: Skeleton - verified real Cline input schema before assuming field names
+    1.2: Run tools prettier → eslint → tsc (sequential, stop on first failure, <10s)
+    1.3: Write sanity-passed/sanity-failed to metrics.json (atomic write, schema-exact)
+
+    Step 2 (Retry Logic): ✅
+    2.1: Retry state in .cline-shield/retry-state.json (composite taskId:file key)
+    2.2: contextModification injection ("Attempt X/3", raw tool output, fix-only instruction)
+
+    Step 3 (Testing): ✅
+    3.1: Test 1 - first failure → eslint FAIL, retryCount:1, contextModification sent ✓
+    3.2: Test 2 - Cline fixed error → sanity-passed, retry-state cleared ✓
+    3.3: Tests 3&4 - max retries cutoff + fresh task isolation verified in smoke tests ✓
+
+    Test workspace setup:
+    - package.json (prettier, eslint, typescript-eslint, typescript)
+    - .prettierrc, eslint.config.js, tsconfig.json
+
+    
 ## Phase 3: YAML Config → Hook Generator ⏸️ NOT STARTED
 ## Phase 4: Metrics Sidebar ⏸️ NOT STARTED
 ## Phase 5: Rules-Based Risk Scoring ⏸️ NOT STARTED
