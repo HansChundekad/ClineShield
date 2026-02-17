@@ -225,5 +225,397 @@
       "structuralChangePercent": 61,
       "functionsDeleted": 1
     }
+  },
+  {
+    "timestamp": "2026-02-17T19:59:04.536Z",
+    "sessionId": "c05fe76d-66b0-434d-b38b-1868a2c60a61",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T19:59:23.000Z",
+    "sessionId": "c05fe76d-66b0-434d-b38b-1868a2c60a61",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:21:14.247Z",
+    "sessionId": "349b4296-c225-475f-8044-eaf873ce1897",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:21:33.000Z",
+    "sessionId": "349b4296-c225-475f-8044-eaf873ce1897",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:26:02.756Z",
+    "sessionId": "cec771f9-d36f-4aac-b9c3-84162314b130",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:26:21.000Z",
+    "sessionId": "cec771f9-d36f-4aac-b9c3-84162314b130",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:30:26.141Z",
+    "sessionId": "6b879203-ad0f-43e0-8c68-332bfdeeaca8",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:30:43.000Z",
+    "sessionId": "6b879203-ad0f-43e0-8c68-332bfdeeaca8",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:33:07.187Z",
+    "sessionId": "2b0217b4-0e58-47e7-ac87-a9f60e1c4cba",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:33:26.000Z",
+    "sessionId": "2b0217b4-0e58-47e7-ac87-a9f60e1c4cba",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:48:06.000Z",
+    "sessionId": "test-session-123",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  12:10  error  'privateHelper' is defined but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 0,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:58:18.000Z",
+    "sessionId": "sess-1",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  12:10  error  'privateHelper' is defined but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:58:22.000Z",
+    "sessionId": "sess-1",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  12:10  error  'privateHelper' is defined but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 2,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:58:24.000Z",
+    "sessionId": "sess-1",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  12:10  error  'privateHelper' is defined but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 3,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T20:58:27.000Z",
+    "sessionId": "sess-1",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  12:10  error  'privateHelper' is defined but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 3,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:05:28.000Z",
+    "sessionId": "sess-1",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  12:10  error  'privateHelper' is defined but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:05:30.000Z",
+    "sessionId": "sess-1",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  12:10  error  'privateHelper' is defined but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 2,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:05:33.000Z",
+    "sessionId": "sess-1",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  12:10  error  'privateHelper' is defined but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 3,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:05:35.000Z",
+    "sessionId": "sess-1",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  12:10  error  'privateHelper' is defined but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 3,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:08:48.595Z",
+    "sessionId": "038e39f3-2d42-439b-80e8-2b9d0be5e4e7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:09:02.000Z",
+    "sessionId": "038e39f3-2d42-439b-80e8-2b9d0be5e4e7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:09:53.000Z",
+    "sessionId": "038e39f3-2d42-439b-80e8-2b9d0be5e4e7",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  12:10  error  'privateHelper' is defined but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:10:00.000Z",
+    "sessionId": "038e39f3-2d42-439b-80e8-2b9d0be5e4e7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:12:14.000Z",
+    "sessionId": "038e39f3-2d42-439b-80e8-2b9d0be5e4e7",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  12:10  error  'privateHelper' is defined but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 2,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:12:22.000Z",
+    "sessionId": "038e39f3-2d42-439b-80e8-2b9d0be5e4e7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:12:32.000Z",
+    "sessionId": "038e39f3-2d42-439b-80e8-2b9d0be5e4e7",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  12:10  error  '_privateHelper' is defined but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 3,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:12:47.000Z",
+    "sessionId": "038e39f3-2d42-439b-80e8-2b9d0be5e4e7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 14,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:12:58.000Z",
+    "sessionId": "038e39f3-2d42-439b-80e8-2b9d0be5e4e7",
+    "type": "sanity-passed",
+    "data": {
+      "file": "simple.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 6
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:25:37.000Z",
+    "sessionId": "sess-tsc",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  26:7  error  'badType' is assigned a value but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-17T21:28:57.000Z",
+    "sessionId": "sess-tsc",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "tsc",
+      "errors": [
+        "simple.ts(26,14): error TS2322: Type 'string' is not assignable to type 'number'."
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
   }
 ]
