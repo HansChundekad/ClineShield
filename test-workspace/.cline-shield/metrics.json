@@ -705,5 +705,288 @@
       "functionsDeleted": 0,
       "exportsDeleted": 0
     }
+  },
+  {
+    "timestamp": "2026-02-18T05:55:45.430Z",
+    "sessionId": "dbfe87db-8bc3-4bc9-bd73-80fbb112184a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T05:54:33.454Z",
+    "sessionId": "dbfe87db-8bc3-4bc9-bd73-80fbb112184a",
+    "type": "edit-blocked",
+    "data": {
+      "file": "src/auth.ts",
+      "reason": "Too many deletions",
+      "structuralChangePercent": 80,
+      "functionsDeleted": 4,
+      "exportsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-18T05:55:33.454Z",
+    "sessionId": "dbfe87db-8bc3-4bc9-bd73-80fbb112184a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/api.ts",
+      "structuralChangePercent": 10,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T05:56:33.454Z",
+    "sessionId": "dbfe87db-8bc3-4bc9-bd73-80fbb112184a",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/api.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-18T05:57:33.454Z",
+    "sessionId": "dbfe87db-8bc3-4bc9-bd73-80fbb112184a",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/auth.ts",
+      "tool": "eslint",
+      "errors": [
+        "Line 12: 'x' is defined but never used"
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-18T05:58:33.454Z",
+    "sessionId": "dbfe87db-8bc3-4bc9-bd73-80fbb112184a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/utils.ts",
+      "structuralChangePercent": 5,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T05:59:30.000Z",
+    "sessionId": "dbfe87db-8bc3-4bc9-bd73-80fbb112184a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:00:10.000Z",
+    "sessionId": "dbfe87db-8bc3-4bc9-bd73-80fbb112184a",
+    "type": "sanity-passed",
+    "data": {
+      "file": "simple.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 4
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:01:53.000Z",
+    "sessionId": "dbfe87db-8bc3-4bc9-bd73-80fbb112184a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 25,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:02:15.000Z",
+    "sessionId": "dbfe87db-8bc3-4bc9-bd73-80fbb112184a",
+    "type": "sanity-passed",
+    "data": {
+      "file": "simple.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 5
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:17:26.185Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:13:45.390Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "edit-blocked",
+    "data": {
+      "file": "src/auth.ts",
+      "reason": "Too many deletions",
+      "structuralChangePercent": 80,
+      "functionsDeleted": 4,
+      "exportsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:14:45.390Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/api.ts",
+      "structuralChangePercent": 10,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:15:45.390Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/api.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:16:45.390Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/auth.ts",
+      "tool": "eslint",
+      "errors": [
+        "Line 12: 'x' is defined but never used"
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:17:45.390Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/utils.ts",
+      "structuralChangePercent": 5,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-01-01T00:00:00Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/auth.ts",
+      "tool\n  ": "eslint",
+      "errors": [
+        "err"
+      ],
+      "retryCount": 2,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-01-01T00:00:01Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/auth.ts",
+      "tool\n  ": "eslint",
+      "errors": [
+        "err"
+      ],
+      "retryCount": 3,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:22:27.000Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "edit-blocked",
+    "data": {
+      "file": "user-service.ts",
+      "reason": "ClineShield: 1 functions deleted, 81% structural change. Make smaller targeted edits (max 3 functions, 75% change for patches > 10 lines).",
+      "structuralChangePercent": 81,
+      "functionsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:25:40.000Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 20,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:25:59.000Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "sanity-failed",
+    "data": {
+      "file": "simple.ts",
+      "tool": "eslint",
+      "errors": [
+        "/Users/hanschundekad/ClineShield/test-workspace/simple.ts",
+        "  5:9  error  'unused' is assigned a value but never used  @typescript-eslint/no-unused-vars",
+        "✖ 1 problem (1 error, 0 warnings)"
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:26:04.000Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 16,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T06:26:15.000Z",
+    "sessionId": "a51e1ed7-43c6-407c-9e29-6029b0daf637",
+    "type": "sanity-passed",
+    "data": {
+      "file": "simple.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 4
+    }
   }
 ]

@@ -2,7 +2,10 @@
 // Phase 1-2: Test low structural change % scenarios
 
 export function greet(name: string): string {
-  return `Hey, ${name}!`;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const unused = 42;
+  console.log(`Greeting user: ${name}`);
+  return `Hi, ${name}!`;
 }
 
 export function add(a: number, b: number): number {
