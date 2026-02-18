@@ -15,10 +15,10 @@
 #
 # CRITICAL: Must exit 0 always (hook errors break Cline workflow)
 
-# Hardcoded thresholds
-MAX_DELETED_FUNCTIONS=3
-MAX_STRUCTURAL_CHANGE=75  # 75% threshold for large patches
-MIN_PATCH_LINES=10        # Only apply % check if patch > 10 lines
+# Thresholds — read from env vars set by configLoader; fall back to built-in defaults
+MAX_DELETED_FUNCTIONS=${CLINESHIELD_MAX_FUNCTIONS:-3}
+MAX_STRUCTURAL_CHANGE=${CLINESHIELD_MAX_CHANGE:-75}    # 75% threshold for large patches
+MIN_PATCH_LINES=${CLINESHIELD_MIN_LINES:-10}           # Only apply % check if patch > 10 lines
 
 # Metrics configuration
 METRICS_DIR=".cline-shield"

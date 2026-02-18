@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { randomUUID } from 'crypto';
+import { loadConfig } from './config/configLoader';
 import { appendEvent } from './metrics/writer';
 import { readEventsBySession } from './metrics/reader';
 
@@ -12,6 +13,12 @@ let currentSessionId: string | undefined;
  */
 export function activate(context: vscode.ExtensionContext): void {
   console.log('ClineShield extension is now active');
+
+  // Load YAML config first so env vars are set before hooks run
+  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (workspaceRoot) {
+    loadConfig(workspaceRoot);
+  }
 
   // Generate fresh session ID on each activation (no persistence)
   currentSessionId = randomUUID();
@@ -35,7 +42,6 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(statusBarItem);
 
   // Write initial session-start event to metrics.json
-  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (workspaceRoot) {
     void appendEvent(
       {
@@ -58,6 +64,19 @@ export function activate(context: vscode.ExtensionContext): void {
   } else {
     console.warn('No workspace folder found, skipping session-start event');
   }
+
+  // Register command: ClineShield: Reload Configuration
+  const reloadConfigCommand = vscode.commands.registerCommand('clineshield.reloadConfig', () => {
+    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!root) {
+      vscode.window.showWarningMessage('ClineShield: No workspace open — cannot reload config.');
+      return;
+    }
+    loadConfig(root);
+    vscode.window.showInformationMessage('ClineShield: Configuration reloaded.');
+  });
+
+  context.subscriptions.push(reloadConfigCommand);
 
   // Register command: ClineShield: Deactivate (stub for Phase 3)
   const deactivateCommand = vscode.commands.registerCommand('clineshield.deactivate', async () => {

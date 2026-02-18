@@ -16,14 +16,22 @@
 
 LOG_FILE="/tmp/clineshield-post.log"
 
+# ── Config: read from env vars with fallback defaults ─────────────────────────
+TOOLS="${CLINESHIELD_TOOLS:-prettier eslint tsc}"
+MAX_RETRIES=${CLINESHIELD_MAX_RETRIES:-3}
+HOOK_TIMEOUT=${CLINESHIELD_TIMEOUT:-30}
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 log() { echo "[ClineShield-Post] $*" | tee -a "$LOG_FILE" >&2; }
 
+# Returns 0 if $1 is listed in $TOOLS, 1 otherwise
+tool_enabled() { [[ " $TOOLS " == *" $1 "* ]]; }
+
 # Wrap a command with `timeout` if available, otherwise run directly
 run_cmd() {
   if command -v timeout >/dev/null 2>&1; then
-    timeout 10s "$@"
+    timeout "${HOOK_TIMEOUT}s" "$@"
   else
     "$@"
   fi
@@ -136,8 +144,9 @@ write_sanity_event() {
       --arg tool "$FAILED_TOOL" \
       --argjson errors "$errors_json" \
       --argjson retry "$retry_count" \
+      --argjson maxret "$MAX_RETRIES" \
       '{timestamp: $ts, sessionId: $sid, type: "sanity-failed",
-        data: {file: $file, tool: $tool, errors: $errors, retryCount: $retry, maxRetries: 3}}')
+        data: {file: $file, tool: $tool, errors: $errors, retryCount: $retry, maxRetries: $maxret}}')
   fi
 
   # Ensure .cline-shield directory exists
@@ -170,23 +179,25 @@ TOOL_OUTPUT=""
 TOOLS_PASSED=()
 
 # 1. Prettier (~0.5s) ─────────────────────────────────────────────────────────
-START=$(date +%s)
-PRETTIER_OUT=$(cd "$WORKSPACE_ROOT" && run_cmd npx --no-install prettier --check "$FILE_RELATIVE" 2>&1)
-PRETTIER_EXIT=$?
-ELAPSED=$(( $(date +%s) - START ))
+if tool_enabled "prettier"; then
+  START=$(date +%s)
+  PRETTIER_OUT=$(cd "$WORKSPACE_ROOT" && run_cmd npx --no-install prettier --check "$FILE_RELATIVE" 2>&1)
+  PRETTIER_EXIT=$?
+  ELAPSED=$(( $(date +%s) - START ))
 
-if [[ $PRETTIER_EXIT -ne 0 ]]; then
-  log "prettier: FAIL (${ELAPSED}s) → $PRETTIER_OUT"
-  FAILED=true
-  FAILED_TOOL="prettier"
-  TOOL_OUTPUT="$PRETTIER_OUT"
-else
-  log "prettier: PASS (${ELAPSED}s)"
-  TOOLS_PASSED+=("prettier")
+  if [[ $PRETTIER_EXIT -ne 0 ]]; then
+    log "prettier: FAIL (${ELAPSED}s) → $PRETTIER_OUT"
+    FAILED=true
+    FAILED_TOOL="prettier"
+    TOOL_OUTPUT="$PRETTIER_OUT"
+  else
+    log "prettier: PASS (${ELAPSED}s)"
+    TOOLS_PASSED+=("prettier")
+  fi
 fi
 
 # 2. ESLint (~1-2s) ───────────────────────────────────────────────────────────
-if [[ "$FAILED" == "false" ]]; then
+if [[ "$FAILED" == "false" ]] && tool_enabled "eslint"; then
   START=$(date +%s)
   ESLINT_OUT=$(cd "$WORKSPACE_ROOT" && run_cmd npx --no-install eslint "$FILE_RELATIVE" 2>&1)
   ESLINT_EXIT=$?
@@ -205,7 +216,7 @@ fi
 
 # 3. TypeScript (~2-3s) ───────────────────────────────────────────────────────
 # Runs on whole project (respects tsconfig.json), filters output to edited file only.
-if [[ "$FAILED" == "false" ]]; then
+if [[ "$FAILED" == "false" ]] && tool_enabled "tsc"; then
   START=$(date +%s)
   TSC_ALL=$(cd "$WORKSPACE_ROOT" && run_cmd npx --no-install tsc --noEmit 2>&1)
   ELAPSED=$(( $(date +%s) - START ))
@@ -228,7 +239,6 @@ fi
 # Key: "taskId:filePath" — scopes retries to the current task, not globally.
 # Stale entries from previous tasks are naturally ignored (different taskId).
 
-MAX_RETRIES=3
 RETRY_KEY="${TASK_ID}:${FILE_RELATIVE}"
 RETRY_STATE_PATH="${WORKSPACE_ROOT}/.cline-shield/retry-state.json"
 

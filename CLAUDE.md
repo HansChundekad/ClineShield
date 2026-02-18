@@ -8,8 +8,8 @@ metrics.json:
 - Format: JSON array (NOT JSONL)
 - Location: {workspace}/.cline-shield/metrics.json
 - Types: src/types/metrics.ts (source of truth)
-- Writer: src/utils/metricsWriter.ts (use appendEvent())
-- Reader: src/utils/metricsReader.ts (use readEvents())
+- Writer: src/metrics/writer.ts (use appendEvent())
+- Reader: src/metrics/reader.ts (use readEvents())
 
 When implementing ANY feature touching metrics.json:
 1. Read src/types/metrics.ts first
@@ -54,6 +54,8 @@ sessionId:
 
 ```
 src/
+├── config/
+│   └── configLoader.ts           // <100 lines - reads .cline-shield.yml, sets env vars
 ├── extension/
 │   ├── extension.ts              // <100 lines - activation only
 │   ├── hookGenerator.ts          // <200 lines - YAML → scripts

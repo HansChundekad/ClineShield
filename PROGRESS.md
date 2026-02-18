@@ -45,11 +45,11 @@
 - [x] Created .cline-shield.example.yml (committed template with comments)
 - [x] Created .cline-shield.yml (local config, gitignored)
 - [x] Added .cline-shield.yml to .gitignore
-- [] Updated PreToolUse to read env vars (max_deleted_functions, max_structural_change)
-- [] Updated PostToolUse to read env vars (tools, max_retries, timeout)
-- [] Added configLoader.ts to extension
-- [] Config loads on extension activation
-- [] Added "Reload Config" command
+- [x] Updated PreToolUse to read env vars (max_deleted_functions, max_structural_change)
+- [x] Updated PostToolUse to read env vars (tools, max_retries, timeout)
+- [x] Added configLoader.ts to extension (src/config/configLoader.ts)
+- [x] Config loads on extension activation (first thing in activate(), before session ID)
+- [x] Added "Reload Config" command (clineshield.reloadConfig)
 
 Implementation: Environment variable approach (no code generation)
 - Hooks use ${VAR:-default} syntax for fallback defaults
