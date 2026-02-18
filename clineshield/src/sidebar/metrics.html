@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: var(--vscode-font-family);
+      font-size: var(--vscode-font-size);
+      color: var(--vscode-foreground);
+      background: var(--vscode-sideBar-background);
+      padding: 12px;
+      margin: 0;
+    }
+    h2 {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 8px 0;
+      color: var(--vscode-sideBarSectionHeader-foreground);
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--vscode-widget-border, transparent);
+    }
+    .stat-label { opacity: 0.8; }
+    .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .blocked { color: var(--vscode-errorForeground); }
+    .passed { color: var(--vscode-testing-iconPassed, #4caf50); }
+    .failed { color: var(--vscode-testing-iconFailed, #f44336); }
+    .section { margin-bottom: 16px; }
+    .recent {
+      background: var(--vscode-editor-background);
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 12px;
+    }
+    .recent-file { font-weight: 600; margin-bottom: 4px; }
+    .recent-type { opacity: 0.8; }
+    .recent-time { opacity: 0.6; font-size: 11px; }
+    .empty { opacity: 0.5; font-style: italic; }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-red { background: var(--vscode-errorForeground); color: var(--vscode-editor-background); }
+    .badge-green { background: var(--vscode-testing-iconPassed, #4caf50); color: var(--vscode-editor-background); }
+    .badge-yellow { background: var(--vscode-editorWarning-foreground, #ff9800); color: var(--vscode-editor-background); }
+  </style>
+</head>
+<body>
+  <div class="section">
+    <h2>Session Stats</h2>
+    <div class="stat-row">
+      <span class="stat-label">Edits Blocked</span>
+      <span class="stat-value blocked" id="blocked">0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Edits Allowed</span>
+      <span class="stat-value passed" id="allowed">0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Sanity Passed</span>
+      <span class="stat-value passed" id="passed">0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Sanity Failed</span>
+      <span class="stat-value failed" id="failed">0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Avg Retries</span>
+      <span class="stat-value" id="retries">0</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Most Recent Edit</h2>
+    <div id="recent" class="recent">
+      <p class="empty">No events yet</p>
+    </div>
+  </div>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+
+    window.addEventListener('message', (event) => {
+      const msg = event.data;
+      if (msg.type !== 'update') return;
+
+      const s = msg.stats;
+      document.getElementById('blocked').textContent = s.blockedEdits;
+      document.getElementById('allowed').textContent = s.allowedEdits;
+      document.getElementById('passed').textContent = s.passedEdits;
+      document.getElementById('failed').textContent = s.failedEdits;
+      document.getElementById('retries').textContent = s.avgRetries;
+
+      const recentEl = document.getElementById('recent');
+      if (s.mostRecent) {
+        const time = formatRelativeTime(s.mostRecent.timestamp);
+        recentEl.innerHTML =
+          '<div class="recent-file">' + escapeHtml(s.mostRecent.file) + '</div>' +
+          '<div class="recent-type">' + getBadgeHtml(s.mostRecent.eventType) + '</div>' +
+          '<div class="recent-time">' + escapeHtml(time) + '</div>';
+      } else {
+        recentEl.innerHTML = '<p class="empty">No events yet</p>';
+      }
+    });
+
+    function formatRelativeTime(timestamp) {
+      const now = Date.now();
+      const then = new Date(timestamp).getTime();
+      const diffMs = now - then;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins} min${diffMins === 1 ? '' : 's'} ago`;
+      if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+      return `${Math.floor(diffHours / 24)} days ago`;
+    }
+
+    function getBadgeHtml(eventType) {
+      let badgeClass = 'badge';
+      if (eventType === 'edit-blocked' || eventType === 'sanity-failed') {
+        badgeClass += ' badge-red';
+      } else if (eventType === 'sanity-passed' || eventType === 'edit-allowed') {
+        badgeClass += ' badge-green';
+      } else {
+        badgeClass += ' badge-yellow';
+      }
+      return '<span class="' + badgeClass + '">' + escapeHtml(eventType) + '</span>';
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

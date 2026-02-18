@@ -55,7 +55,27 @@ Implementation: Environment variable approach (no code generation)
 - Hooks use ${VAR:-default} syntax for fallback defaults
 - Extension reads YAML and sets process.env variables
 - No template system needed - hooks remain static files
-## Phase 4: Metrics Sidebar ⏸️ NOT STARTED
+
+## Phase 4: Metrics Sidebar ✅ COMPLETE
+
+- [x] MetricsSidebarProvider (src/sidebar/MetricsSidebarProvider.ts)
+- [x] Sidebar HTML/JS UI (src/sidebar/metrics.html) — VS Code theme-aware
+- [x] Activity bar entry (shield icon) + webview view registered in package.json
+- [x] File watcher on metrics.json → real-time refresh on every write
+- [x] generateTestMetrics command for dev/demo population
+- [x] Session-scoped stats (readEventsBySession — not all-time)
+- [x] 5 stat rows: Edits Blocked, Edits Allowed, Sanity Passed, Sanity Failed, Avg Retries
+- [x] Avg Retries: averages max retryCount per unique file (correct formula)
+- [x] Most Recent Edit panel with badge + relative timestamp
+- [x] session-start synthetic event excluded from Edits Allowed counter
+- [x] Merged onto feature/phase-4-merging (cherry-pick strategy, Phase 3 preserved)
+
+Integration tested:
+- Sidebar shows 0 on fresh session (session isolation confirmed)
+- generateTestMetrics → Blocked=1, Allowed=2, Passed=1, Failed=1, AvgRetries=1
+- Manual retryCount append → AvgRetries=3 (correct per-file max formula)
+- Real Cline ESLint failure → sanity-failed event written, sidebar updates live
+
 ## Phase 5: Rules-Based Risk Scoring ⏸️ NOT STARTED
 ## Phase 6: LLM Analysis ⏸️ NOT STARTED
 ## Phase 7: Change Map TreeView ⏸️ NOT STARTED
