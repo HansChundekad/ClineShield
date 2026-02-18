@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { randomUUID } from 'crypto';
 import { appendEvent } from './metrics/writer';
 import { readEventsBySession } from './metrics/reader';
+import { MetricsSidebarProvider } from './sidebar/MetricsSidebarProvider';
 
 // Store current session ID at module level for file watcher access
 let currentSessionId: string | undefined;
@@ -40,7 +41,7 @@ export function activate(context: vscode.ExtensionContext): void {
     void appendEvent(
       {
         timestamp: new Date().toISOString(),
-        sessionId: currentSessionId,
+        sessionId: currentSessionId ?? 'unknown-session',
         type: 'edit-allowed',
         data: {
           file: 'session-start',
@@ -110,9 +111,73 @@ export function activate(context: vscode.ExtensionContext): void {
   // Add watcher to subscriptions for cleanup
   context.subscriptions.push(metricsWatcher);
 
+  // Register Metrics Sidebar
+  if (workspaceRoot) {
+    const sidebarProvider = new MetricsSidebarProvider(
+      context.extensionUri,
+      workspaceRoot
+    );
+
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(
+        MetricsSidebarProvider.viewType,
+        sidebarProvider
+      )
+    );
+
+    context.subscriptions.push(sidebarProvider);
+  }
+
+  // Test command: Generate mock metrics
+  const generateTestMetrics = vscode.commands.registerCommand(
+    'clineshield.generateTestMetrics',
+    async () => {
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('No workspace folder open');
+        return;
+      }
+
+      const now = Date.now();
+      const testEvents = [
+        { type: 'edit-blocked', mins: 25, file: 'src/auth.ts', reason: 'Would delete 5 functions' },
+        { type: 'edit-blocked', mins: 20, file: 'src/database.ts', reason: 'Structural change 80%' },
+        { type: 'edit-blocked', mins: 15, file: 'src/api.ts', reason: 'Would delete 3 exports' },
+        { type: 'sanity-passed', mins: 28, file: 'src/utils.ts' },
+        { type: 'sanity-passed', mins: 22, file: 'src/config.ts' },
+        { type: 'sanity-passed', mins: 18, file: 'src/helper.ts' },
+        { type: 'sanity-passed', mins: 10, file: 'src/format.ts' },
+        { type: 'sanity-passed', mins: 5, file: 'src/validator.ts' },
+        { type: 'sanity-failed', mins: 12, file: 'src/buggy.ts', retryCount: 1 },
+        { type: 'sanity-failed', mins: 3, file: 'src/messy.ts', retryCount: 2 },
+      ];
+
+      for (const evt of testEvents) {
+        const timestamp = new Date(now - evt.mins * 60 * 1000).toISOString();
+
+        await appendEvent(
+          {
+            timestamp,
+            sessionId: currentSessionId || 'test-session',
+            type: evt.type as any,
+            data: {
+              file: evt.file,
+              ...(evt.retryCount !== undefined ? { retryCount: evt.retryCount } : {}),
+              ...(evt.reason ? { reason: evt.reason } : {}),
+            } as any,
+          },
+          workspaceRoot
+        );
+      }
+
+      vscode.window.showInformationMessage('Generated 10 test metrics events');
+    }
+  );
+
+  context.subscriptions.push(generateTestMetrics);
+
   // Future: Initialize components here
   // - Hook generators
-  // - Sidebar/UI providers
+  // - Config loader (Phase 3)
 }
 
 /**

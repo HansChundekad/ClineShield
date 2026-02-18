@@ -16,10 +16,32 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "clineshield",
+          "title": "ClineShield",
+          "icon": "$(shield)"
+        }
+      ]
+    },
+    "views": {
+      "clineshield": [
+        {
+          "type": "webview",
+          "id": "clineshield.metricsView",
+          "name": "Metrics"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "clineshield.deactivate",
         "title": "ClineShield: Deactivate (Coming in Phase 3)"
+      },
+      {
+        "command": "clineshield.generateTestMetrics",
+        "title": "ClineShield: Generate Test Metrics"
       }
     ]
   },

@@ -55,7 +55,18 @@ Implementation: Environment variable approach (no code generation)
 - Hooks use ${VAR:-default} syntax for fallback defaults
 - Extension reads YAML and sets process.env variables
 - No template system needed - hooks remain static files
-## Phase 4: Metrics Sidebar ⏸️ NOT STARTED
+## Phase 4: Metrics Sidebar ✅ COMPLETE
+- [x] Created MetricsSidebarProvider.ts (195 lines)
+- [x] Created metrics.html with counters and most recent edit (142 lines)
+- [x] Registered sidebar in extension.ts
+- [x] Added viewsContainer and views to package.json
+- [x] Created test command: "Generate Test Metrics"
+- [x] Verified empty state handling
+- [x] Verified real-time updates on metrics.json changes
+- [x] Color-coded badges (red/green) working
+- [x] Relative timestamps ("X mins ago") working
+- [x] Theme-aware styling with VS Code CSS variables
+
 ## Phase 5: Rules-Based Risk Scoring ⏸️ NOT STARTED
 ## Phase 6: LLM Analysis ⏸️ NOT STARTED
 ## Phase 7: Change Map TreeView ⏸️ NOT STARTED
