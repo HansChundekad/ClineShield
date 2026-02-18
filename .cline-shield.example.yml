@@ -1,0 +1,33 @@
+# ClineShield Configuration
+# Copy this file to .cline-shield.yml and customize for your project.
+# .cline-shield.yml is gitignored — each developer sets their own thresholds.
+
+no-nuke:
+  # Maximum number of functions Cline may delete in a single edit.
+  # Edits that exceed this are blocked and must be split into smaller changes.
+  max_deleted_functions: 3
+
+  # Minimum number of structural-change lines required before the percent
+  # threshold is also applied. Prevents false positives on tiny files.
+  max_structural_change_lines: 10
+
+  # Maximum percentage of functions that may be added/removed in one edit
+  # (only enforced when max_structural_change_lines is also exceeded).
+  max_structural_change_percent: 75
+
+sanity:
+  # Linting/formatting tools to run after every Cline file write.
+  # Supported values: prettier, eslint, tsc
+  # Tools run sequentially; the chain stops on the first failure.
+  tools:
+    - prettier
+    - eslint
+    - tsc
+
+  # How many times Cline is allowed to retry a failing sanity check
+  # before ClineShield stops injecting contextModification messages.
+  max_retries: 3
+
+  # Seconds to wait for a single tool (prettier/eslint/tsc) before
+  # killing the process and treating the check as failed.
+  timeout_seconds: 30
