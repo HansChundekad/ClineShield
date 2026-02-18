@@ -65,6 +65,19 @@ export function activate(context: vscode.ExtensionContext): void {
     console.warn('No workspace folder found, skipping session-start event');
   }
 
+  // Register command: ClineShield: Reload Configuration
+  const reloadConfigCommand = vscode.commands.registerCommand('clineshield.reloadConfig', () => {
+    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!root) {
+      vscode.window.showWarningMessage('ClineShield: No workspace open — cannot reload config.');
+      return;
+    }
+    loadConfig(root);
+    vscode.window.showInformationMessage('ClineShield: Configuration reloaded.');
+  });
+
+  context.subscriptions.push(reloadConfigCommand);
+
   // Register command: ClineShield: Deactivate (stub for Phase 3)
   const deactivateCommand = vscode.commands.registerCommand('clineshield.deactivate', async () => {
     // TODO: Phase 3 - Implement full deactivation:

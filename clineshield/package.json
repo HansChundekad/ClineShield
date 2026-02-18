@@ -18,6 +18,10 @@
   "contributes": {
     "commands": [
       {
+        "command": "clineshield.reloadConfig",
+        "title": "ClineShield: Reload Configuration"
+      },
+      {
         "command": "clineshield.deactivate",
         "title": "ClineShield: Deactivate (Coming in Phase 3)"
       }

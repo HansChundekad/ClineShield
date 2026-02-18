@@ -49,7 +49,7 @@
 - [x] Updated PostToolUse to read env vars (tools, max_retries, timeout)
 - [x] Added configLoader.ts to extension (src/config/configLoader.ts)
 - [x] Config loads on extension activation (first thing in activate(), before session ID)
-- [] Added "Reload Config" command
+- [x] Added "Reload Config" command (clineshield.reloadConfig)
 
 Implementation: Environment variable approach (no code generation)
 - Hooks use ${VAR:-default} syntax for fallback defaults
