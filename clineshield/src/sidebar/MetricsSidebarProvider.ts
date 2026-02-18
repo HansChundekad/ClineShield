@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { readEvents } from '../metrics/reader';
+import { readEventsBySession } from '../metrics/reader';
 import type { MetricsEvent } from '../types/metrics';
 
 interface SidebarStats {
   blockedEdits: number;
+  allowedEdits: number;
   passedEdits: number;
   failedEdits: number;
   avgRetries: number;
@@ -25,7 +26,8 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
 
   constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly workspaceRoot: string
+    private readonly workspaceRoot: string,
+    private readonly sessionId: string
   ) {
     this.watcher = vscode.workspace.createFileSystemWatcher(
       '**/.cline-shield/metrics.json'
@@ -72,9 +74,15 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
   }
 
   private async calculateStats(): Promise<SidebarStats> {
-    const events = await readEvents(this.workspaceRoot);
+    const events = await readEventsBySession(this.sessionId, this.workspaceRoot);
 
     const blockedEdits = events.filter(e => e.type === 'edit-blocked').length;
+
+    // Exclude the synthetic 'session-start' marker written on activation
+    const allowedEdits = events.filter(
+      e => e.type === 'edit-allowed' && (e.data as { file?: string }).file !== 'session-start'
+    ).length;
+
     const passedEdits = events.filter(e => e.type === 'sanity-passed').length;
 
     const sanityFailed = events.filter(
@@ -83,13 +91,16 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
     );
     const failedEdits = sanityFailed.length;
 
+    // Average max retryCount per unique file (= how many attempts each file needed)
     let avgRetries = 0;
     if (sanityFailed.length > 0) {
-      const totalRetries = sanityFailed.reduce(
-        (sum, e) => sum + (e.data.retryCount ?? 0),
-        0
-      );
-      avgRetries = Math.round((totalRetries / sanityFailed.length) * 10) / 10;
+      const maxPerFile = new Map<string, number>();
+      for (const e of sanityFailed) {
+        const file = e.data.file;
+        maxPerFile.set(file, Math.max(maxPerFile.get(file) ?? 0, e.data.retryCount));
+      }
+      const totals = [...maxPerFile.values()];
+      avgRetries = Math.round((totals.reduce((s, n) => s + n, 0) / totals.length) * 10) / 10;
     }
 
     let mostRecent: SidebarStats['mostRecent'] = null;
@@ -103,7 +114,7 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
       };
     }
 
-    return { blockedEdits, passedEdits, failedEdits, avgRetries, mostRecent };
+    return { blockedEdits, allowedEdits, passedEdits, failedEdits, avgRetries, mostRecent };
   }
 
   private async getHtmlContent(): Promise<string> {

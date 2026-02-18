@@ -132,7 +132,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Register metrics sidebar
   if (workspaceRoot) {
-    const sidebarProvider = new MetricsSidebarProvider(context.extensionUri, workspaceRoot);
+    const sidebarProvider = new MetricsSidebarProvider(context.extensionUri, workspaceRoot, currentSessionId);
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider(MetricsSidebarProvider.viewType, sidebarProvider)
     );

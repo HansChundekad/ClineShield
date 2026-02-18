@@ -59,8 +59,12 @@
   <div class="section">
     <h2>Session Stats</h2>
     <div class="stat-row">
-      <span class="stat-label">Blocked Edits</span>
+      <span class="stat-label">Edits Blocked</span>
       <span class="stat-value blocked" id="blocked">0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Edits Allowed</span>
+      <span class="stat-value passed" id="allowed">0</span>
     </div>
     <div class="stat-row">
       <span class="stat-label">Sanity Passed</span>
@@ -92,6 +96,7 @@
 
       const s = msg.stats;
       document.getElementById('blocked').textContent = s.blockedEdits;
+      document.getElementById('allowed').textContent = s.allowedEdits;
       document.getElementById('passed').textContent = s.passedEdits;
       document.getElementById('failed').textContent = s.failedEdits;
       document.getElementById('retries').textContent = s.avgRetries;
