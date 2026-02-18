@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { loadConfig } from './config/configLoader';
 import { appendEvent } from './metrics/writer';
 import { readEventsBySession } from './metrics/reader';
+import { MetricsSidebarProvider } from './sidebar/MetricsSidebarProvider';
 
 // Store current session ID at module level for file watcher access
 let currentSessionId: string | undefined;
@@ -129,9 +130,32 @@ export function activate(context: vscode.ExtensionContext): void {
   // Add watcher to subscriptions for cleanup
   context.subscriptions.push(metricsWatcher);
 
-  // Future: Initialize components here
-  // - Hook generators
-  // - Sidebar/UI providers
+  // Register metrics sidebar
+  if (workspaceRoot) {
+    const sidebarProvider = new MetricsSidebarProvider(context.extensionUri, workspaceRoot);
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(MetricsSidebarProvider.viewType, sidebarProvider)
+    );
+    context.subscriptions.push(sidebarProvider);
+  }
+
+  // Register command: ClineShield: Generate Test Metrics
+  const generateTestMetricsCommand = vscode.commands.registerCommand('clineshield.generateTestMetrics', async () => {
+    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!root || !currentSessionId) {
+      vscode.window.showWarningMessage('ClineShield: No workspace open.');
+      return;
+    }
+    const now = Date.now();
+    const ts = (minsAgo: number) => new Date(now - minsAgo * 60000).toISOString();
+    await appendEvent({ timestamp: ts(4), sessionId: currentSessionId, type: 'edit-blocked',  data: { file: 'src/auth.ts', reason: 'Too many deletions', structuralChangePercent: 80, functionsDeleted: 4, exportsDeleted: 1 } }, root);
+    await appendEvent({ timestamp: ts(3), sessionId: currentSessionId, type: 'edit-allowed',  data: { file: 'src/api.ts',  structuralChangePercent: 10, functionsDeleted: 0, exportsDeleted: 0 } }, root);
+    await appendEvent({ timestamp: ts(2), sessionId: currentSessionId, type: 'sanity-passed', data: { file: 'src/api.ts',  tools: ['prettier', 'eslint', 'tsc'], duration: 3 } }, root);
+    await appendEvent({ timestamp: ts(1), sessionId: currentSessionId, type: 'sanity-failed', data: { file: 'src/auth.ts', tool: 'eslint', errors: ["Line 12: 'x' is defined but never used"], retryCount: 1, maxRetries: 3 } }, root);
+    await appendEvent({ timestamp: ts(0), sessionId: currentSessionId, type: 'edit-allowed',  data: { file: 'src/utils.ts', structuralChangePercent: 5, functionsDeleted: 0, exportsDeleted: 0 } }, root);
+    vscode.window.showInformationMessage('ClineShield: Generated 5 test metrics events.');
+  });
+  context.subscriptions.push(generateTestMetricsCommand);
 }
 
 /**
