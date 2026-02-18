@@ -617,5 +617,93 @@
       "retryCount": 1,
       "maxRetries": 3
     }
+  },
+  {
+    "timestamp": "2026-02-18T01:58:31.977Z",
+    "sessionId": "58e2ad1d-1feb-48a2-bc4f-01ac76119986",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T02:02:15.667Z",
+    "sessionId": "dc05143c-010b-4351-873c-db5283b11e97",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T02:07:59.570Z",
+    "sessionId": "e0529c7e-2715-4208-a905-c62348261521",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T02:36:47.721Z",
+    "sessionId": "2a2ffe19-e732-4c65-998c-e93f33615bfb",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T02:42:45.656Z",
+    "sessionId": "e43bd7db-429a-40af-b40a-0edc338169f4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T02:44:33.495Z",
+    "sessionId": "e057b0b6-eea4-45ec-80c0-5b0298769c26",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T02:45:30.000Z",
+    "sessionId": "e057b0b6-eea4-45ec-80c0-5b0298769c26",
+    "type": "edit-blocked",
+    "data": {
+      "file": "simple.ts",
+      "reason": "ClineShield: 2 functions deleted, 72% structural change. Make smaller targeted edits (max 1 functions, 75% change for patches > 10 lines).",
+      "structuralChangePercent": 72,
+      "functionsDeleted": 2
+    }
+  },
+  {
+    "timestamp": "2026-02-18T02:51:49.541Z",
+    "sessionId": "d3d65761-af95-40e4-8513-4ae3e1c8c158",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
   }
 ]
