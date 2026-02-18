@@ -43,7 +43,11 @@
     "type": "sanity-passed",
     "data": {
       "file": "src/auth.ts",
-      "tools": ["eslint", "prettier", "tsc"],
+      "tools": [
+        "eslint",
+        "prettier",
+        "tsc"
+      ],
       "duration": 1.2
     }
   },
@@ -90,6 +94,26 @@
       "model": "gpt-4",
       "duration": 2.5
     }
+  },
+  {
+    "timestamp": "2026-02-18T02:57:52.000Z",
+    "sessionId": "unknown-session",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-18T02:57:53.000Z",
+    "sessionId": "unknown-session",
+    "type": "edit-blocked",
+    "data": {
+      "file": "simple.ts",
+      "reason": "ClineShield: 11 functions deleted, 91% structural change. Make smaller targeted edits (max 3 functions, 75% change for patches > 10 lines).",
+      "structuralChangePercent": 91,
+      "functionsDeleted": 11
+    }
   }
 ]
-
