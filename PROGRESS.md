@@ -41,7 +41,20 @@
     - .prettierrc, eslint.config.js, tsconfig.json
 
     
-## Phase 3: YAML Config → Hook Generator ⏸️ NOT STARTED
+## Phase 3: YAML Config → Hook Generator
+- [x] Created .cline-shield.example.yml (committed template with comments)
+- [x] Created .cline-shield.yml (local config, gitignored)
+- [x] Added .cline-shield.yml to .gitignore
+- [] Updated PreToolUse to read env vars (max_deleted_functions, max_structural_change)
+- [] Updated PostToolUse to read env vars (tools, max_retries, timeout)
+- [] Added configLoader.ts to extension
+- [] Config loads on extension activation
+- [] Added "Reload Config" command
+
+Implementation: Environment variable approach (no code generation)
+- Hooks use ${VAR:-default} syntax for fallback defaults
+- Extension reads YAML and sets process.env variables
+- No template system needed - hooks remain static files
 ## Phase 4: Metrics Sidebar ⏸️ NOT STARTED
 ## Phase 5: Rules-Based Risk Scoring ⏸️ NOT STARTED
 ## Phase 6: LLM Analysis ⏸️ NOT STARTED

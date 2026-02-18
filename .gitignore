@@ -4,3 +4,6 @@ node_modules/
 *.lock
 clineshield/dist/
 .Rhistory
+
+# Local ClineShield config (use .cline-shield.example.yml as a template)
+.cline-shield.yml
