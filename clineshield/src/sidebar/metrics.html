@@ -41,6 +41,9 @@
     .recent-file { font-weight: 600; margin-bottom: 4px; }
     .recent-type { opacity: 0.8; }
     .recent-time { opacity: 0.6; font-size: 11px; }
+    .recent-risk { margin-top: 6px; font-size: 11px; }
+    .recent-risk-none { opacity: 0.5; font-style: italic; }
+    .risk-score { font-weight: 600; margin-right: 5px; }
     .empty { opacity: 0.5; font-style: italic; }
     .badge {
       display: inline-block;
@@ -107,7 +110,8 @@
         recentEl.innerHTML =
           '<div class="recent-file">' + escapeHtml(s.mostRecent.file) + '</div>' +
           '<div class="recent-type">' + getBadgeHtml(s.mostRecent.eventType) + '</div>' +
-          '<div class="recent-time">' + escapeHtml(time) + '</div>';
+          '<div class="recent-time">' + escapeHtml(time) + '</div>' +
+          '<div class="recent-risk">' + getRiskHtml(s.mostRecent.eventType, s.mostRecent.riskScore, s.mostRecent.riskLevel) + '</div>';
       } else {
         recentEl.innerHTML = '<p class="empty">No events yet</p>';
       }
@@ -135,6 +139,20 @@
         badgeClass += ' badge-yellow';
       }
       return '<span class="' + badgeClass + '">' + escapeHtml(eventType) + '</span>';
+    }
+
+    function getRiskHtml(eventType, riskScore, riskLevel) {
+      if (eventType === 'edit-blocked') {
+        return '<span class="recent-risk-none">Risk: — (edit was blocked)</span>';
+      }
+      if (riskScore === null || riskLevel === null) {
+        return '<span class="recent-risk-none">Risk: pending</span>';
+      }
+      const badgeClass = riskLevel === 'high' ? 'badge badge-red'
+                       : riskLevel === 'medium' ? 'badge badge-yellow'
+                       : 'badge badge-green';
+      return '<span class="risk-score">Risk: ' + riskScore + '</span>' +
+             '<span class="' + badgeClass + '">' + riskLevel.toUpperCase() + '</span>';
     }
 
     function escapeHtml(str) {

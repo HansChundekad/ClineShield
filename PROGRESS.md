@@ -93,7 +93,11 @@ Integration tested:
   - Trailing slash = directory prefix match; no trailing slash = exact basename match
   - Empty list sets "none" sentinel to disable rule
   - Bash hook loop replaces hardcoded regex
-- [ ] Surface risk level in sidebar
+- [x] Surface risk level in sidebar (Most Recent Edit panel, Option B)
+  - mostRecent scoped to edit-allowed/edit-blocked only (risk-assessed events no longer overwrite panel)
+  - risk-assessed event linked by file + timestamp >= edit timestamp
+  - edit-blocked shows "Risk: — (edit was blocked)"
+  - edit-allowed shows score + LOW/MEDIUM/HIGH badge (green/yellow/red)
 ## Phase 6: LLM Analysis ⏸️ NOT STARTED
 ## Phase 7: Change Map TreeView ⏸️ NOT STARTED
 
