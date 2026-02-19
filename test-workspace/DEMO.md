@@ -156,6 +156,3 @@ The panel updates within 1–2 seconds of any write to `.cline-shield/metrics.js
   Class method syntax (`methodName() {}`) is not matched — `src/models/product.ts`
   is a PostToolUse target only (tsc/eslint catch errors there, not PreToolUse).
 - **LLM analysis**: Phase 6, not yet implemented.
-- **YAML config changes live**: Edit `.cline-shield.yml`, then run
-  `Ctrl+Shift+P → ClineShield: Reload Config` to pick up the new values
-  without restarting the extension.
