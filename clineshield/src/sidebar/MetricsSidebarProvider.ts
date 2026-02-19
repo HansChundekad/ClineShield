@@ -16,6 +16,7 @@ interface SidebarStats {
     timestamp: string;
     riskScore: number | null;
     riskLevel: 'low' | 'medium' | 'high' | null;
+    riskReasons: Array<{ description: string; points: number }> | null;
   } | null;
 }
 
@@ -120,6 +121,7 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
       // after (or at the same time as) the edit — links score to this specific edit.
       let riskScore: number | null = null;
       let riskLevel: 'low' | 'medium' | 'high' | null = null;
+      let riskReasons: Array<{ description: string; points: number }> | null = null;
 
       if (lastEdit.type === 'edit-allowed') {
         const riskEvent = [...events]
@@ -131,13 +133,18 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
               e.timestamp >= lastEdit.timestamp
           );
         if (riskEvent?.type === 'risk-assessed') {
-          const d = riskEvent.data as { rulesScore: number; level: 'low' | 'medium' | 'high' };
+          const d = riskEvent.data as {
+            rulesScore: number;
+            level: 'low' | 'medium' | 'high';
+            reasons: Array<{ rule: string; points: number; description: string }>;
+          };
           riskScore = d.rulesScore;
           riskLevel = d.level;
+          riskReasons = d.reasons.map(r => ({ description: r.description, points: r.points }));
         }
       }
 
-      mostRecent = { file, eventType: lastEdit.type, timestamp: lastEdit.timestamp, riskScore, riskLevel };
+      mostRecent = { file, eventType: lastEdit.type, timestamp: lastEdit.timestamp, riskScore, riskLevel, riskReasons };
     }
 
     return { blockedEdits, allowedEdits, passedEdits, failedEdits, avgRetries, mostRecent };

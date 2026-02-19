@@ -44,6 +44,9 @@
     .recent-risk { margin-top: 6px; font-size: 11px; }
     .recent-risk-none { opacity: 0.5; font-style: italic; }
     .risk-score { font-weight: 600; margin-right: 5px; }
+    .risk-reasons { margin-top: 5px; padding-left: 2px; }
+    .risk-reason { opacity: 0.7; padding: 1px 0; }
+    .risk-reason-points { font-variant-numeric: tabular-nums; margin-right: 4px; opacity: 0.9; }
     .empty { opacity: 0.5; font-style: italic; }
     .badge {
       display: inline-block;
@@ -111,7 +114,7 @@
           '<div class="recent-file">' + escapeHtml(s.mostRecent.file) + '</div>' +
           '<div class="recent-type">' + getBadgeHtml(s.mostRecent.eventType) + '</div>' +
           '<div class="recent-time">' + escapeHtml(time) + '</div>' +
-          '<div class="recent-risk">' + getRiskHtml(s.mostRecent.eventType, s.mostRecent.riskScore, s.mostRecent.riskLevel) + '</div>';
+          '<div class="recent-risk">' + getRiskHtml(s.mostRecent.eventType, s.mostRecent.riskScore, s.mostRecent.riskLevel, s.mostRecent.riskReasons) + '</div>';
       } else {
         recentEl.innerHTML = '<p class="empty">No events yet</p>';
       }
@@ -141,7 +144,7 @@
       return '<span class="' + badgeClass + '">' + escapeHtml(eventType) + '</span>';
     }
 
-    function getRiskHtml(eventType, riskScore, riskLevel) {
+    function getRiskHtml(eventType, riskScore, riskLevel, riskReasons) {
       if (eventType === 'edit-blocked') {
         return '<span class="recent-risk-none">Risk: — (edit was blocked)</span>';
       }
@@ -151,8 +154,20 @@
       const badgeClass = riskLevel === 'high' ? 'badge badge-red'
                        : riskLevel === 'medium' ? 'badge badge-yellow'
                        : 'badge badge-green';
-      return '<span class="risk-score">Risk: ' + riskScore + '</span>' +
-             '<span class="' + badgeClass + '">' + riskLevel.toUpperCase() + '</span>';
+      let html = '<span class="risk-score">Risk: ' + riskScore + '</span>' +
+                 '<span class="' + badgeClass + '">' + riskLevel.toUpperCase() + '</span>';
+      if (riskReasons && riskReasons.length > 0) {
+        html += '<div class="risk-reasons">';
+        for (const r of riskReasons) {
+          const sign = r.points >= 0 ? '+' : '';
+          html += '<div class="risk-reason">' +
+                  '<span class="risk-reason-points">' + sign + r.points + '</span>' +
+                  escapeHtml(r.description) +
+                  '</div>';
+        }
+        html += '</div>';
+      }
+      return html;
     }
 
     function escapeHtml(str) {
