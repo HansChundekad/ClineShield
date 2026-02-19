@@ -35,7 +35,9 @@ export function isDevelopment(): boolean {
   return config.env === 'development';
 }
 
-export function isFeatureEnabled(flag: keyof AppConfig['featureFlags']): boolean {
+export function isFeatureEnabled(
+  flag: keyof AppConfig['featureFlags']
+): boolean {
   return config.featureFlags[flag];
 }
 
