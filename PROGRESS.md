@@ -76,7 +76,19 @@ Integration tested:
 - Manual retryCount append → AvgRetries=3 (correct per-file max formula)
 - Real Cline ESLint failure → sanity-failed event written, sidebar updates live
 
-## Phase 5: Rules-Based Risk Scoring ⏸️ NOT STARTED
+## Phase 5: Rules-Based Risk Scoring 🔄 IN PROGRESS
+
+- [x] rulesEngine.ts (src/extension/riskAnalysis/rulesEngine.ts)
+  - computeRiskScore(RiskInput) → RiskResult
+  - 8 rules: protected_path(+30), structural_change_medium(+25), structural_change_high(+40),
+    deleted_functions_low(+20), deleted_functions_high(+35), sanity_failed(+20),
+    large_diff>200(+15), test_file(-10)
+  - Tiered rules are not additive (high tier replaces medium)
+  - Score capped [0, 100]; level: low(0-30), medium(31-60), high(61-100)
+  - RiskReason shape matches RiskAssessedEvent.data.reasons schema
+- [x] rulesEngine.test.ts (51 tests, all passing)
+- [ ] Wire into PostToolUse hook (read structuralChangePercent/deletedFunctions from metrics.json, write risk-assessed event)
+- [ ] Surface risk level in sidebar
 ## Phase 6: LLM Analysis ⏸️ NOT STARTED
 ## Phase 7: Change Map TreeView ⏸️ NOT STARTED
 
