@@ -367,8 +367,22 @@ fi
   REASONS="[]"
 
   # Rule: protected path (+30)
-  if [[ "$FILE_RELATIVE" =~ ^(src/config|src/auth|src/middleware|auth|config)/ ]] || \
-     [[ "$(basename "$FILE_RELATIVE")" =~ ^\.env ]]; then
+  # Trailing slash = directory prefix match; no trailing slash = exact basename match.
+  # Set CLINESHIELD_PROTECTED_PATHS="none" to disable this rule entirely.
+  _DEFAULT_PATHS="src/config/:src/auth/:src/middleware/:auth/:config/:.env:.env.local:.env.production:.env.development"
+  _PROTECTED_PATHS="${CLINESHIELD_PROTECTED_PATHS:-$_DEFAULT_PATHS}"
+  IS_PROTECTED=false
+  if [[ "$_PROTECTED_PATHS" != "none" ]]; then
+    IFS=':' read -ra _PATH_LIST <<< "$_PROTECTED_PATHS"
+    for _p in "${_PATH_LIST[@]}"; do
+      if [[ "$_p" == */ ]]; then
+        [[ "$FILE_RELATIVE" == "$_p"* ]] && IS_PROTECTED=true && break
+      else
+        [[ "$(basename "$FILE_RELATIVE")" == "$_p" ]] && IS_PROTECTED=true && break
+      fi
+    done
+  fi
+  if [[ "$IS_PROTECTED" == "true" ]]; then
     RISK_SCORE=$(( RISK_SCORE + 30 ))
     REASONS=$(echo "$REASONS" | jq '. + [{"rule":"protected_path","points":30,"description":"File is in a protected path"}]')
   fi

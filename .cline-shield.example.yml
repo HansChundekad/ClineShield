@@ -31,3 +31,25 @@ sanity:
   # Seconds to wait for a single tool (prettier/eslint/tsc) before
   # killing the process and treating the check as failed.
   timeout_seconds: 30
+
+risk:
+  # Files and directories treated as high-risk (+30 points to risk score).
+  #
+  # Trailing slash  → directory prefix match (any file under that path)
+  # No trailing slash → exact filename match (basename only)
+  #
+  # Examples:
+  #   src/auth/    matches src/auth/service.ts, src/auth/middleware.ts
+  #   .env         matches .env only — NOT .env.local or .env.production
+  #   .env.local   list each variant explicitly if you want them all covered
+  #
+  # Set to an empty list ([]) to disable the protected path rule entirely.
+  protected_paths:
+    - src/auth/
+    - src/config/
+    - src/middleware/
+    - auth/
+    - config/
+    - .env
+    - .env.local
+    - .env.production

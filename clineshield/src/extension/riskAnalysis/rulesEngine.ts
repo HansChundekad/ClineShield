@@ -38,21 +38,26 @@ const PROTECTED_PATH_PREFIXES = [
   'config/',
 ];
 
-const PROTECTED_FILE_PREFIXES = ['.env'];
+// Exact basename matches — trailing-slash entries above cover directories,
+// these cover individual files. Aligns with bash hook behaviour.
+const PROTECTED_FILE_EXACT = [
+  '.env',
+  '.env.local',
+  '.env.production',
+  '.env.development',
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function isProtectedPath(filePath: string): boolean {
   const normalized = filePath.replace(/\\/g, '/');
-  if (PROTECTED_FILE_PREFIXES.some(prefix => {
-    const basename = normalized.split('/').pop() ?? normalized;
-    return basename.startsWith(prefix);
-  })) {
+  const basename = normalized.split('/').pop() ?? normalized;
+
+  if (PROTECTED_FILE_EXACT.includes(basename)) {
     return true;
   }
-  return PROTECTED_PATH_PREFIXES.some(prefix =>
-    normalized.startsWith(prefix) || normalized.includes('/' + prefix)
-  );
+  // Prefix match from path root only — consistent with bash `[[ path == prefix* ]]`
+  return PROTECTED_PATH_PREFIXES.some(prefix => normalized.startsWith(prefix));
 }
 
 function isTestFile(filePath: string): boolean {

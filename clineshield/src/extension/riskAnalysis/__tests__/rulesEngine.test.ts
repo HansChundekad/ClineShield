@@ -44,6 +44,16 @@ describe('computeRiskScore', () => {
       expect(reason!.points).toBe(30);
     });
 
+    it('does not match .env.staging — not in the default exact-file list', () => {
+      const result = computeRiskScore({ ...baseline, filePath: '.env.staging' });
+      expect(result.score).toBe(0);
+    });
+
+    it('does not match nested/src/auth/file.ts — prefix must be at path root', () => {
+      const result = computeRiskScore({ ...baseline, filePath: 'nested/src/auth/file.ts' });
+      expect(result.score).toBe(0);
+    });
+
     const neutralCases = [
       'src/utils/helper.ts',
       'src/components/Button.tsx',

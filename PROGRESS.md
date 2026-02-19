@@ -87,7 +87,12 @@ Integration tested:
   - Score capped [0, 100]; level: low(0-30), medium(31-60), high(61-100)
   - RiskReason shape matches RiskAssessedEvent.data.reasons schema
 - [x] rulesEngine.test.ts (51 tests, all passing)
-- [ ] Wire into PostToolUse hook (read structuralChangePercent/deletedFunctions from metrics.json, write risk-assessed event)
+- [x] Wire into PostToolUse hook (read structuralChangePercent/deletedFunctions from metrics.json, write risk-assessed event)
+- [x] Wire protected_paths to YAML config (configLoader.ts + .cline-shield.example.yml)
+  - Colon-separated env var CLINESHIELD_PROTECTED_PATHS
+  - Trailing slash = directory prefix match; no trailing slash = exact basename match
+  - Empty list sets "none" sentinel to disable rule
+  - Bash hook loop replaces hardcoded regex
 - [ ] Surface risk level in sidebar
 ## Phase 6: LLM Analysis ⏸️ NOT STARTED
 ## Phase 7: Change Map TreeView ⏸️ NOT STARTED
