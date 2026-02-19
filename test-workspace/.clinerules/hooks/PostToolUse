@@ -94,6 +94,12 @@ fi
 FULL_PATH="${WORKSPACE_ROOT}/${FILE_RELATIVE}"
 log "Checking: $FILE_RELATIVE"
 
+# Compute diff line count for large_diff risk rule (apply_patch only; 0 for write_to_file)
+DIFF_LINE_COUNT=0
+if [[ "$TOOL" == "apply_patch" ]]; then
+  DIFF_LINE_COUNT=$(echo "$PATCH_INPUT" | grep -c '^[+-]' 2>/dev/null || echo 0)
+fi
+
 # ── Filter: TS/JS files only ──────────────────────────────────────────────────
 
 if [[ ! "$FILE_RELATIVE" =~ \.(ts|tsx|js|jsx)$ ]]; then
@@ -168,6 +174,42 @@ write_sanity_event() {
   mv "$temp_path" "$metrics_path"
 
   log "Wrote $event_type to metrics.json"
+}
+
+# ── Write risk-assessed event (atomic, same pattern as write_sanity_event) ─────
+# Args: score level reasons_json
+write_risk_event() {
+  local score="$1" level="$2" reasons_json="$3"
+  local session_id="${CLINESHIELD_SESSION_ID:-unknown-session}"
+  local timestamp
+  timestamp=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+  local metrics_dir="${WORKSPACE_ROOT}/.cline-shield"
+  local metrics_path="${metrics_dir}/metrics.json"
+
+  local event_json
+  event_json=$(jq -n \
+    --arg ts "$timestamp" \
+    --arg sid "$session_id" \
+    --arg file "$FILE_RELATIVE" \
+    --argjson score "$score" \
+    --arg level "$level" \
+    --argjson reasons "$reasons_json" \
+    '{timestamp: $ts, sessionId: $sid, type: "risk-assessed",
+      data: {file: $file, rulesScore: $score, level: $level, reasons: $reasons}}')
+
+  mkdir -p "$metrics_dir" 2>/dev/null || true
+  local existing="[]"
+  if [[ -f "$metrics_path" ]]; then
+    existing=$(cat "$metrics_path" 2>/dev/null || echo "[]")
+    if ! echo "$existing" | jq -e 'type == "array"' >/dev/null 2>&1; then
+      existing="[]"
+    fi
+  fi
+
+  local temp_path="${metrics_path}.tmp.risk.$$"
+  echo "$existing" | jq --argjson event "$event_json" '. + [$event]' > "$temp_path"
+  mv "$temp_path" "$metrics_path"
+  log "Wrote risk-assessed: score=$score level=$level"
 }
 
 # ── Run quality tools (sequential, stop on first failure) ─────────────────────
@@ -299,5 +341,110 @@ else
 
   echo '{}'
 fi
+
+# ── Risk scoring (non-fatal — runs after sanity response is already written) ───
+{
+  METRICS_PATH="${WORKSPACE_ROOT}/.cline-shield/metrics.json"
+  RISK_STRUCTURAL=0
+  RISK_DELETED=0
+
+  if [[ -f "$METRICS_PATH" ]]; then
+    RISK_STRUCTURAL=$(jq -r --arg file "$FILE_RELATIVE" \
+      '[.[] | select(.type == "edit-allowed" or .type == "edit-blocked") | select(.data.file == $file)] | last | .data.structuralChangePercent // 0 | floor' \
+      "$METRICS_PATH" 2>/dev/null || echo 0)
+    RISK_DELETED=$(jq -r --arg file "$FILE_RELATIVE" \
+      '[.[] | select(.type == "edit-allowed" or .type == "edit-blocked") | select(.data.file == $file)] | last | .data.functionsDeleted // 0 | floor' \
+      "$METRICS_PATH" 2>/dev/null || echo 0)
+  fi
+
+  if [[ "$RISK_STRUCTURAL" == "0" && "$RISK_DELETED" == "0" ]]; then
+    log "WARNING: structuralChangePercent and functionsDeleted both 0 for $FILE_RELATIVE — no PreToolUse edit event found (write_to_file or missing event)"
+  fi
+
+  [[ "$FAILED" == "false" ]] && SANITY_PASSED_RISK=true || SANITY_PASSED_RISK=false
+
+  RISK_SCORE=0
+  REASONS="[]"
+
+  # Rule: protected path (+30)
+  # Trailing slash = directory prefix match; no trailing slash = exact basename match.
+  # Set CLINESHIELD_PROTECTED_PATHS="none" to disable this rule entirely.
+  _DEFAULT_PATHS="src/config/:src/auth/:src/middleware/:auth/:config/:.env:.env.local:.env.production:.env.development"
+  _PROTECTED_PATHS="${CLINESHIELD_PROTECTED_PATHS:-$_DEFAULT_PATHS}"
+  IS_PROTECTED=false
+  if [[ "$_PROTECTED_PATHS" != "none" ]]; then
+    IFS=':' read -ra _PATH_LIST <<< "$_PROTECTED_PATHS"
+    for _p in "${_PATH_LIST[@]}"; do
+      if [[ "$_p" == */ ]]; then
+        [[ "$FILE_RELATIVE" == "$_p"* ]] && IS_PROTECTED=true && break
+      else
+        [[ "$(basename "$FILE_RELATIVE")" == "$_p" ]] && IS_PROTECTED=true && break
+      fi
+    done
+  fi
+  if [[ "$IS_PROTECTED" == "true" ]]; then
+    RISK_SCORE=$(( RISK_SCORE + 30 ))
+    REASONS=$(echo "$REASONS" | jq '. + [{"rule":"protected_path","points":30,"description":"File is in a protected path"}]')
+  fi
+
+  # Rule: structural change — tiered, high replaces medium.
+  # Only applied when patch exceeds MIN_LINES lines — same guard as PreToolUse
+  # blocking, prevents small focused edits from scoring high due to low context.
+  _MIN_LINES=${CLINESHIELD_MIN_LINES:-10}
+  if [[ $DIFF_LINE_COUNT -gt $_MIN_LINES ]]; then
+    if [[ $RISK_STRUCTURAL -gt 75 ]]; then
+      RISK_SCORE=$(( RISK_SCORE + 40 ))
+      REASONS=$(echo "$REASONS" | jq --argjson pct "$RISK_STRUCTURAL" \
+        '. + [{"rule":"structural_change_high","points":40,"description":"Structural change is \($pct)% (exceeds 75%)"}]')
+    elif [[ $RISK_STRUCTURAL -gt 50 ]]; then
+      RISK_SCORE=$(( RISK_SCORE + 25 ))
+      REASONS=$(echo "$REASONS" | jq --argjson pct "$RISK_STRUCTURAL" \
+        '. + [{"rule":"structural_change_medium","points":25,"description":"Structural change is \($pct)% (exceeds 50%)"}]')
+    fi
+  fi
+
+  # Rule: deleted functions — tiered, high replaces low
+  if [[ $RISK_DELETED -gt 3 ]]; then
+    RISK_SCORE=$(( RISK_SCORE + 35 ))
+    REASONS=$(echo "$REASONS" | jq --argjson n "$RISK_DELETED" \
+      '. + [{"rule":"deleted_functions_high","points":35,"description":"\($n) functions deleted (exceeds 3)"}]')
+  elif [[ $RISK_DELETED -gt 0 ]]; then
+    RISK_SCORE=$(( RISK_SCORE + 20 ))
+    REASONS=$(echo "$REASONS" | jq --argjson n "$RISK_DELETED" \
+      '. + [{"rule":"deleted_functions_low","points":20,"description":"\($n) function(s) deleted"}]')
+  fi
+
+  # Rule: sanity failed (+20)
+  if [[ "$SANITY_PASSED_RISK" == "false" ]]; then
+    RISK_SCORE=$(( RISK_SCORE + 20 ))
+    REASONS=$(echo "$REASONS" | jq '. + [{"rule":"sanity_failed","points":20,"description":"Quality checks (eslint/tsc/prettier) failed after this edit"}]')
+  fi
+
+  # Rule: large diff (+15)
+  if [[ $DIFF_LINE_COUNT -gt 200 ]]; then
+    RISK_SCORE=$(( RISK_SCORE + 15 ))
+    REASONS=$(echo "$REASONS" | jq --argjson n "$DIFF_LINE_COUNT" \
+      '. + [{"rule":"large_diff","points":15,"description":"Diff is \($n) lines (exceeds 200)"}]')
+  fi
+
+  # Rule: test file (-10)
+  if [[ "$FILE_RELATIVE" =~ \.(test|spec)\.(ts|tsx|js|jsx)$ ]]; then
+    RISK_SCORE=$(( RISK_SCORE - 10 ))
+    REASONS=$(echo "$REASONS" | jq '. + [{"rule":"test_file","points":-10,"description":"Test file — lower inherent risk"}]')
+  fi
+
+  # Cap score [0, 100]
+  [[ $RISK_SCORE -gt 100 ]] && RISK_SCORE=100
+  [[ $RISK_SCORE -lt 0 ]] && RISK_SCORE=0
+
+  if [[ $RISK_SCORE -le 30 ]]; then RISK_LEVEL="low"
+  elif [[ $RISK_SCORE -le 60 ]]; then RISK_LEVEL="medium"
+  else RISK_LEVEL="high"
+  fi
+
+  log "Risk score: $RISK_SCORE ($RISK_LEVEL) for $FILE_RELATIVE"
+  write_risk_event "$RISK_SCORE" "$RISK_LEVEL" "$REASONS"
+
+} || true
 
 exit 0

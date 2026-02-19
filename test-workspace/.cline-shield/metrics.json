@@ -988,5 +988,413 @@
       ],
       "duration": 4
     }
+  },
+  {
+    "timestamp": "2026-02-19T00:41:43.397Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:44:51.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "simple.ts",
+      "structuralChangePercent": 57,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:45:03.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "sanity-passed",
+    "data": {
+      "file": "simple.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 4
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:45:03.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "risk-assessed",
+    "data": {
+      "file": "simple.ts",
+      "rulesScore": 25,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "structural_change_medium",
+          "points": 25,
+          "description": "Structural change is 57% (exceeds 50%)"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:46:51.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "protected.ts",
+      "structuralChangePercent": 66,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:47:11.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "sanity-failed",
+    "data": {
+      "file": "protected.ts",
+      "tool": "prettier",
+      "errors": [
+        "Checking formatting...",
+        "[warn] protected.ts",
+        "[warn] Code style issues found in the above file. Run Prettier with --write to fix."
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:47:11.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "risk-assessed",
+    "data": {
+      "file": "protected.ts",
+      "rulesScore": 45,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "structural_change_medium",
+          "points": 25,
+          "description": "Structural change is 66% (exceeds 50%)"
+        },
+        {
+          "rule": "sanity_failed",
+          "points": 20,
+          "description": "Quality checks (eslint/tsc/prettier) failed after this edit"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:48:34.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "protected.ts",
+      "structuralChangePercent": 25,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:48:44.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "sanity-failed",
+    "data": {
+      "file": "protected.ts",
+      "tool": "prettier",
+      "errors": [
+        "Checking formatting...",
+        "[warn] protected.ts",
+        "[warn] Code style issues found in the above file. Run Prettier with --write to fix."
+      ],
+      "retryCount": 2,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:48:45.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "risk-assessed",
+    "data": {
+      "file": "protected.ts",
+      "rulesScore": 20,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "sanity_failed",
+          "points": 20,
+          "description": "Quality checks (eslint/tsc/prettier) failed after this edit"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:49:03.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "protected.ts",
+      "structuralChangePercent": 57,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:49:14.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "sanity-failed",
+    "data": {
+      "file": "protected.ts",
+      "tool": "prettier",
+      "errors": [
+        "Checking formatting...",
+        "[warn] protected.ts",
+        "[warn] Code style issues found in the above file. Run Prettier with --write to fix."
+      ],
+      "retryCount": 3,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:49:16.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "risk-assessed",
+    "data": {
+      "file": "protected.ts",
+      "rulesScore": 45,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "structural_change_medium",
+          "points": 25,
+          "description": "Structural change is 57% (exceeds 50%)"
+        },
+        {
+          "rule": "sanity_failed",
+          "points": 20,
+          "description": "Quality checks (eslint/tsc/prettier) failed after this edit"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:49:29.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "protected.ts",
+      "structuralChangePercent": 33,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:49:49.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "sanity-failed",
+    "data": {
+      "file": "protected.ts",
+      "tool": "prettier",
+      "errors": [
+        "Checking formatting...",
+        "[warn] protected.ts",
+        "[warn] Code style issues found in the above file. Run Prettier with --write to fix."
+      ],
+      "retryCount": 3,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:49:50.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "risk-assessed",
+    "data": {
+      "file": "protected.ts",
+      "rulesScore": 20,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "sanity_failed",
+          "points": 20,
+          "description": "Quality checks (eslint/tsc/prettier) failed after this edit"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:50:52.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "protected.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:51:07.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "sanity-passed",
+    "data": {
+      "file": "protected.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 8
+    }
+  },
+  {
+    "timestamp": "2026-02-19T00:51:07.000Z",
+    "sessionId": "3f95ad19-1367-4793-bf1b-c5552b7813d7",
+    "type": "risk-assessed",
+    "data": {
+      "file": "protected.ts",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-19T01:29:23.580Z",
+    "sessionId": "fafb3520-9953-4395-bc77-63b9b5a767de",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T01:32:35.917Z",
+    "sessionId": "f524d7ae-9e2a-43ff-8a40-e7c31aea0f4b",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T01:34:53.826Z",
+    "sessionId": "1c565a3b-175d-4e8d-8c81-4d2ab3b313dc",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T01:37:48.000Z",
+    "sessionId": "1c565a3b-175d-4e8d-8c81-4d2ab3b313dc",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/appConfig.ts",
+      "structuralChangePercent": 36,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T01:38:11.000Z",
+    "sessionId": "1c565a3b-175d-4e8d-8c81-4d2ab3b313dc",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/config/appConfig.ts",
+      "tool": "prettier",
+      "errors": [
+        "Checking formatting...",
+        "[warn] src/config/appConfig.ts",
+        "[warn] Code style issues found in the above file. Run Prettier with --write to fix."
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-19T01:38:11.000Z",
+    "sessionId": "1c565a3b-175d-4e8d-8c81-4d2ab3b313dc",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/appConfig.ts",
+      "rulesScore": 50,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        },
+        {
+          "rule": "sanity_failed",
+          "points": 20,
+          "description": "Quality checks (eslint/tsc/prettier) failed after this edit"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-19T02:35:13.701Z",
+    "sessionId": "6107dd14-b992-4436-b815-083dd414a189",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T02:37:27.000Z",
+    "sessionId": "6107dd14-b992-4436-b815-083dd414a189",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/appConfig.ts",
+      "structuralChangePercent": 36,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-19T02:37:36.000Z",
+    "sessionId": "6107dd14-b992-4436-b815-083dd414a189",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/config/appConfig.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 5
+    }
+  },
+  {
+    "timestamp": "2026-02-19T02:37:36.000Z",
+    "sessionId": "6107dd14-b992-4436-b815-083dd414a189",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/appConfig.ts",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        }
+      ]
+    }
   }
 ]

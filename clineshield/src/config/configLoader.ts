@@ -14,9 +14,14 @@ interface SanityConfig {
   timeout_seconds?: number;
 }
 
+interface RiskConfig {
+  protected_paths?: string[];
+}
+
 interface ClineShieldConfig {
   'no-nuke'?: NoNukeConfig;
   sanity?: SanityConfig;
+  risk?: RiskConfig;
 }
 
 const CONFIG_FILE = '.cline-shield.yml';
@@ -68,6 +73,16 @@ export function loadConfig(workspaceRoot: string): void {
       }
     }
 
+    const risk = config.risk;
+    if (risk) {
+      if (Array.isArray(risk.protected_paths) && risk.protected_paths.length > 0) {
+        process.env.CLINESHIELD_PROTECTED_PATHS = risk.protected_paths.join(':');
+      } else if (risk.protected_paths !== undefined) {
+        // Explicitly empty list — disable the protected path rule
+        process.env.CLINESHIELD_PROTECTED_PATHS = 'none';
+      }
+    }
+
     console.log(`ClineShield: config loaded from ${CONFIG_FILE}`);
     console.log(`  no-nuke  → MAX_FUNCTIONS=${process.env.CLINESHIELD_MAX_FUNCTIONS ?? '(default)'}`);
     console.log(`             MIN_LINES=${process.env.CLINESHIELD_MIN_LINES ?? '(default)'}`);
@@ -75,6 +90,7 @@ export function loadConfig(workspaceRoot: string): void {
     console.log(`  sanity   → TOOLS=${process.env.CLINESHIELD_TOOLS ?? '(default)'}`);
     console.log(`             MAX_RETRIES=${process.env.CLINESHIELD_MAX_RETRIES ?? '(default)'}`);
     console.log(`             TIMEOUT=${process.env.CLINESHIELD_TIMEOUT ?? '(default)'}`);
+    console.log(`  risk     → PROTECTED_PATHS=${process.env.CLINESHIELD_PROTECTED_PATHS ?? '(default)'}`);
   } catch (err) {
     console.error(`ClineShield: failed to parse ${CONFIG_FILE} — ${(err as Error).message}`);
     console.error('ClineShield: using hook defaults');

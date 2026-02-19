@@ -2,5 +2,9 @@
   "tsc-test:simple.ts": {
     "count": 1,
     "lastError": "simple.ts(26,14): error TS2322: Type 'string' is not assignable to type 'number'."
+  },
+  "1771465059286:src/config/appConfig.ts": {
+    "count": 1,
+    "lastError": "Checking formatting...\n[warn] src/config/appConfig.ts\n[warn] Code style issues found in the above file. Run Prettier with --write to fix."
   }
 }
