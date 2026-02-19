@@ -76,7 +76,7 @@ Integration tested:
 - Manual retryCount append → AvgRetries=3 (correct per-file max formula)
 - Real Cline ESLint failure → sanity-failed event written, sidebar updates live
 
-## Phase 5: Rules-Based Risk Scoring 🔄 IN PROGRESS
+## Phase 5: Rules-Based Risk Scoring ✅ COMPLETE
 
 - [x] rulesEngine.ts (src/extension/riskAnalysis/rulesEngine.ts)
   - computeRiskScore(RiskInput) → RiskResult
@@ -98,7 +98,19 @@ Integration tested:
   - risk-assessed event linked by file + timestamp >= edit timestamp
   - edit-blocked shows "Risk: — (edit was blocked)"
   - edit-allowed shows score + LOW/MEDIUM/HIGH badge (green/yellow/red)
-## Phase 6: LLM Analysis ⏸️ NOT STARTED
+
+## Phase 6: LLM Analysis 🔄 IN PROGRESS
+
+- [x] llmAnalyzer.ts — Gemini 2.5 Flash caller, never throws, returns null on any failure
+- [ ] Step 1: Sidecar write in PostToolUse hook (diff-context.json, file-path matched)
+- [ ] Step 2: llmTrigger.ts + wire into extension.ts watcher + integration tests
+- [ ] Step 3: README — document CLINESHIELD_GEMINI_KEY env var
+- [ ] Step 4: Sidebar display of llm-analysis summary
+- [ ] Step 5: Smoke test, mark complete
+
+Key decisions:
+- Sidecar bridges diff from hook process to extension process (matched on file path, not timestamp)
+- LLM is best-effort: null result is silent, no schema changes, reasoning = JSON.stringify({summary, risks, confidence})
 ## Phase 7: Change Map TreeView ⏸️ NOT STARTED
 
 ---
