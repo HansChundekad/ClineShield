@@ -8,6 +8,8 @@
  * Output shape matches the RiskAssessedEvent.data schema in types/metrics.ts.
  */
 
+const MIN_DIFF_LINES_FOR_STRUCTURAL = 10; // mirrors CLINESHIELD_MIN_LINES default
+
 export interface RiskInput {
   filePath: string;
   structuralChangePercent: number;
@@ -86,22 +88,26 @@ export function computeRiskScore(input: RiskInput): RiskResult {
     });
   }
 
-  // Rule 2/3: Structural change — tiered, not additive
-  // >75%: +40  |  >50%: +25  |  ≤50%: +0
-  if (input.structuralChangePercent > 75) {
-    score += 40;
-    reasons.push({
-      rule: 'structural_change_high',
-      points: 40,
-      description: `Structural change is ${input.structuralChangePercent}% (exceeds 75%)`,
-    });
-  } else if (input.structuralChangePercent > 50) {
-    score += 25;
-    reasons.push({
-      rule: 'structural_change_medium',
-      points: 25,
-      description: `Structural change is ${input.structuralChangePercent}% (exceeds 50%)`,
-    });
+  // Rule 2/3: Structural change — tiered, not additive.
+  // Only applied when patch exceeds MIN_DIFF_LINES_FOR_STRUCTURAL — same guard
+  // as PreToolUse blocking, prevents small focused edits scoring high due to
+  // low context line count inflating the patch-density percentage.
+  if (input.diffLineCount > MIN_DIFF_LINES_FOR_STRUCTURAL) {
+    if (input.structuralChangePercent > 75) {
+      score += 40;
+      reasons.push({
+        rule: 'structural_change_high',
+        points: 40,
+        description: `Structural change is ${input.structuralChangePercent}% (exceeds 75%)`,
+      });
+    } else if (input.structuralChangePercent > 50) {
+      score += 25;
+      reasons.push({
+        rule: 'structural_change_medium',
+        points: 25,
+        description: `Structural change is ${input.structuralChangePercent}% (exceeds 50%)`,
+      });
+    }
   }
 
   // Rule 4/5: Deleted functions — tiered, not additive

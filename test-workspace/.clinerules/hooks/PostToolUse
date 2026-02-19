@@ -387,15 +387,20 @@ fi
     REASONS=$(echo "$REASONS" | jq '. + [{"rule":"protected_path","points":30,"description":"File is in a protected path"}]')
   fi
 
-  # Rule: structural change — tiered, high replaces medium
-  if [[ $RISK_STRUCTURAL -gt 75 ]]; then
-    RISK_SCORE=$(( RISK_SCORE + 40 ))
-    REASONS=$(echo "$REASONS" | jq --argjson pct "$RISK_STRUCTURAL" \
-      '. + [{"rule":"structural_change_high","points":40,"description":"Structural change is \($pct)% (exceeds 75%)"}]')
-  elif [[ $RISK_STRUCTURAL -gt 50 ]]; then
-    RISK_SCORE=$(( RISK_SCORE + 25 ))
-    REASONS=$(echo "$REASONS" | jq --argjson pct "$RISK_STRUCTURAL" \
-      '. + [{"rule":"structural_change_medium","points":25,"description":"Structural change is \($pct)% (exceeds 50%)"}]')
+  # Rule: structural change — tiered, high replaces medium.
+  # Only applied when patch exceeds MIN_LINES lines — same guard as PreToolUse
+  # blocking, prevents small focused edits from scoring high due to low context.
+  _MIN_LINES=${CLINESHIELD_MIN_LINES:-10}
+  if [[ $DIFF_LINE_COUNT -gt $_MIN_LINES ]]; then
+    if [[ $RISK_STRUCTURAL -gt 75 ]]; then
+      RISK_SCORE=$(( RISK_SCORE + 40 ))
+      REASONS=$(echo "$REASONS" | jq --argjson pct "$RISK_STRUCTURAL" \
+        '. + [{"rule":"structural_change_high","points":40,"description":"Structural change is \($pct)% (exceeds 75%)"}]')
+    elif [[ $RISK_STRUCTURAL -gt 50 ]]; then
+      RISK_SCORE=$(( RISK_SCORE + 25 ))
+      REASONS=$(echo "$REASONS" | jq --argjson pct "$RISK_STRUCTURAL" \
+        '. + [{"rule":"structural_change_medium","points":25,"description":"Structural change is \($pct)% (exceeds 50%)"}]')
+    fi
   fi
 
   # Rule: deleted functions — tiered, high replaces low

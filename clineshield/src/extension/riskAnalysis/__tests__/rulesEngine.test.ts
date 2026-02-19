@@ -70,19 +70,31 @@ describe('computeRiskScore', () => {
 
   // ── Rule: structural change (tiered) ──────────────────────────────────────
 
+  // Structural change rules require diffLineCount > 10 to fire (same guard
+  // as PreToolUse blocking — prevents small focused patches from scoring high
+  // due to low context line count inflating the patch-density percentage).
+  const aboveMinDiff = { diffLineCount: 11 };
+  const belowMinDiff = { diffLineCount: 10 };
+
   describe('structural change rule', () => {
+    it('adds +0 when diffLineCount is at the threshold (≤10) — guard prevents scoring', () => {
+      const result = computeRiskScore({ ...baseline, ...belowMinDiff, structuralChangePercent: 100 });
+      expect(result.score).toBe(0);
+      expect(result.reasons.find(r => r.rule.startsWith('structural_change'))).toBeUndefined();
+    });
+
     it('adds +0 for 0% structural change', () => {
-      const result = computeRiskScore({ ...baseline, structuralChangePercent: 0 });
+      const result = computeRiskScore({ ...baseline, ...aboveMinDiff, structuralChangePercent: 0 });
       expect(result.score).toBe(0);
     });
 
     it('adds +0 for exactly 50% structural change (boundary: must exceed 50)', () => {
-      const result = computeRiskScore({ ...baseline, structuralChangePercent: 50 });
+      const result = computeRiskScore({ ...baseline, ...aboveMinDiff, structuralChangePercent: 50 });
       expect(result.score).toBe(0);
     });
 
     it('adds +25 for 51% structural change (medium tier)', () => {
-      const result = computeRiskScore({ ...baseline, structuralChangePercent: 51 });
+      const result = computeRiskScore({ ...baseline, ...aboveMinDiff, structuralChangePercent: 51 });
       expect(result.score).toBe(25);
       const reason = result.reasons.find(r => r.rule === 'structural_change_medium');
       expect(reason).toBeDefined();
@@ -90,14 +102,14 @@ describe('computeRiskScore', () => {
     });
 
     it('adds +25 for exactly 75% structural change (boundary: must exceed 75 for high)', () => {
-      const result = computeRiskScore({ ...baseline, structuralChangePercent: 75 });
+      const result = computeRiskScore({ ...baseline, ...aboveMinDiff, structuralChangePercent: 75 });
       expect(result.score).toBe(25);
       expect(result.reasons.find(r => r.rule === 'structural_change_medium')).toBeDefined();
       expect(result.reasons.find(r => r.rule === 'structural_change_high')).toBeUndefined();
     });
 
     it('adds +40 for 76% structural change (high tier, replaces medium)', () => {
-      const result = computeRiskScore({ ...baseline, structuralChangePercent: 76 });
+      const result = computeRiskScore({ ...baseline, ...aboveMinDiff, structuralChangePercent: 76 });
       expect(result.score).toBe(40);
       const reason = result.reasons.find(r => r.rule === 'structural_change_high');
       expect(reason).toBeDefined();
@@ -106,7 +118,7 @@ describe('computeRiskScore', () => {
     });
 
     it('adds +40 (not +65) for 100% structural change — tiers are not additive', () => {
-      const result = computeRiskScore({ ...baseline, structuralChangePercent: 100 });
+      const result = computeRiskScore({ ...baseline, ...aboveMinDiff, structuralChangePercent: 100 });
       expect(result.score).toBe(40);
     });
   });
@@ -276,14 +288,12 @@ describe('computeRiskScore', () => {
     });
 
     it('returns medium for score 60 (boundary)', () => {
-      // protected(30) + structuralMedium(25) + sanityFailed(20) - but 30+25+20=75 → too high
-      // Use: structuralMedium(25) + deletedLow(20) + sanityFailed(20) - largeDiff(0) = no wait that's 65
-      // Let's get exactly 60: deletedHigh(35) + sanityFailed(20) + largeDiff no = 55, + deletedFunctions...
-      // structuralMedium(25) + deletedHigh(35) = 60
+      // structuralMedium(25) + deletedHigh(35) = 60; diffLineCount > 10 required for structural rule
       const result = computeRiskScore({
         ...baseline,
         structuralChangePercent: 60,
         deletedFunctions: 4,
+        diffLineCount: 11,
       });
       expect(result.score).toBe(60);
       expect(result.level).toBe('medium');
@@ -296,6 +306,7 @@ describe('computeRiskScore', () => {
         structuralChangePercent: 60,
         deletedFunctions: 4,
         sanityPassed: false,
+        diffLineCount: 11,
       });
       expect(result.score).toBe(80);
       expect(result.level).toBe('high');
@@ -387,7 +398,7 @@ describe('computeRiskScore', () => {
         structuralChangePercent: 80,
         deletedFunctions: 5,
         sanityPassed: false,
-        diffLineCount: 250,
+        diffLineCount: 250, // > 10, so structural change rule fires
       });
       // protected(30) + structuralHigh(40) + deletedHigh(35) + sanityFailed(20) + largeDiff(15) = 140 → 100
       expect(result.score).toBe(100);
@@ -400,7 +411,7 @@ describe('computeRiskScore', () => {
         structuralChangePercent: 60,
         deletedFunctions: 4,
         sanityPassed: true,
-        diffLineCount: 50,
+        diffLineCount: 50, // > 10, so structural change rule fires
       });
       // protected(30) + structuralMedium(25) + deletedHigh(35) - testFile(10) = 80
       expect(result.score).toBe(80);
