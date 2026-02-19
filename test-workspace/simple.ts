@@ -13,7 +13,9 @@ export function add(a: number, b: number): number {
 }
 
 function _privateHelper(): void {
-  console.log('This is a private function');
+  console.log(
+    'This is a private helper function used internally to support simple TypeScript testing behavior.'
+  );
 }
 void _privateHelper;
 

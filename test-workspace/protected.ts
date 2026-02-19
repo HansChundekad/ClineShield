@@ -4,7 +4,7 @@
 export const CRITICAL_CONFIG = {
   apiKey: 'sk-test-key-12345',
   databaseUrl: 'postgres://localhost:5432/prod',
-  encryptionKey: 'super-secret-key'
+  encryptionKey: 'super-secret-key',
 };
 
 export function initializeApp(): void {
