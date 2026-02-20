@@ -133,7 +133,20 @@ Known limitations:
   unique temp paths prevent JSON corruption but a hook and extension writing simultaneously may
   lose one event (last rename wins). Acceptable given hooks and extension rarely write concurrently.
   
-## Phase 7: Change Map TreeView ⏸️ NOT STARTED
+## Phase 7: Change Map TreeView ✅ COMPLETE
+
+- [x] ChangeMapProvider (src/changeMap/ChangeMapProvider.ts)
+  - Implements vscode.TreeDataProvider — read-only, never writes to metrics.json
+  - Aggregates per file: edit count (edit-allowed + edit-blocked) and worst risk level from risk-assessed events
+  - Folder nodes derive color from worst child file level
+  - File nodes: colored circle icon (green/yellow/red), filename label, edit count + risk level description
+  - Folder nodes: colored folder icon, folder name label, total edits + worst level, expanded by default
+  - Empty state: "No edits recorded this session" when no events exist
+  - Own FileSystemWatcher (isolated from extension.ts and MetricsSidebarProvider watchers)
+  - Full error isolation: getChildren() returns [] on any failure, other features unaffected
+- [x] Registered in extension.ts (registerTreeDataProvider, added to context.subscriptions)
+- [x] Registered in package.json (clineshield.changeMapView, stacked below Metrics panel)
+- [x] Click behaviour: file nodes open current file via vscode.open (absolute path from workspaceRoot + relative filePath)
 
 ## Phase 8: Final Touches ⏸️ NOT STARTED
 

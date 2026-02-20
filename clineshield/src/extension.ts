@@ -4,6 +4,7 @@ import { loadConfig } from './config/configLoader';
 import { appendEvent } from './metrics/writer';
 import { readEventsBySession } from './metrics/reader';
 import { MetricsSidebarProvider } from './sidebar/MetricsSidebarProvider';
+import { ChangeMapProvider } from './changeMap/ChangeMapProvider';
 import { processRiskEvent } from './extension/riskAnalysis/llmTrigger';
 
 // Store current session ID at module level for file watcher access
@@ -187,6 +188,15 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(sidebarProvider);
   }
 
+  // Register change map tree view
+  if (workspaceRoot) {
+    const changeMapProvider = new ChangeMapProvider(workspaceRoot, currentSessionId);
+    context.subscriptions.push(
+      vscode.window.registerTreeDataProvider(ChangeMapProvider.viewType, changeMapProvider)
+    );
+    context.subscriptions.push(changeMapProvider);
+  }
+
   // Register command: ClineShield: Generate Test Metrics
   const generateTestMetricsCommand = vscode.commands.registerCommand('clineshield.generateTestMetrics', async () => {
     const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
@@ -196,12 +206,29 @@ export function activate(context: vscode.ExtensionContext): void {
     }
     const now = Date.now();
     const ts = (minsAgo: number) => new Date(now - minsAgo * 60000).toISOString();
-    await appendEvent({ timestamp: ts(4), sessionId: currentSessionId, type: 'edit-blocked',  data: { file: 'src/auth.ts', reason: 'Too many deletions', structuralChangePercent: 80, functionsDeleted: 4, exportsDeleted: 1 } }, root);
-    await appendEvent({ timestamp: ts(3), sessionId: currentSessionId, type: 'edit-allowed',  data: { file: 'src/api.ts',  structuralChangePercent: 10, functionsDeleted: 0, exportsDeleted: 0 } }, root);
-    await appendEvent({ timestamp: ts(2), sessionId: currentSessionId, type: 'sanity-passed', data: { file: 'src/api.ts',  tools: ['prettier', 'eslint', 'tsc'], duration: 3 } }, root);
-    await appendEvent({ timestamp: ts(1), sessionId: currentSessionId, type: 'sanity-failed', data: { file: 'src/auth.ts', tool: 'eslint', errors: ["Line 12: 'x' is defined but never used"], retryCount: 1, maxRetries: 3 } }, root);
-    await appendEvent({ timestamp: ts(0), sessionId: currentSessionId, type: 'edit-allowed',  data: { file: 'src/utils.ts', structuralChangePercent: 5, functionsDeleted: 0, exportsDeleted: 0 } }, root);
-    vscode.window.showInformationMessage('ClineShield: Generated 5 test metrics events.');
+
+    // src/auth/userService.ts — HIGH risk (protected path + functions deleted)
+    await appendEvent({ timestamp: ts(8), sessionId: currentSessionId, type: 'edit-blocked', data: { file: 'src/auth/userService.ts', reason: 'Too many deletions', structuralChangePercent: 82, functionsDeleted: 4, exportsDeleted: 2 } }, root);
+    await appendEvent({ timestamp: ts(7), sessionId: currentSessionId, type: 'edit-allowed', data: { file: 'src/auth/userService.ts', structuralChangePercent: 30, functionsDeleted: 1, exportsDeleted: 0 } }, root);
+    await appendEvent({ timestamp: ts(6), sessionId: currentSessionId, type: 'sanity-failed', data: { file: 'src/auth/userService.ts', tool: 'eslint', errors: ["Line 24: 'token' is defined but never used", "Line 31: Missing return type annotation"], retryCount: 1, maxRetries: 3 } }, root);
+    await appendEvent({ timestamp: ts(6), sessionId: currentSessionId, type: 'risk-assessed', data: { file: 'src/auth/userService.ts', rulesScore: 75, level: 'high', reasons: [{ rule: 'protected_path', points: 30, description: 'File is in a protected path (src/auth/userService.ts)' }, { rule: 'deleted_functions_high', points: 35, description: '4 functions deleted (exceeds 3)' }, { rule: 'sanity_failed', points: 20, description: 'Quality checks (eslint/tsc/prettier) failed after this edit' }] } }, root);
+
+    // src/config/appConfig.ts — MEDIUM risk (protected path)
+    await appendEvent({ timestamp: ts(5), sessionId: currentSessionId, type: 'edit-allowed', data: { file: 'src/config/appConfig.ts', structuralChangePercent: 40, functionsDeleted: 0, exportsDeleted: 0 } }, root);
+    await appendEvent({ timestamp: ts(4), sessionId: currentSessionId, type: 'sanity-passed', data: { file: 'src/config/appConfig.ts', tools: ['prettier', 'eslint', 'tsc'], duration: 4 } }, root);
+    await appendEvent({ timestamp: ts(4), sessionId: currentSessionId, type: 'risk-assessed', data: { file: 'src/config/appConfig.ts', rulesScore: 45, level: 'medium', reasons: [{ rule: 'protected_path', points: 30, description: 'File is in a protected path (src/config/appConfig.ts)' }, { rule: 'structural_change_medium', points: 25, description: 'Structural change is 40% (exceeds 25%)' }] } }, root);
+
+    // src/models/product.ts — MEDIUM risk (sanity failed + large diff)
+    await appendEvent({ timestamp: ts(3), sessionId: currentSessionId, type: 'edit-allowed', data: { file: 'src/models/product.ts', structuralChangePercent: 55, functionsDeleted: 1, exportsDeleted: 0 } }, root);
+    await appendEvent({ timestamp: ts(2), sessionId: currentSessionId, type: 'sanity-failed', data: { file: 'src/models/product.ts', tool: 'tsc', errors: ["src/models/product.ts(18,3): error TS2322: Type 'string' is not assignable to type 'number'"], retryCount: 1, maxRetries: 3 } }, root);
+    await appendEvent({ timestamp: ts(2), sessionId: currentSessionId, type: 'risk-assessed', data: { file: 'src/models/product.ts', rulesScore: 40, level: 'medium', reasons: [{ rule: 'deleted_functions_low', points: 20, description: '1 function deleted' }, { rule: 'sanity_failed', points: 20, description: 'Quality checks (eslint/tsc/prettier) failed after this edit' }] } }, root);
+
+    // src/utils/formatters.ts — LOW risk (clean edit)
+    await appendEvent({ timestamp: ts(1), sessionId: currentSessionId, type: 'edit-allowed', data: { file: 'src/utils/formatters.ts', structuralChangePercent: 15, functionsDeleted: 0, exportsDeleted: 0 } }, root);
+    await appendEvent({ timestamp: ts(0), sessionId: currentSessionId, type: 'sanity-passed', data: { file: 'src/utils/formatters.ts', tools: ['prettier', 'eslint', 'tsc'], duration: 3 } }, root);
+    await appendEvent({ timestamp: ts(0), sessionId: currentSessionId, type: 'risk-assessed', data: { file: 'src/utils/formatters.ts', rulesScore: 10, level: 'low', reasons: [] } }, root);
+
+    vscode.window.showInformationMessage('ClineShield: Generated 13 test metrics events.');
   });
   context.subscriptions.push(generateTestMetricsCommand);
 }

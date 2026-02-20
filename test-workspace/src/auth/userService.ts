@@ -34,10 +34,6 @@ export function updateUser(id: string, updates: Partial<User>): boolean {
   return true;
 }
 
-export function deleteUser(id: string): boolean {
-  return users.delete(id);
-}
-
 export function authenticateUser(email: string, password: string): boolean {
   const user = findByEmail(email);
   if (!user) {
@@ -53,10 +49,6 @@ export function validateEmail(email: string): boolean {
 
 export function generateToken(userId: string): string {
   return `tok_${userId}_${Date.now()}`;
-}
-
-export function listUsers(): User[] {
-  return Array.from(users.values());
 }
 
 function findByEmail(email: string): User | undefined {

@@ -31,6 +31,10 @@
           "type": "webview",
           "id": "clineshield.metricsView",
           "name": "Metrics"
+        },
+        {
+          "id": "clineshield.changeMapView",
+          "name": "Change Map"
         }
       ]
     },

@@ -1,4 +1,4 @@
 {
-  "file": "src/utils/formatters.ts",
-  "diff": "%%bash\napply_patch <<'EOF'\n*** Begin Patch\n*** Update File: src/utils/formatters.ts\n@@\n-export function formatDate(date: Date, locale = 'en-US'): number {\n+export function formatDate(date: Date): number {\n   return date.getTime();\n }\n*** End Patch\nEOF"
+  "file": "src/auth/userService.ts",
+  "diff": "%%bash\napply_patch <<\"EOF\"\n*** Begin Patch\n*** Update File: src/auth/userService.ts\n@@\n export function updateUser(id: string, updates: Partial<User>): boolean {\n   const user = users.get(id);\n   if (!user) {\n     return false;\n   }\n   Object.assign(user, updates);\n   return true;\n }\n-\n-export function deleteUser(id: string): boolean {\n-  return users.delete(id);\n-}\n@@\n export function generateToken(userId: string): string {\n   return `tok_${userId}_${Date.now()}`;\n }\n-\n-export function listUsers(): User[] {\n-  return Array.from(users.values());\n-}\n \n function findByEmail(email: string): User | undefined {\n   return Array.from(users.values()).find(u => u.email === email);\n }\n*** End Patch\nEOF"
 }
