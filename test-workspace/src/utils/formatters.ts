@@ -3,22 +3,33 @@
  *
  * CLINESHIELD DEMO: Neutral path, no risk bonus.
  * Good target for safe small edits — PreToolUse allows, PostToolUse sanity passes.
- * Try introducing a type error to trigger a sanity-failed + retry cycle.
+ *
+ * Scene 2: add padLeft() here — small safe edit, LOW risk badge.
+ * Scene 3: ask Cline to change formatDate() to return number / timestamp.
+ *   tsc will fail because formatDateLabel() assigns formatDate() to a string variable.
  */
 
-export function formatDate(date: Date, locale = 'en-US'): string {
-  return date.toLocaleDateString(locale, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+export function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0]; // e.g. "2024-01-15"
+}
+
+// Uses formatDate as a string — tsc fails if formatDate return type becomes number.
+export function formatDateLabel(date: Date): string {
+  const dateStr: string = formatDate(date);
+  return `Updated: ${dateStr}`;
 }
 
 export function formatCurrency(amount: number, currency = 'USD'): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(
+    amount
+  );
 }
 
-export function truncate(str: string, maxLength: number, suffix = '...'): string {
+export function truncate(
+  str: string,
+  maxLength: number,
+  suffix = '...'
+): string {
   if (str.length <= maxLength) {
     return str;
   }
