@@ -78,3 +78,6 @@ The change map gives you a quick view:
 - **src/auth/service.ts** shows 4 edits → repeatedly modified
 
 **Use case:** at the end of a session, you can prioritize review by opening the change map, sorting by risk color, and clicking through files in order — a ready-made, prioritized review queue based on Cline’s actual edits.
+
+Link to download extension:
+https://github.com/HansChundekad/ClineShield/releases/tag/v0.1.0  
