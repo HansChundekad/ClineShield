@@ -20,6 +20,8 @@ interface SidebarStats {
     llmReasoning: string | null;
     llmPending: boolean;
     riskEventTimestamp: string | null;
+    structuralChangePercent: number | null;
+    functionsDeleted: number | null;
   } | null;
 }
 
@@ -128,6 +130,14 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
       let llmReasoning: string | null = null;
       let llmPending = false;
       let riskEventTimestamp: string | null = null;
+      let structuralChangePercent: number | null = null;
+      let functionsDeleted: number | null = null;
+
+      if (lastEdit.type === 'edit-blocked') {
+        const d = lastEdit.data as { structuralChangePercent?: number; functionsDeleted?: number };
+        structuralChangePercent = d.structuralChangePercent ?? null;
+        functionsDeleted = d.functionsDeleted ?? null;
+      }
 
       if (lastEdit.type === 'edit-allowed') {
         const riskEvent = [...events]
@@ -172,7 +182,7 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
         }
       }
 
-      mostRecent = { file, eventType: lastEdit.type, timestamp: lastEdit.timestamp, riskScore, riskLevel, riskReasons, llmReasoning, llmPending, riskEventTimestamp };
+      mostRecent = { file, eventType: lastEdit.type, timestamp: lastEdit.timestamp, riskScore, riskLevel, riskReasons, llmReasoning, llmPending, riskEventTimestamp, structuralChangePercent, functionsDeleted };
     }
 
     return { blockedEdits, allowedEdits, passedEdits, failedEdits, avgRetries, mostRecent };

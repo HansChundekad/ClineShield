@@ -142,7 +142,7 @@
           '<div class="recent-file">' + escapeHtml(s.mostRecent.file) + '</div>' +
           '<div class="recent-type">' + getBadgeHtml(s.mostRecent.eventType) + '</div>' +
           '<div class="recent-time">' + escapeHtml(time) + '</div>' +
-          '<div class="recent-risk">' + getRiskHtml(s.mostRecent.eventType, s.mostRecent.riskScore, s.mostRecent.riskLevel, s.mostRecent.riskReasons) + '</div>' +
+          '<div class="recent-risk">' + getRiskHtml(s.mostRecent.eventType, s.mostRecent.riskScore, s.mostRecent.riskLevel, s.mostRecent.riskReasons, s.mostRecent.structuralChangePercent, s.mostRecent.functionsDeleted) + '</div>' +
           getLlmHtml(s.mostRecent.llmReasoning, s.mostRecent.llmPending, s.mostRecent.riskEventTimestamp);
 
         // Schedule auto-hide of the loading indicator if Gemini doesn't respond in time
@@ -185,9 +185,16 @@
       return '<span class="' + badgeClass + '">' + escapeHtml(eventType) + '</span>';
     }
 
-    function getRiskHtml(eventType, riskScore, riskLevel, riskReasons) {
+    function getRiskHtml(eventType, riskScore, riskLevel, riskReasons, structuralChangePercent, functionsDeleted) {
       if (eventType === 'edit-blocked') {
-        return '<span class="recent-risk-none">Risk: — (edit was blocked)</span>';
+        let html = '<span class="recent-risk-none">Blocked</span>';
+        if (structuralChangePercent !== null && structuralChangePercent !== undefined) {
+          html += '<div class="risk-reason"><span class="risk-reason-points">Structure change:</span>' + escapeHtml(structuralChangePercent + '%') + '</div>';
+        }
+        if (functionsDeleted !== null && functionsDeleted !== undefined) {
+          html += '<div class="risk-reason"><span class="risk-reason-points">Functions deleted:</span>' + escapeHtml(String(functionsDeleted)) + '</div>';
+        }
+        return html;
       }
       if (riskScore === null || riskLevel === null) {
         return '<span class="recent-risk-none">Risk: pending</span>';

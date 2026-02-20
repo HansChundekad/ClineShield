@@ -2026,5 +2026,49 @@
       "functionsDeleted": 0,
       "exportsDeleted": 0
     }
+  },
+  {
+    "timestamp": "2026-02-20T05:47:35.421Z",
+    "sessionId": "a988c611-7268-4adf-9893-75581dbc4274",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T05:48:44.000Z",
+    "sessionId": "a988c611-7268-4adf-9893-75581dbc4274",
+    "type": "edit-blocked",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "reason": "ClineShield: 6 functions deleted, 100% structural change. Make smaller targeted edits (max 3 functions, 90% change for patches > 10 lines).",
+      "structuralChangePercent": 100,
+      "functionsDeleted": 6
+    }
+  },
+  {
+    "timestamp": "2026-02-20T05:52:16.001Z",
+    "sessionId": "5afda52a-b4aa-47c0-90d9-9708f50a0e90",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T05:54:56.000Z",
+    "sessionId": "5afda52a-b4aa-47c0-90d9-9708f50a0e90",
+    "type": "edit-blocked",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "reason": "ClineShield: 6 functions deleted, 100% structural change. Make smaller targeted edits (max 3 functions, 90% change for patches > 10 lines).",
+      "structuralChangePercent": 100,
+      "functionsDeleted": 6
+    }
   }
 ]
