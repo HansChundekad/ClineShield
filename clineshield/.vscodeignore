@@ -1,0 +1,14 @@
+.vscode/**
+.github/**
+src/**
+node_modules/**
+scripts/**
+.cline-shield/**
+**/*.map
+**/*.ts
+!dist/**
+!images/**
+!hooks/**
+jest.config.*
+tsconfig.json
+.eslintrc*

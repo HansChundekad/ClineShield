@@ -1,0 +1,278 @@
+#!/bin/bash
+#
+# ClineShield PreToolUse Hook - Phase 3
+#
+# Executes before any tool is used (read_file, write_to_file, execute_command, etc.)
+#
+# Input: { taskId, preToolUse: { tool: string, parameters: object }, ... }
+# Output: { cancel: boolean, contextModification?: string, errorMessage?: string }
+#
+# Phase 3: Block Destructive Edits
+# - Parse Cline's custom patch format (no patch command needed)
+# - Count added/deleted lines and functions
+# - Calculate structural change percentage
+# - BLOCK edits that exceed hardcoded thresholds
+#
+# CRITICAL: Must exit 0 always (hook errors break Cline workflow)
+
+# Thresholds — read from env vars set by configLoader; fall back to built-in defaults
+MAX_DELETED_FUNCTIONS=${CLINESHIELD_MAX_FUNCTIONS:-3}
+MAX_STRUCTURAL_CHANGE=${CLINESHIELD_MAX_CHANGE:-75}    # 75% threshold for large patches
+MIN_PATCH_LINES=${CLINESHIELD_MIN_LINES:-10}           # Only apply % check if patch > 10 lines
+
+# Metrics configuration
+METRICS_DIR=".cline-shield"
+METRICS_FILE="metrics.json"
+
+# Write event to metrics.json using atomic write pattern
+# Args: event_type, file_path, structural_change_percent, functions_deleted, [reason]
+write_metrics_event() {
+  local event_type="$1"
+  local file_path="$2"
+  local structural_change="$3"
+  local functions_deleted="$4"
+  local reason="${5:-}"
+
+  # Get workspace root (current working directory where Cline is running)
+  local workspace_root="$(pwd)"
+  local metrics_path="${workspace_root}/${METRICS_DIR}/${METRICS_FILE}"
+  local metrics_dir="${workspace_root}/${METRICS_DIR}"
+
+  # Get sessionId from environment (set by extension)
+  local session_id="${CLINESHIELD_SESSION_ID:-unknown-session}"
+  if [[ "$session_id" == "unknown-session" ]]; then
+    echo "[ClineShield] WARNING: CLINESHIELD_SESSION_ID not set, using 'unknown-session'" >&2
+  fi
+
+  # Get ISO 8601 timestamp
+  local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+
+  # Build event JSON based on type
+  local event_json
+  if [[ "$event_type" == "edit-blocked" ]]; then
+    event_json=$(jq -n \
+      --arg ts "$timestamp" \
+      --arg sid "$session_id" \
+      --arg file "$file_path" \
+      --arg reason "$reason" \
+      --argjson struct "$structural_change" \
+      --argjson funcs "$functions_deleted" \
+      '{
+        timestamp: $ts,
+        sessionId: $sid,
+        type: "edit-blocked",
+        data: {
+          file: $file,
+          reason: $reason,
+          structuralChangePercent: $struct,
+          functionsDeleted: $funcs
+        }
+      }')
+  elif [[ "$event_type" == "edit-allowed" ]]; then
+    event_json=$(jq -n \
+      --arg ts "$timestamp" \
+      --arg sid "$session_id" \
+      --arg file "$file_path" \
+      --argjson struct "$structural_change" \
+      --argjson funcs "$functions_deleted" \
+      '{
+        timestamp: $ts,
+        sessionId: $sid,
+        type: "edit-allowed",
+        data: {
+          file: $file,
+          structuralChangePercent: $struct,
+          functionsDeleted: $funcs
+        }
+      }')
+  else
+    echo "[ClineShield] ERROR: Unknown event type: $event_type" >&2
+    return 1
+  fi
+
+  # Ensure .cline-shield directory exists
+  mkdir -p "$metrics_dir" 2>/dev/null || true
+
+  # Read existing events or create empty array
+  local existing_events="[]"
+  if [[ -f "$metrics_path" ]]; then
+    existing_events=$(cat "$metrics_path" 2>/dev/null || echo "[]")
+    # Validate it's an array
+    if ! echo "$existing_events" | jq -e 'type == "array"' >/dev/null 2>&1; then
+      echo "[ClineShield] WARNING: metrics.json is not an array, resetting to empty" >&2
+      existing_events="[]"
+    fi
+  fi
+
+  # Append new event to array
+  local updated_events=$(echo "$existing_events" | jq --argjson event "$event_json" '. + [$event]')
+
+  # Atomic write: temp file + rename
+  local temp_path="${metrics_path}.tmp.$$"
+  echo "$updated_events" | jq '.' > "$temp_path"
+  mv "$temp_path" "$metrics_path"
+
+  echo "[ClineShield] Wrote $event_type event to metrics.json" >&2
+}
+
+# Read JSON input from stdin
+INPUT=$(cat)
+
+# Ensure jq is available (required for robust JSON parsing)
+if ! command -v jq &> /dev/null; then
+  echo "[ClineShield] WARNING: jq not found, hook disabled" >&2
+  echo '{"cancel":false}'
+  exit 0
+fi
+
+# Parse tool and parameters
+TOOL=$(echo "$INPUT" | jq -r '.preToolUse.toolName // "unknown"')
+
+# Log all tool usage (with timestamp for visibility)
+LOG_FILE="/tmp/clineshield-hook.log"
+echo "===========================================" | tee -a "$LOG_FILE" >&2
+echo "[ClineShield] $(date '+%H:%M:%S') - Tool: $TOOL" | tee -a "$LOG_FILE" >&2
+echo "[ClineShield] DEBUG: Full input JSON:" | tee -a "$LOG_FILE" >&2
+echo "$INPUT" | jq '.' | tee -a "$LOG_FILE" >&2
+echo "===========================================" | tee -a "$LOG_FILE" >&2
+
+# Handle file edit operations (apply_patch)
+if [[ "$TOOL" == "apply_patch" ]]; then
+  # Extract patch input
+  PATCH_INPUT=$(echo "$INPUT" | jq -r '.preToolUse.parameters.input // ""')
+
+  # Extract file path from patch (format: "*** Update File: path")
+  FILE_PATH=$(echo "$PATCH_INPUT" | grep "^\*\*\* Update File:" | sed 's/\*\*\* Update File: //' | head -1)
+
+  echo "[ClineShield] === APPLY_PATCH DETECTED ===" | tee -a "$LOG_FILE" >&2
+  echo "[ClineShield] File: $FILE_PATH" | tee -a "$LOG_FILE" >&2
+
+  # Phase 2: Parse Cline's patch format directly (no patch command needed)
+  # Only analyze TypeScript/JavaScript files
+  if [[ "$FILE_PATH" =~ \.(ts|tsx|js|jsx)$ ]]; then
+    echo "[ClineShield] Analyzing patch directly..." | tee -a "$LOG_FILE" >&2
+
+    # Initialize counters
+    DELETED_LINES=0
+    ADDED_LINES=0
+    CONTEXT_LINES=0
+    DELETED_FUNCTIONS=0
+    ADDED_FUNCTIONS=0
+
+    # Function signature patterns (grep -E compatible)
+    # Matches: function foo(), async function foo(), export function foo(), const foo = () =>
+    # Excludes: if/while/for/switch control flow statements
+    FUNC_PATTERN='(function\s+\w+\s*\(|^\s*export\s+(async\s+)?function\s+\w+|const\s+\w+\s*=\s*.*=>)'
+
+    # Parse patch line by line
+    while IFS= read -r line; do
+      # Skip patch markers
+      if [[ "$line" =~ ^\*\*\*|^@@ ]]; then
+        continue
+      fi
+
+      # Count deletions
+      if [[ "$line" =~ ^- ]]; then
+        ((DELETED_LINES++))
+        # Strip the '-' prefix and check if line contains a function signature
+        line_content="${line:1}"
+        if echo "$line_content" | grep -qE "$FUNC_PATTERN"; then
+          ((DELETED_FUNCTIONS++))
+          echo "[ClineShield] Deleted function: ${line:0:80}" | tee -a "$LOG_FILE" >&2
+        fi
+      # Count additions
+      elif [[ "$line" =~ ^\+ ]]; then
+        ((ADDED_LINES++))
+        # Strip the '+' prefix and check if line contains a function signature
+        line_content="${line:1}"
+        if echo "$line_content" | grep -qE "$FUNC_PATTERN"; then
+          ((ADDED_FUNCTIONS++))
+          echo "[ClineShield] Added function: ${line:0:80}" | tee -a "$LOG_FILE" >&2
+        fi
+      # Count context lines (start with space)
+      elif [[ "$line" =~ ^[[:space:]] ]]; then
+        ((CONTEXT_LINES++))
+      fi
+    done <<< "$PATCH_INPUT"
+
+    # Calculate structural change percentage
+    TOTAL_CHANGED=$((DELETED_LINES + ADDED_LINES))
+    TOTAL_LINES=$((TOTAL_CHANGED + CONTEXT_LINES))
+
+    if [[ $TOTAL_LINES -gt 0 ]]; then
+      STRUCTURAL_CHANGE=$(( (TOTAL_CHANGED * 100) / TOTAL_LINES ))
+    else
+      STRUCTURAL_CHANGE=0
+    fi
+
+    echo "[ClineShield] === ANALYSIS RESULTS ===" | tee -a "$LOG_FILE" >&2
+    echo "[ClineShield] Structural change: ${STRUCTURAL_CHANGE}% (${TOTAL_CHANGED}/${TOTAL_LINES} lines)" | tee -a "$LOG_FILE" >&2
+    echo "[ClineShield] Added: ${ADDED_LINES} lines, ${ADDED_FUNCTIONS} functions" | tee -a "$LOG_FILE" >&2
+    echo "[ClineShield] Deleted: ${DELETED_LINES} lines, ${DELETED_FUNCTIONS} functions" | tee -a "$LOG_FILE" >&2
+
+    # Phase 3: Block destructive edits
+    # Check if should block based on thresholds
+    SHOULD_BLOCK=false
+    BLOCK_REASON=""
+
+    # Always check function deletion count
+    if [[ $DELETED_FUNCTIONS -gt $MAX_DELETED_FUNCTIONS ]]; then
+      SHOULD_BLOCK=true
+      BLOCK_REASON="function deletion"
+    fi
+
+    # Only check structural change % if patch is large enough (> 10 lines)
+    if [[ $TOTAL_LINES -gt $MIN_PATCH_LINES ]] && [[ $STRUCTURAL_CHANGE -gt $MAX_STRUCTURAL_CHANGE ]]; then
+      SHOULD_BLOCK=true
+      BLOCK_REASON="${BLOCK_REASON:+$BLOCK_REASON and }structural change"
+    fi
+
+    if [[ "$SHOULD_BLOCK" == "true" ]]; then
+      echo "[ClineShield] ⛔ BLOCKING EDIT ($BLOCK_REASON)" | tee -a "$LOG_FILE" >&2
+      echo "[ClineShield] Deleted functions: $DELETED_FUNCTIONS (max: $MAX_DELETED_FUNCTIONS)" | tee -a "$LOG_FILE" >&2
+      echo "[ClineShield] Structural change: ${STRUCTURAL_CHANGE}% (max: ${MAX_STRUCTURAL_CHANGE}% for patches > ${MIN_PATCH_LINES} lines)" | tee -a "$LOG_FILE" >&2
+      echo "[ClineShield] Patch size: ${TOTAL_LINES} lines" | tee -a "$LOG_FILE" >&2
+
+      # Write EditBlockedEvent to metrics.json
+      ERROR_MSG="ClineShield: ${DELETED_FUNCTIONS} functions deleted, ${STRUCTURAL_CHANGE}% structural change. Make smaller targeted edits (max ${MAX_DELETED_FUNCTIONS} functions, ${MAX_STRUCTURAL_CHANGE}% change for patches > ${MIN_PATCH_LINES} lines)."
+      write_metrics_event "edit-blocked" "$FILE_PATH" "$STRUCTURAL_CHANGE" "$DELETED_FUNCTIONS" "$ERROR_MSG"
+
+      echo "{\"cancel\":true,\"errorMessage\":\"⛔ ${ERROR_MSG}\"}"
+      exit 0
+    fi
+
+    # Edit allowed - write EditAllowedEvent to metrics.json
+    echo "[ClineShield] ✅ Edit allowed" | tee -a "$LOG_FILE" >&2
+    write_metrics_event "edit-allowed" "$FILE_PATH" "$STRUCTURAL_CHANGE" "$DELETED_FUNCTIONS"
+  else
+    echo "[ClineShield] Skipping analysis (not a TS/JS file)" | tee -a "$LOG_FILE" >&2
+  fi
+fi
+
+# Handle file write operations
+if [[ "$TOOL" == "write_to_file" ]]; then
+  FILE_PATH=$(echo "$INPUT" | jq -r '.preToolUse.parameters.file_path // "unknown"')
+  CONTENT=$(echo "$INPUT" | jq -r '.preToolUse.parameters.content // ""')
+  CONTENT_SIZE=${#CONTENT}
+
+  echo "[ClineShield] === WRITE_FILE DETECTED ===" >&2
+  echo "[ClineShield] File: $FILE_PATH" >&2
+  echo "[ClineShield] Content size: $CONTENT_SIZE chars" >&2
+  echo "[ClineShield] Phase 1: Logging only (new file creation)" >&2
+fi
+
+# Handle dangerous commands (existing protection)
+if [[ "$TOOL" == "execute_command" ]]; then
+  COMMAND=$(echo "$INPUT" | jq -r '.preToolUse.parameters.command // ""')
+
+  # Block destructive operations
+  if [[ "$COMMAND" == *"rm -rf /"* ]] || [[ "$COMMAND" == *"sudo rm"* ]]; then
+    echo "[ClineShield] BLOCKED: Dangerous command detected" >&2
+    echo '{"cancel":true,"errorMessage":"⛔ ClineShield: Dangerous command blocked"}'
+    exit 0
+  fi
+fi
+
+# Allow execution (Phase 1: no blocking on edits)
+echo '{"cancel":false}'
+exit 0

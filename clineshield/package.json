@@ -5,7 +5,7 @@
   "description": "Safety guardrails for Cline AI coding assistant",
   "publisher": "clineshield",
   "engines": {
-    "vscode": "^1.85.0",
+    "vscode": "^1.109.0",
     "node": ">=18.0.0"
   },
   "categories": [
@@ -21,7 +21,7 @@
         {
           "id": "clineshield",
           "title": "ClineShield",
-          "icon": "$(shield)"
+          "icon": "images/shield.svg"
         }
       ]
     },
@@ -70,11 +70,16 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HansChundekad/ClineShield"
+  },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.2.3",
     "@types/vscode": "^1.109.0",
+    "@vscode/vsce": "^3.7.1",
     "jest": "^30.2.0",
     "ts-jest": "^29.4.6",
     "typescript": "^5.9.3"

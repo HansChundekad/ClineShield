@@ -1,0 +1,466 @@
+#!/bin/bash
+#
+# ClineShield PostToolUse Hook - Phase 2 (Step 1.2: Run quality tools)
+#
+# Runs after apply_patch / write_to_file completes.
+# Validates edited file with prettier → eslint → tsc (stops on first failure).
+# Target: <10s total (acceptable for PostToolUse - edit already succeeded).
+#
+# Input verified from real Cline output (2026-02-17):
+#   .postToolUse.toolName
+#   .workspaceRoots[0]
+#   apply_patch file path: parse "*** Update File:" from .postToolUse.parameters.input
+#   write_to_file file path: .postToolUse.parameters.path
+#
+# CRITICAL: Exit 0 always. stderr for logs. stdout for JSON only.
+
+LOG_FILE="/tmp/clineshield-post.log"
+
+# ── Config: read from env vars with fallback defaults ─────────────────────────
+TOOLS="${CLINESHIELD_TOOLS:-prettier eslint tsc}"
+MAX_RETRIES=${CLINESHIELD_MAX_RETRIES:-3}
+HOOK_TIMEOUT=${CLINESHIELD_TIMEOUT:-30}
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+log() { echo "[ClineShield-Post] $*" | tee -a "$LOG_FILE" >&2; }
+
+# Returns 0 if $1 is listed in $TOOLS, 1 otherwise
+tool_enabled() { [[ " $TOOLS " == *" $1 "* ]]; }
+
+# Wrap a command with `timeout` if available, otherwise run directly
+run_cmd() {
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "${HOOK_TIMEOUT}s" "$@"
+  else
+    "$@"
+  fi
+}
+
+# ── Guard: jq required ────────────────────────────────────────────────────────
+
+if ! command -v jq &>/dev/null; then
+  log "WARNING: jq not found, hook disabled"
+  echo '{}'
+  exit 0
+fi
+
+# ── Parse stdin ───────────────────────────────────────────────────────────────
+
+INPUT=$(cat)
+
+{
+  echo "==========================================="
+  echo "[ClineShield-Post] $(date '+%H:%M:%S') Raw stdin:"
+  echo "$INPUT" | jq '.' 2>/dev/null || echo "$INPUT"
+  echo "==========================================="
+} >> "$LOG_FILE" 2>&1
+
+TOOL=$(echo "$INPUT" | jq -r '.postToolUse.toolName // "unknown"')
+WORKSPACE_ROOT=$(echo "$INPUT" | jq -r '.workspaceRoots[0] // ""')
+TASK_ID=$(echo "$INPUT" | jq -r '.taskId // "unknown-task"')
+
+log "Tool: $TOOL"
+
+# ── Filter: file-editing tools only ──────────────────────────────────────────
+
+if [[ "$TOOL" != "write_to_file" ]] && [[ "$TOOL" != "apply_patch" ]]; then
+  log "Skipping: $TOOL"
+  echo '{}'
+  exit 0
+fi
+
+# ── Extract file path ─────────────────────────────────────────────────────────
+
+FILE_RELATIVE=""
+
+if [[ "$TOOL" == "apply_patch" ]]; then
+  PATCH_INPUT=$(echo "$INPUT" | jq -r '.postToolUse.parameters.input // ""')
+  FILE_RELATIVE=$(echo "$PATCH_INPUT" \
+    | grep "^\*\*\* Update File:" \
+    | sed 's/\*\*\* Update File: //' \
+    | head -1 \
+    | tr -d '[:space:]')
+elif [[ "$TOOL" == "write_to_file" ]]; then
+  FILE_RELATIVE=$(echo "$INPUT" | jq -r '.postToolUse.parameters.path // ""')
+fi
+
+if [[ -z "$FILE_RELATIVE" ]]; then
+  log "Could not extract file path, skipping"
+  echo '{}'
+  exit 0
+fi
+
+FULL_PATH="${WORKSPACE_ROOT}/${FILE_RELATIVE}"
+log "Checking: $FILE_RELATIVE"
+
+# Compute diff line count for large_diff risk rule (apply_patch only; 0 for write_to_file)
+DIFF_LINE_COUNT=0
+if [[ "$TOOL" == "apply_patch" ]]; then
+  DIFF_LINE_COUNT=$(echo "$PATCH_INPUT" | grep -c '^[+-]' 2>/dev/null || echo 0)
+fi
+
+# ── Filter: TS/JS files only ──────────────────────────────────────────────────
+
+if [[ ! "$FILE_RELATIVE" =~ \.(ts|tsx|js|jsx)$ ]]; then
+  log "Not a TS/JS file, skipping"
+  echo '{}'
+  exit 0
+fi
+
+if [[ ! -f "$FULL_PATH" ]]; then
+  log "File not found on disk: $FULL_PATH"
+  echo '{}'
+  exit 0
+fi
+
+# ── Write event to metrics.json (atomic, mirrors PreToolUse pattern) ──────────
+# Args: event_type ("sanity-passed"|"sanity-failed") [retry_count]
+write_sanity_event() {
+  local event_type="$1"
+  local retry_count="${2:-0}"
+  local session_id="${CLINESHIELD_SESSION_ID:-unknown-session}"
+  local timestamp
+  timestamp=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+  local metrics_dir="${WORKSPACE_ROOT}/.cline-shield"
+  local metrics_path="${metrics_dir}/metrics.json"
+  local duration=$(( $(date +%s) - HOOK_START ))
+
+  local event_json
+  if [[ "$event_type" == "sanity-passed" ]]; then
+    local tools_json
+    tools_json=$(jq -n '$ARGS.positional' --args "${TOOLS_PASSED[@]}")
+    event_json=$(jq -n \
+      --arg ts "$timestamp" \
+      --arg sid "$session_id" \
+      --arg file "$FILE_RELATIVE" \
+      --argjson tools "$tools_json" \
+      --argjson dur "$duration" \
+      '{timestamp: $ts, sessionId: $sid, type: "sanity-passed",
+        data: {file: $file, tools: $tools, duration: $dur}}')
+
+  elif [[ "$event_type" == "sanity-failed" ]]; then
+    # Split tool output into errors array, dropping blank lines
+    local errors_json
+    errors_json=$(echo "$TOOL_OUTPUT" | grep -v '^[[:space:]]*$' | jq -R . | jq -s .)
+    event_json=$(jq -n \
+      --arg ts "$timestamp" \
+      --arg sid "$session_id" \
+      --arg file "$FILE_RELATIVE" \
+      --arg tool "$FAILED_TOOL" \
+      --argjson errors "$errors_json" \
+      --argjson retry "$retry_count" \
+      --argjson maxret "$MAX_RETRIES" \
+      '{timestamp: $ts, sessionId: $sid, type: "sanity-failed",
+        data: {file: $file, tool: $tool, errors: $errors, retryCount: $retry, maxRetries: $maxret}}')
+  fi
+
+  # Ensure .cline-shield directory exists
+  mkdir -p "$metrics_dir" 2>/dev/null || true
+
+  # Read existing events or start fresh
+  local existing="[]"
+  if [[ -f "$metrics_path" ]]; then
+    existing=$(cat "$metrics_path" 2>/dev/null || echo "[]")
+    if ! echo "$existing" | jq -e 'type == "array"' >/dev/null 2>&1; then
+      log "WARNING: metrics.json is not an array, resetting"
+      existing="[]"
+    fi
+  fi
+
+  # Atomic write: temp file + rename
+  local temp_path="${metrics_path}.tmp.$$"
+  echo "$existing" | jq --argjson event "$event_json" '. + [$event]' > "$temp_path"
+  mv "$temp_path" "$metrics_path"
+
+  log "Wrote $event_type to metrics.json"
+}
+
+# ── Write risk-assessed event (atomic, same pattern as write_sanity_event) ─────
+# Args: score level reasons_json
+write_risk_event() {
+  local score="$1" level="$2" reasons_json="$3"
+  local session_id="${CLINESHIELD_SESSION_ID:-unknown-session}"
+  local timestamp
+  timestamp=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+  local metrics_dir="${WORKSPACE_ROOT}/.cline-shield"
+  local metrics_path="${metrics_dir}/metrics.json"
+
+  local event_json
+  event_json=$(jq -n \
+    --arg ts "$timestamp" \
+    --arg sid "$session_id" \
+    --arg file "$FILE_RELATIVE" \
+    --argjson score "$score" \
+    --arg level "$level" \
+    --argjson reasons "$reasons_json" \
+    '{timestamp: $ts, sessionId: $sid, type: "risk-assessed",
+      data: {file: $file, rulesScore: $score, level: $level, reasons: $reasons}}')
+
+  mkdir -p "$metrics_dir" 2>/dev/null || true
+  local existing="[]"
+  if [[ -f "$metrics_path" ]]; then
+    existing=$(cat "$metrics_path" 2>/dev/null || echo "[]")
+    if ! echo "$existing" | jq -e 'type == "array"' >/dev/null 2>&1; then
+      existing="[]"
+    fi
+  fi
+
+  local temp_path="${metrics_path}.tmp.risk.$$"
+  echo "$existing" | jq --argjson event "$event_json" '. + [$event]' > "$temp_path"
+  mv "$temp_path" "$metrics_path"
+  log "Wrote risk-assessed: score=$score level=$level"
+}
+
+# ── Run quality tools (sequential, stop on first failure) ─────────────────────
+
+HOOK_START=$(date +%s)
+FAILED=false
+FAILED_TOOL=""
+TOOL_OUTPUT=""
+TOOLS_PASSED=()
+
+# 1. Prettier (~0.5s) ─────────────────────────────────────────────────────────
+if tool_enabled "prettier"; then
+  START=$(date +%s)
+  PRETTIER_OUT=$(cd "$WORKSPACE_ROOT" && run_cmd npx --no-install prettier --check "$FILE_RELATIVE" 2>&1)
+  PRETTIER_EXIT=$?
+  ELAPSED=$(( $(date +%s) - START ))
+
+  if [[ $PRETTIER_EXIT -ne 0 ]]; then
+    log "prettier: FAIL (${ELAPSED}s) → $PRETTIER_OUT"
+    FAILED=true
+    FAILED_TOOL="prettier"
+    TOOL_OUTPUT="$PRETTIER_OUT"
+  else
+    log "prettier: PASS (${ELAPSED}s)"
+    TOOLS_PASSED+=("prettier")
+  fi
+fi
+
+# 2. ESLint (~1-2s) ───────────────────────────────────────────────────────────
+if [[ "$FAILED" == "false" ]] && tool_enabled "eslint"; then
+  START=$(date +%s)
+  ESLINT_OUT=$(cd "$WORKSPACE_ROOT" && run_cmd npx --no-install eslint "$FILE_RELATIVE" 2>&1)
+  ESLINT_EXIT=$?
+  ELAPSED=$(( $(date +%s) - START ))
+
+  if [[ $ESLINT_EXIT -ne 0 ]]; then
+    log "eslint: FAIL (${ELAPSED}s) → $ESLINT_OUT"
+    FAILED=true
+    FAILED_TOOL="eslint"
+    TOOL_OUTPUT="$ESLINT_OUT"
+  else
+    log "eslint: PASS (${ELAPSED}s)"
+    TOOLS_PASSED+=("eslint")
+  fi
+fi
+
+# 3. TypeScript (~2-3s) ───────────────────────────────────────────────────────
+# Runs on whole project (respects tsconfig.json), filters output to edited file only.
+if [[ "$FAILED" == "false" ]] && tool_enabled "tsc"; then
+  START=$(date +%s)
+  TSC_ALL=$(cd "$WORKSPACE_ROOT" && run_cmd npx --no-install tsc --noEmit 2>&1)
+  ELAPSED=$(( $(date +%s) - START ))
+
+  # Only surface errors in the file that was just edited
+  TSC_OUT=$(echo "$TSC_ALL" | grep "$FILE_RELATIVE")
+
+  if [[ -n "$TSC_OUT" ]]; then
+    log "tsc: FAIL (${ELAPSED}s) → $TSC_OUT"
+    FAILED=true
+    FAILED_TOOL="tsc"
+    TOOL_OUTPUT="$TSC_OUT"
+  else
+    log "tsc: PASS (${ELAPSED}s)"
+    TOOLS_PASSED+=("tsc")
+  fi
+fi
+
+# ── Retry state ───────────────────────────────────────────────────────────────
+# Key: "taskId:filePath" — scopes retries to the current task, not globally.
+# Stale entries from previous tasks are naturally ignored (different taskId).
+
+RETRY_KEY="${TASK_ID}:${FILE_RELATIVE}"
+RETRY_STATE_PATH="${WORKSPACE_ROOT}/.cline-shield/retry-state.json"
+
+# Read current retry state (object keyed by RETRY_KEY)
+RETRY_STATE="{}"
+if [[ -f "$RETRY_STATE_PATH" ]]; then
+  RETRY_STATE=$(cat "$RETRY_STATE_PATH" 2>/dev/null || echo "{}")
+  if ! echo "$RETRY_STATE" | jq -e 'type == "object"' >/dev/null 2>&1; then
+    log "WARNING: retry-state.json is not an object, resetting"
+    RETRY_STATE="{}"
+  fi
+fi
+
+CURRENT_COUNT=$(echo "$RETRY_STATE" | jq -r --arg key "$RETRY_KEY" '.[$key].count // 0')
+
+# ── Respond ───────────────────────────────────────────────────────────────────
+
+if [[ "$FAILED" == "true" ]]; then
+  if [[ $CURRENT_COUNT -lt $MAX_RETRIES ]]; then
+    NEW_COUNT=$(( CURRENT_COUNT + 1 ))
+
+    # Atomically update retry-state.json
+    TEMP="${RETRY_STATE_PATH}.tmp.$$"
+    echo "$RETRY_STATE" | jq \
+      --arg key "$RETRY_KEY" \
+      --argjson count "$NEW_COUNT" \
+      --arg err "$TOOL_OUTPUT" \
+      '.[$key] = {count: $count, lastError: $err}' > "$TEMP"
+    mv "$TEMP" "$RETRY_STATE_PATH"
+
+    log "Checks failed: $FAILED_TOOL (attempt $NEW_COUNT/$MAX_RETRIES)"
+    write_sanity_event "sanity-failed" "$NEW_COUNT"
+
+    CONTEXT_MESSAGE="CLINESHIELD SANITY CHECK FAILED (Attempt $NEW_COUNT/$MAX_RETRIES):
+
+Tool: $FAILED_TOOL
+
+$TOOL_OUTPUT
+
+Fix ONLY these errors. Do not change unrelated code."
+
+    jq -n --arg msg "$CONTEXT_MESSAGE" '{"contextModification": $msg}'
+  else
+    log "Max retries ($MAX_RETRIES) reached for $RETRY_KEY — stopping feedback"
+    write_sanity_event "sanity-failed" "$CURRENT_COUNT"
+    echo '{}'
+  fi
+else
+  log "All checks passed — resetting retry state for $RETRY_KEY"
+  write_sanity_event "sanity-passed"
+
+  # Remove this key from retry state on success (atomic)
+  if [[ -f "$RETRY_STATE_PATH" ]]; then
+    TEMP="${RETRY_STATE_PATH}.tmp.$$"
+    echo "$RETRY_STATE" | jq --arg key "$RETRY_KEY" 'del(.[$key])' > "$TEMP"
+    mv "$TEMP" "$RETRY_STATE_PATH"
+  fi
+
+  echo '{}'
+fi
+
+# ── Risk scoring (non-fatal — runs after sanity response is already written) ───
+{
+  METRICS_PATH="${WORKSPACE_ROOT}/.cline-shield/metrics.json"
+  RISK_STRUCTURAL=0
+  RISK_DELETED=0
+
+  if [[ -f "$METRICS_PATH" ]]; then
+    RISK_STRUCTURAL=$(jq -r --arg file "$FILE_RELATIVE" \
+      '[.[] | select(.type == "edit-allowed" or .type == "edit-blocked") | select(.data.file == $file)] | last | .data.structuralChangePercent // 0 | floor' \
+      "$METRICS_PATH" 2>/dev/null || echo 0)
+    RISK_DELETED=$(jq -r --arg file "$FILE_RELATIVE" \
+      '[.[] | select(.type == "edit-allowed" or .type == "edit-blocked") | select(.data.file == $file)] | last | .data.functionsDeleted // 0 | floor' \
+      "$METRICS_PATH" 2>/dev/null || echo 0)
+  fi
+
+  if [[ "$RISK_STRUCTURAL" == "0" && "$RISK_DELETED" == "0" ]]; then
+    log "WARNING: structuralChangePercent and functionsDeleted both 0 for $FILE_RELATIVE — no PreToolUse edit event found (write_to_file or missing event)"
+  fi
+
+  [[ "$FAILED" == "false" ]] && SANITY_PASSED_RISK=true || SANITY_PASSED_RISK=false
+
+  RISK_SCORE=0
+  REASONS="[]"
+
+  # Rule: protected path (+30)
+  # Trailing slash = directory prefix match; no trailing slash = exact basename match.
+  # Set CLINESHIELD_PROTECTED_PATHS="none" to disable this rule entirely.
+  _DEFAULT_PATHS="src/config/:src/auth/:src/middleware/:auth/:config/:.env:.env.local:.env.production:.env.development"
+  _PROTECTED_PATHS="${CLINESHIELD_PROTECTED_PATHS:-$_DEFAULT_PATHS}"
+  IS_PROTECTED=false
+  if [[ "$_PROTECTED_PATHS" != "none" ]]; then
+    IFS=':' read -ra _PATH_LIST <<< "$_PROTECTED_PATHS"
+    for _p in "${_PATH_LIST[@]}"; do
+      if [[ "$_p" == */ ]]; then
+        [[ "$FILE_RELATIVE" == "$_p"* ]] && IS_PROTECTED=true && break
+      else
+        [[ "$(basename "$FILE_RELATIVE")" == "$_p" ]] && IS_PROTECTED=true && break
+      fi
+    done
+  fi
+  if [[ "$IS_PROTECTED" == "true" ]]; then
+    RISK_SCORE=$(( RISK_SCORE + 30 ))
+    REASONS=$(echo "$REASONS" | jq '. + [{"rule":"protected_path","points":30,"description":"File is in a protected path"}]')
+  fi
+
+  # Rule: structural change — tiered, high replaces medium.
+  # Only applied when patch exceeds MIN_LINES lines — same guard as PreToolUse
+  # blocking, prevents small focused edits from scoring high due to low context.
+  _MIN_LINES=${CLINESHIELD_MIN_LINES:-10}
+  if [[ $DIFF_LINE_COUNT -gt $_MIN_LINES ]]; then
+    if [[ $RISK_STRUCTURAL -gt 75 ]]; then
+      RISK_SCORE=$(( RISK_SCORE + 40 ))
+      REASONS=$(echo "$REASONS" | jq --argjson pct "$RISK_STRUCTURAL" \
+        '. + [{"rule":"structural_change_high","points":40,"description":"Structural change is \($pct)% (exceeds 75%)"}]')
+    elif [[ $RISK_STRUCTURAL -gt 50 ]]; then
+      RISK_SCORE=$(( RISK_SCORE + 25 ))
+      REASONS=$(echo "$REASONS" | jq --argjson pct "$RISK_STRUCTURAL" \
+        '. + [{"rule":"structural_change_medium","points":25,"description":"Structural change is \($pct)% (exceeds 50%)"}]')
+    fi
+  fi
+
+  # Rule: deleted functions — tiered, high replaces low
+  if [[ $RISK_DELETED -gt 3 ]]; then
+    RISK_SCORE=$(( RISK_SCORE + 35 ))
+    REASONS=$(echo "$REASONS" | jq --argjson n "$RISK_DELETED" \
+      '. + [{"rule":"deleted_functions_high","points":35,"description":"\($n) functions deleted (exceeds 3)"}]')
+  elif [[ $RISK_DELETED -gt 0 ]]; then
+    RISK_SCORE=$(( RISK_SCORE + 20 ))
+    REASONS=$(echo "$REASONS" | jq --argjson n "$RISK_DELETED" \
+      '. + [{"rule":"deleted_functions_low","points":20,"description":"\($n) function(s) deleted"}]')
+  fi
+
+  # Rule: sanity failed (+20)
+  if [[ "$SANITY_PASSED_RISK" == "false" ]]; then
+    RISK_SCORE=$(( RISK_SCORE + 20 ))
+    REASONS=$(echo "$REASONS" | jq '. + [{"rule":"sanity_failed","points":20,"description":"Quality checks (eslint/tsc/prettier) failed after this edit"}]')
+  fi
+
+  # Rule: large diff (+15)
+  if [[ $DIFF_LINE_COUNT -gt 200 ]]; then
+    RISK_SCORE=$(( RISK_SCORE + 15 ))
+    REASONS=$(echo "$REASONS" | jq --argjson n "$DIFF_LINE_COUNT" \
+      '. + [{"rule":"large_diff","points":15,"description":"Diff is \($n) lines (exceeds 200)"}]')
+  fi
+
+  # Rule: test file (-10)
+  if [[ "$FILE_RELATIVE" =~ \.(test|spec)\.(ts|tsx|js|jsx)$ ]]; then
+    RISK_SCORE=$(( RISK_SCORE - 10 ))
+    REASONS=$(echo "$REASONS" | jq '. + [{"rule":"test_file","points":-10,"description":"Test file — lower inherent risk"}]')
+  fi
+
+  # Cap score [0, 100]
+  [[ $RISK_SCORE -gt 100 ]] && RISK_SCORE=100
+  [[ $RISK_SCORE -lt 0 ]] && RISK_SCORE=0
+
+  if [[ $RISK_SCORE -le 30 ]]; then RISK_LEVEL="low"
+  elif [[ $RISK_SCORE -le 60 ]]; then RISK_LEVEL="medium"
+  else RISK_LEVEL="high"
+  fi
+
+  log "Risk score: $RISK_SCORE ($RISK_LEVEL) for $FILE_RELATIVE"
+  write_risk_event "$RISK_SCORE" "$RISK_LEVEL" "$REASONS"
+
+  # ── Diff sidecar for LLM analysis (best-effort) ───────────────────────────
+  # Writes .cline-shield/diff-context.json so the extension process can pass
+  # the real diff to Gemini. Matched on file path (not timestamp) to avoid
+  # clock skew. Overwritten on each edit — no deletion needed.
+  # Failure here is already swallowed by the outer || true.
+  SIDECAR_PATH="${WORKSPACE_ROOT}/.cline-shield/diff-context.json"
+  SIDECAR_DIFF=""
+  if [[ "$TOOL" == "apply_patch" && -n "$PATCH_INPUT" ]]; then
+    SIDECAR_DIFF=$(echo "$PATCH_INPUT" | head -c 4000)
+  fi
+  SIDECAR_TEMP="${SIDECAR_PATH}.tmp.$$"
+  jq -n --arg file "$FILE_RELATIVE" --arg diff "$SIDECAR_DIFF" \
+    '{"file": $file, "diff": $diff}' > "$SIDECAR_TEMP"
+  mv "$SIDECAR_TEMP" "$SIDECAR_PATH"
+  log "Wrote diff sidecar for $FILE_RELATIVE (${#SIDECAR_DIFF} chars)"
+
+} || true
+
+exit 0
