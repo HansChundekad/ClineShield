@@ -59,6 +59,29 @@
     .badge-red { background: var(--vscode-errorForeground); color: var(--vscode-editor-background); }
     .badge-green { background: var(--vscode-testing-iconPassed, #4caf50); color: var(--vscode-editor-background); }
     .badge-yellow { background: var(--vscode-editorWarning-foreground, #ff9800); color: var(--vscode-editor-background); }
+    .llm-section {
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px solid var(--vscode-widget-border, transparent);
+    }
+    .llm-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.6;
+      margin-bottom: 3px;
+    }
+    .llm-text {
+      font-size: 11px;
+      opacity: 0.85;
+      line-height: 1.5;
+    }
+    .llm-loading {
+      font-size: 11px;
+      opacity: 0.5;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -95,6 +118,7 @@
 
   <script>
     const vscode = acquireVsCodeApi();
+    let pendingLlmTimeout = null;
 
     window.addEventListener('message', (event) => {
       const msg = event.data;
@@ -107,6 +131,10 @@
       document.getElementById('failed').textContent = s.failedEdits;
       document.getElementById('retries').textContent = s.avgRetries;
 
+      // Cancel any pending loading timeout from a previous render
+      clearTimeout(pendingLlmTimeout);
+      pendingLlmTimeout = null;
+
       const recentEl = document.getElementById('recent');
       if (s.mostRecent) {
         const time = formatRelativeTime(s.mostRecent.timestamp);
@@ -114,7 +142,20 @@
           '<div class="recent-file">' + escapeHtml(s.mostRecent.file) + '</div>' +
           '<div class="recent-type">' + getBadgeHtml(s.mostRecent.eventType) + '</div>' +
           '<div class="recent-time">' + escapeHtml(time) + '</div>' +
-          '<div class="recent-risk">' + getRiskHtml(s.mostRecent.eventType, s.mostRecent.riskScore, s.mostRecent.riskLevel, s.mostRecent.riskReasons) + '</div>';
+          '<div class="recent-risk">' + getRiskHtml(s.mostRecent.eventType, s.mostRecent.riskScore, s.mostRecent.riskLevel, s.mostRecent.riskReasons) + '</div>' +
+          getLlmHtml(s.mostRecent.llmReasoning, s.mostRecent.llmPending, s.mostRecent.riskEventTimestamp);
+
+        // Schedule auto-hide of the loading indicator if Gemini doesn't respond in time
+        if (s.mostRecent.llmPending && s.mostRecent.riskEventTimestamp) {
+          const elapsed = Date.now() - new Date(s.mostRecent.riskEventTimestamp).getTime();
+          const remaining = 10000 - elapsed;
+          if (remaining > 0) {
+            pendingLlmTimeout = setTimeout(() => {
+              const el = document.getElementById('llm-analysis-pending');
+              if (el) { el.remove(); }
+            }, remaining);
+          }
+        }
       } else {
         recentEl.innerHTML = '<p class="empty">No events yet</p>';
       }
@@ -168,6 +209,25 @@
         html += '</div>';
       }
       return html;
+    }
+
+    function getLlmHtml(reasoning, llmPending, riskEventTimestamp) {
+      if (reasoning && typeof reasoning === 'string' && reasoning.trim()) {
+        return '<div class="llm-section">' +
+               '<div class="llm-label">Gemini Analysis</div>' +
+               '<div class="llm-text">' + escapeHtml(reasoning) + '</div>' +
+               '</div>';
+      }
+      if (llmPending && riskEventTimestamp) {
+        const elapsed = Date.now() - new Date(riskEventTimestamp).getTime();
+        if (elapsed < 10000) {
+          return '<div id="llm-analysis-pending" class="llm-section">' +
+                 '<div class="llm-label">Gemini Analysis</div>' +
+                 '<div class="llm-loading">Analyzing...</div>' +
+                 '</div>';
+        }
+      }
+      return '';
     }
 
     function escapeHtml(str) {

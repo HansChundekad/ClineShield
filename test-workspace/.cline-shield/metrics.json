@@ -1396,5 +1396,624 @@
         }
       ]
     }
+  },
+  {
+    "timestamp": "2026-02-20T00:47:20.757Z",
+    "sessionId": "60ac9ecb-75ff-4e1b-bfca-f58543e6d75a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T00:48:29.000Z",
+    "sessionId": "60ac9ecb-75ff-4e1b-bfca-f58543e6d75a",
+    "type": "edit-blocked",
+    "data": {
+      "file": "src/config/appConfig.ts",
+      "reason": "ClineShield: 0 functions deleted, 96% structural change. Make smaller targeted edits (max 3 functions, 90% change for patches > 10 lines).",
+      "structuralChangePercent": 96,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T00:49:46.000Z",
+    "sessionId": "60ac9ecb-75ff-4e1b-bfca-f58543e6d75a",
+    "type": "edit-blocked",
+    "data": {
+      "file": "src/config/appConfig.ts",
+      "reason": "ClineShield: 0 functions deleted, 95% structural change. Make smaller targeted edits (max 3 functions, 90% change for patches > 10 lines).",
+      "structuralChangePercent": 95,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T00:51:52.000Z",
+    "sessionId": "60ac9ecb-75ff-4e1b-bfca-f58543e6d75a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "structuralChangePercent": 23,
+      "functionsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-20T00:52:07.000Z",
+    "sessionId": "60ac9ecb-75ff-4e1b-bfca-f58543e6d75a",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "tool": "prettier",
+      "errors": [
+        "Checking formatting...",
+        "[warn] src/auth/userService.ts",
+        "[warn] Code style issues found in the above file. Run Prettier with --write to fix."
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T00:52:07.000Z",
+    "sessionId": "60ac9ecb-75ff-4e1b-bfca-f58543e6d75a",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "rulesScore": 70,
+      "level": "high",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        },
+        {
+          "rule": "deleted_functions_low",
+          "points": 20,
+          "description": "1 function(s) deleted"
+        },
+        {
+          "rule": "sanity_failed",
+          "points": 20,
+          "description": "Quality checks (eslint/tsc/prettier) failed after this edit"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T00:52:56.000Z",
+    "sessionId": "60ac9ecb-75ff-4e1b-bfca-f58543e6d75a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "structuralChangePercent": 23,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T00:53:12.000Z",
+    "sessionId": "60ac9ecb-75ff-4e1b-bfca-f58543e6d75a",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "tool": "prettier",
+      "errors": [
+        "Checking formatting...",
+        "[warn] src/auth/userService.ts",
+        "[warn] Code style issues found in the above file. Run Prettier with --write to fix."
+      ],
+      "retryCount": 2,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T00:53:12.000Z",
+    "sessionId": "60ac9ecb-75ff-4e1b-bfca-f58543e6d75a",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "rulesScore": 50,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        },
+        {
+          "rule": "sanity_failed",
+          "points": 20,
+          "description": "Quality checks (eslint/tsc/prettier) failed after this edit"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T00:53:36.000Z",
+    "sessionId": "60ac9ecb-75ff-4e1b-bfca-f58543e6d75a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T00:54:19.000Z",
+    "sessionId": "60ac9ecb-75ff-4e1b-bfca-f58543e6d75a",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 4
+    }
+  },
+  {
+    "timestamp": "2026-02-20T00:54:19.000Z",
+    "sessionId": "60ac9ecb-75ff-4e1b-bfca-f58543e6d75a",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:16:40.951Z",
+    "sessionId": "c581bdd2-4b28-4a20-9d58-472c247e69f4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:17:14.000Z",
+    "sessionId": "c581bdd2-4b28-4a20-9d58-472c247e69f4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "structuralChangePercent": 25,
+      "functionsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:17:25.000Z",
+    "sessionId": "c581bdd2-4b28-4a20-9d58-472c247e69f4",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 5
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:17:25.000Z",
+    "sessionId": "c581bdd2-4b28-4a20-9d58-472c247e69f4",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "rulesScore": 50,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        },
+        {
+          "rule": "deleted_functions_low",
+          "points": 20,
+          "description": "1 function(s) deleted"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:31:20.407Z",
+    "sessionId": "599fa38c-a957-4acf-8e81-b597e85ae0cf",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:32:06.000Z",
+    "sessionId": "599fa38c-a957-4acf-8e81-b597e85ae0cf",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "structuralChangePercent": 23,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:32:14.000Z",
+    "sessionId": "599fa38c-a957-4acf-8e81-b597e85ae0cf",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 4
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:32:15.000Z",
+    "sessionId": "599fa38c-a957-4acf-8e81-b597e85ae0cf",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:32:30.000Z",
+    "sessionId": "599fa38c-a957-4acf-8e81-b597e85ae0cf",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "structuralChangePercent": 23,
+      "functionsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:32:45.000Z",
+    "sessionId": "599fa38c-a957-4acf-8e81-b597e85ae0cf",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 4
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:32:46.000Z",
+    "sessionId": "599fa38c-a957-4acf-8e81-b597e85ae0cf",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "rulesScore": 50,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        },
+        {
+          "rule": "deleted_functions_low",
+          "points": 20,
+          "description": "1 function(s) deleted"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:16:50.946Z",
+    "sessionId": "0941b657-cdf0-43f8-8fb0-3069cc343150",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:17:44.000Z",
+    "sessionId": "0941b657-cdf0-43f8-8fb0-3069cc343150",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "structuralChangePercent": 53,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:17:54.000Z",
+    "sessionId": "0941b657-cdf0-43f8-8fb0-3069cc343150",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 4
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:17:54.000Z",
+    "sessionId": "0941b657-cdf0-43f8-8fb0-3069cc343150",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:18:25.000Z",
+    "sessionId": "0941b657-cdf0-43f8-8fb0-3069cc343150",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "structuralChangePercent": 36,
+      "functionsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:18:37.000Z",
+    "sessionId": "0941b657-cdf0-43f8-8fb0-3069cc343150",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 7
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:18:37.000Z",
+    "sessionId": "0941b657-cdf0-43f8-8fb0-3069cc343150",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "rulesScore": 50,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        },
+        {
+          "rule": "deleted_functions_low",
+          "points": 20,
+          "description": "1 function(s) deleted"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:22:28.333Z",
+    "sessionId": "90b202e1-4951-4eb8-be2a-8fdf280657bf",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:23:50.000Z",
+    "sessionId": "90b202e1-4951-4eb8-be2a-8fdf280657bf",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "structuralChangePercent": 36,
+      "functionsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:24:24.000Z",
+    "sessionId": "90b202e1-4951-4eb8-be2a-8fdf280657bf",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:24:24.000Z",
+    "sessionId": "90b202e1-4951-4eb8-be2a-8fdf280657bf",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "rulesScore": 50,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        },
+        {
+          "rule": "deleted_functions_low",
+          "points": 20,
+          "description": "1 function(s) deleted"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:24:27.088Z",
+    "sessionId": "90b202e1-4951-4eb8-be2a-8fdf280657bf",
+    "type": "llm-analysis",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "relatedRiskEventTimestamp": "2026-02-20T02:24:24.000Z",
+      "reasoning": "Deleting the `listUsers` function removes the ability to retrieve all registered users within the application. This could break existing features or administrative tools that rely on a comprehensive list of users for tasks like user management, auditing, or displaying user directories. Since this file is in an authentication service, removing such a core function could significantly impact user visibility and management workflows.",
+      "model": "gemini-2.5-flash",
+      "duration": 2.168
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:35:17.532Z",
+    "sessionId": "ae78c5e2-a55e-4920-866a-9d3d2e6dd1f5",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:37:59.000Z",
+    "sessionId": "ae78c5e2-a55e-4920-866a-9d3d2e6dd1f5",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "structuralChangePercent": 76,
+      "functionsDeleted": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:46:48.000Z",
+    "sessionId": "ae78c5e2-a55e-4920-866a-9d3d2e6dd1f5",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "structuralChangePercent": 88,
+      "functionsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:46:57.000Z",
+    "sessionId": "ae78c5e2-a55e-4920-866a-9d3d2e6dd1f5",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "tool": "prettier",
+      "errors": [
+        "Checking formatting...",
+        "[warn] src/utils/formatters.ts",
+        "[warn] Code style issues found in the above file. Run Prettier with --write to fix."
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:46:58.000Z",
+    "sessionId": "ae78c5e2-a55e-4920-866a-9d3d2e6dd1f5",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "rulesScore": 40,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "deleted_functions_low",
+          "points": 20,
+          "description": "1 function(s) deleted"
+        },
+        {
+          "rule": "sanity_failed",
+          "points": 20,
+          "description": "Quality checks (eslint/tsc/prettier) failed after this edit"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:47:00.934Z",
+    "sessionId": "ae78c5e2-a55e-4920-866a-9d3d2e6dd1f5",
+    "type": "llm-analysis",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "relatedRiskEventTimestamp": "2026-02-20T02:46:58.000Z",
+      "reasoning": "The `formatDate` function was modified to return a number representing milliseconds since epoch, instead of a human-readable date string. This change in return type and value will break any downstream code that expects a formatted string for display or further string manipulation, leading to type errors or incorrect date presentation in the UI. The failed quality checks indicate that this behavioral change is indeed causing issues elsewhere in the codebase.",
+      "model": "gemini-2.5-flash",
+      "duration": 2.066
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:48:54.000Z",
+    "sessionId": "ae78c5e2-a55e-4920-866a-9d3d2e6dd1f5",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "structuralChangePercent": 50,
+      "functionsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:49:32.000Z",
+    "sessionId": "ae78c5e2-a55e-4920-866a-9d3d2e6dd1f5",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 10
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:49:32.000Z",
+    "sessionId": "ae78c5e2-a55e-4920-866a-9d3d2e6dd1f5",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "rulesScore": 20,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "deleted_functions_low",
+          "points": 20,
+          "description": "1 function(s) deleted"
+        }
+      ]
+    }
   }
 ]

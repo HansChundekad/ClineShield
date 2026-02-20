@@ -45,7 +45,7 @@ After editing `.cline-shield.yml`, run `Ctrl+Shift+P → ClineShield: Reload Con
 | **Sanity Checker** | After the edit (PostToolUse) | Runs eslint → tsc → prettier, injects error context for Cline to fix |
 | **Risk Engine** | After the edit (PostToolUse) | Scores the edit 0–100, writes risk-assessed event |
 | **Metrics Sidebar** | Live, on every write | Shows session stats and the risk level of the most recent edit |
-| **LLM Analysis** | *(Phase 6 — not yet implemented)* | Will add natural-language reasoning to each risk event |
+| **LLM Analysis** | After risk scoring (medium/high only) | Gemini explains in 2–3 sentences why the edit is risky; appears in sidebar below the risk badge |
 
 ---
 
@@ -155,4 +155,3 @@ The panel updates within 1–2 seconds of any write to `.cline-shield/metrics.js
 - **Class method deletions**: PreToolUse uses regex-based function detection.
   Class method syntax (`methodName() {}`) is not matched — `src/models/product.ts`
   is a PostToolUse target only (tsc/eslint catch errors there, not PreToolUse).
-- **LLM analysis**: Phase 6, not yet implemented.

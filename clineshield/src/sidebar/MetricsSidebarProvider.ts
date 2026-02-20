@@ -17,6 +17,9 @@ interface SidebarStats {
     riskScore: number | null;
     riskLevel: 'low' | 'medium' | 'high' | null;
     riskReasons: Array<{ description: string; points: number }> | null;
+    llmReasoning: string | null;
+    llmPending: boolean;
+    riskEventTimestamp: string | null;
   } | null;
 }
 
@@ -122,6 +125,9 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
       let riskScore: number | null = null;
       let riskLevel: 'low' | 'medium' | 'high' | null = null;
       let riskReasons: Array<{ description: string; points: number }> | null = null;
+      let llmReasoning: string | null = null;
+      let llmPending = false;
+      let riskEventTimestamp: string | null = null;
 
       if (lastEdit.type === 'edit-allowed') {
         const riskEvent = [...events]
@@ -141,10 +147,32 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
           riskScore = d.rulesScore;
           riskLevel = d.level;
           riskReasons = d.reasons.map(r => ({ description: r.description, points: r.points }));
+
+          // Find llm-analysis linked to this specific risk event via relatedRiskEventTimestamp
+          const llmEvent = [...events]
+            .reverse()
+            .find(
+              e =>
+                e.type === 'llm-analysis' &&
+                (e.data as { file?: string }).file === file &&
+                (e.data as { relatedRiskEventTimestamp?: string }).relatedRiskEventTimestamp === riskEvent.timestamp
+            );
+          if (llmEvent?.type === 'llm-analysis') {
+            const reasoning = (llmEvent.data as { reasoning?: unknown }).reasoning;
+            if (typeof reasoning === 'string' && reasoning.trim()) {
+              llmReasoning = reasoning;
+            }
+          }
+
+          // If medium/high risk but no llm-analysis yet, signal loading state
+          if (llmReasoning === null && (riskLevel === 'medium' || riskLevel === 'high')) {
+            llmPending = true;
+            riskEventTimestamp = riskEvent.timestamp;
+          }
         }
       }
 
-      mostRecent = { file, eventType: lastEdit.type, timestamp: lastEdit.timestamp, riskScore, riskLevel, riskReasons };
+      mostRecent = { file, eventType: lastEdit.type, timestamp: lastEdit.timestamp, riskScore, riskLevel, riskReasons, llmReasoning, llmPending, riskEventTimestamp };
     }
 
     return { blockedEdits, allowedEdits, passedEdits, failedEdits, avgRetries, mostRecent };

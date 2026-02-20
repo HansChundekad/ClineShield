@@ -2,7 +2,7 @@
  * userService.ts — Auth & user management
  *
  * CLINESHIELD DEMO: Protected path (src/auth/) → +30 risk score.
- * 8 exported functions — ask Cline to delete 4+ to trigger PreToolUse block.
+ * 8 exported functions — ask Cline to delete 5 to trigger PreToolUse block.
  */
 
 export interface User {

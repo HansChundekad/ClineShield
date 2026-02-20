@@ -217,14 +217,10 @@ describe('metricsWriter', () => {
 
       await appendEvent(event, testWorkspaceRoot);
 
-      // Temp file should not exist after successful write
-      const tempPath = `${metricsPath}.tmp`;
-      const tempExists = await fs
-        .access(tempPath)
-        .then(() => true)
-        .catch(() => false);
-
-      expect(tempExists).toBe(false);
+      // No temp files should remain after successful write (unique suffix, so check by pattern)
+      const shieldDir = path.join(testWorkspaceRoot, '.cline-shield');
+      const files = await fs.readdir(shieldDir);
+      expect(files.filter(f => f.endsWith('.tmp'))).toHaveLength(0);
 
       // Final file should exist with correct content
       const content = await fs.readFile(metricsPath, 'utf-8');
@@ -279,16 +275,13 @@ describe('metricsWriter', () => {
         appendEvent(event3, testWorkspaceRoot),
       ]);
 
-      // File should still be valid JSON
       const content = await fs.readFile(metricsPath, 'utf-8');
-      const events = JSON.parse(content);
+      const events = JSON.parse(content) as Array<{ data: { file: string } }>;
 
-      // Should be an array (not corrupted)
+      // Write queue serialises reads, so all three events must be present with no corruption
       expect(Array.isArray(events)).toBe(true);
-
-      // Should contain at least one event (race conditions may cause some to be lost)
-      expect(events.length).toBeGreaterThan(0);
-      expect(events.length).toBeLessThanOrEqual(3);
+      expect(events).toHaveLength(3);
+      expect(events.map(e => e.data.file).sort()).toEqual(['test1.ts', 'test2.ts', 'test3.ts']);
     });
   });
 });

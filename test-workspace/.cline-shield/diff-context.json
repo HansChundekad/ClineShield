@@ -1,0 +1,4 @@
+{
+  "file": "src/utils/formatters.ts",
+  "diff": "%%bash\napply_patch <<'EOF'\n*** Begin Patch\n*** Update File: src/utils/formatters.ts\n@@\n-export function formatDate(date: Date, locale = 'en-US'): number {\n+export function formatDate(date: Date): number {\n   return date.getTime();\n }\n*** End Patch\nEOF"
+}
