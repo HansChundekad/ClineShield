@@ -135,6 +135,11 @@ Known limitations:
   
 ## Phase 7: Change Map TreeView ⏸️ NOT STARTED
 
+## Phase 8: Final Touches ⏸️ NOT STARTED
+
+- [ ] "Generate Hooks" command — copies PreToolUse and PostToolUse scripts into `.clinerules/hooks/` automatically so users don't have to place them manually
+- [ ] User installs extension, adds `.cline-shield.yml`, clicks Generate Hooks, and Cline is protected — no manual file setup needed
+
 ---
 
 ## Known Issues / Decisions
