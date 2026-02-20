@@ -6,5 +6,9 @@
   "1771465059286:src/config/appConfig.ts": {
     "count": 1,
     "lastError": "Checking formatting...\n[warn] src/config/appConfig.ts\n[warn] Code style issues found in the above file. Run Prettier with --write to fix."
+  },
+  "1771570497520:src/auth/userService.ts": {
+    "count": 1,
+    "lastError": "Checking formatting...\n[warn] src/auth/userService.ts\n[warn] Code style issues found in the above file. Run Prettier with --write to fix."
   }
 }

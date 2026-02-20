@@ -2070,5 +2070,517 @@
       "structuralChangePercent": 100,
       "functionsDeleted": 6
     }
+  },
+  {
+    "timestamp": "2026-02-20T06:49:08.329Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:45:21.880Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "edit-blocked",
+    "data": {
+      "file": "src/auth.ts",
+      "reason": "Too many deletions",
+      "structuralChangePercent": 80,
+      "functionsDeleted": 4,
+      "exportsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:46:21.880Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/api.ts",
+      "structuralChangePercent": 10,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:47:21.880Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/api.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:48:21.880Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/auth.ts",
+      "tool": "eslint",
+      "errors": [
+        "Line 12: 'x' is defined but never used"
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:49:21.880Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/utils.ts",
+      "structuralChangePercent": 5,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:45:36.636Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "edit-blocked",
+    "data": {
+      "file": "src/auth.ts",
+      "reason": "Too many deletions",
+      "structuralChangePercent": 80,
+      "functionsDeleted": 4,
+      "exportsDeleted": 1
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:46:36.636Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/api.ts",
+      "structuralChangePercent": 10,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:47:36.636Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/api.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:48:36.636Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/auth.ts",
+      "tool": "eslint",
+      "errors": [
+        "Line 12: 'x' is defined but never used"
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:49:36.636Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/utils.ts",
+      "structuralChangePercent": 5,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:55:06.000Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "structuralChangePercent": 20,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:55:16.000Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 6
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:55:16.000Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:55:49.000Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "structuralChangePercent": 63,
+      "functionsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:56:02.000Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 4
+    }
+  },
+  {
+    "timestamp": "2026-02-20T06:56:02.000Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:02:14.000Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "structuralChangePercent": 34,
+      "functionsDeleted": 2
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:02:32.000Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "tool": "prettier",
+      "errors": [
+        "Checking formatting...",
+        "[warn] src/auth/userService.ts",
+        "[warn] Code style issues found in the above file. Run Prettier with --write to fix."
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:02:32.000Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "rulesScore": 70,
+      "level": "high",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path"
+        },
+        {
+          "rule": "deleted_functions_low",
+          "points": 20,
+          "description": "2 function(s) deleted"
+        },
+        {
+          "rule": "sanity_failed",
+          "points": 20,
+          "description": "Quality checks (eslint/tsc/prettier) failed after this edit"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:02:35.460Z",
+    "sessionId": "19077e3a-9192-4bb0-8af7-d8007d405dec",
+    "type": "llm-analysis",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "relatedRiskEventTimestamp": "2026-02-20T07:02:32.000Z",
+      "reasoning": "This edit is risky because it removes the `deleteUser` and `listUsers` functions, which are critical for managing user data. Without `deleteUser`, there's no programmatic way to remove user accounts from the system, potentially leading to data retention issues or security concerns. Removing `listUsers` eliminates the ability to retrieve an overview of all users, which could break administrative dashboards or reporting features.",
+      "model": "gemini-2.5-flash",
+      "duration": 2.131
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:08:03.758Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:00:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "edit-blocked",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "reason": "Too many deletions",
+      "structuralChangePercent": 82,
+      "functionsDeleted": 4,
+      "exportsDeleted": 2
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:01:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "structuralChangePercent": 30,
+      "functionsDeleted": 1,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:02:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "tool": "eslint",
+      "errors": [
+        "Line 24: 'token' is defined but never used",
+        "Line 31: Missing return type annotation"
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:02:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "rulesScore": 75,
+      "level": "high",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path (src/auth/userService.ts)"
+        },
+        {
+          "rule": "deleted_functions_high",
+          "points": 35,
+          "description": "4 functions deleted (exceeds 3)"
+        },
+        {
+          "rule": "sanity_failed",
+          "points": 20,
+          "description": "Quality checks (eslint/tsc/prettier) failed after this edit"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:03:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/appConfig.ts",
+      "structuralChangePercent": 40,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:04:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/config/appConfig.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 4
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:04:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/appConfig.ts",
+      "rulesScore": 45,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "File is in a protected path (src/config/appConfig.ts)"
+        },
+        {
+          "rule": "structural_change_medium",
+          "points": 25,
+          "description": "Structural change is 40% (exceeds 25%)"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:05:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/models/product.ts",
+      "structuralChangePercent": 55,
+      "functionsDeleted": 1,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:06:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "sanity-failed",
+    "data": {
+      "file": "src/models/product.ts",
+      "tool": "tsc",
+      "errors": [
+        "src/models/product.ts(18,3): error TS2322: Type 'string' is not assignable to type 'number'"
+      ],
+      "retryCount": 1,
+      "maxRetries": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:06:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/models/product.ts",
+      "rulesScore": 40,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "deleted_functions_low",
+          "points": 20,
+          "description": "1 function deleted"
+        },
+        {
+          "rule": "sanity_failed",
+          "points": 20,
+          "description": "Quality checks (eslint/tsc/prettier) failed after this edit"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:07:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "structuralChangePercent": 15,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:08:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "sanity-passed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "tools": [
+        "prettier",
+        "eslint",
+        "tsc"
+      ],
+      "duration": 3
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:08:10.175Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/utils/formatters.ts",
+      "rulesScore": 10,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:08:13.491Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "llm-analysis",
+    "data": {
+      "file": "src/auth/userService.ts",
+      "relatedRiskEventTimestamp": "2026-02-20T07:02:10.175Z",
+      "reasoning": "This edit significantly increases risk by removing the `deleteUser` and `listUsers` functions from the `userService`. Without `deleteUser`, there is no public method to remove user records, which could lead to data integrity issues or unmanageable user accounts. The removal of `listUsers` prevents other parts of the application from enumerating all users, potentially breaking administrative interfaces or reporting features that rely on a full user list.",
+      "model": "gemini-2.5-flash",
+      "duration": 2.729
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:08:20.923Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "llm-analysis",
+    "data": {
+      "file": "src/config/appConfig.ts",
+      "relatedRiskEventTimestamp": "2026-02-20T07:04:10.175Z",
+      "reasoning": "This edit significantly modifies the application's central configuration, which can have broad implications across numerous dependent modules. The introduction of the setRequestTimeout function allows the application's global request timeout to be dynamically altered at runtime. This capability for dynamic modification of critical operational parameters introduces a risk of instability, performance issues, or unintended behavior if not managed carefully.",
+      "model": "gemini-2.5-flash",
+      "duration": 4.283
+    }
+  },
+  {
+    "timestamp": "2026-02-20T07:08:26.082Z",
+    "sessionId": "61559ac9-b8af-4592-b8b3-b19cb4bfa7ca",
+    "type": "llm-analysis",
+    "data": {
+      "file": "src/models/product.ts",
+      "relatedRiskEventTimestamp": "2026-02-20T07:06:10.175Z",
+      "reasoning": "Deleting a function from the Product class means that any code relying on that function will now fail, potentially breaking core business logic related to product management, such as retrieving details, managing stock, or handling purchases. The subsequent failure of quality checks (TypeScript and/or ESLint) indicates that these breaking changes were not properly addressed, leading to compilation errors or unmet code standards that could prevent the application from building or running correctly.",
+      "model": "gemini-2.5-flash",
+      "duration": 3.437
+    }
   }
 ]

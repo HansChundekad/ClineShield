@@ -15,8 +15,14 @@ export function formatDate(date: Date): string {
 
 // Uses formatDate as a string — tsc fails if formatDate return type becomes number.
 export function formatDateLabel(date: Date): string {
+  console.log('formatDateLabel called with:', date);
   const dateStr: string = formatDate(date);
-  return `Updated: ${dateStr}`;
+  console.log('formatDateLabel:', dateStr);
+  console.log('formatDateLabel date type:', typeof dateStr);
+  const label = `Updated: ${dateStr}`;
+  console.log('formatDateLabel output label:', label);
+  console.log('formatDateLabel completed');
+  return label;
 }
 
 export function formatCurrency(amount: number, currency = 'USD'): string {
