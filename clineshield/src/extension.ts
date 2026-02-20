@@ -4,6 +4,7 @@ import { loadConfig } from './config/configLoader';
 import { appendEvent } from './metrics/writer';
 import { readEventsBySession } from './metrics/reader';
 import { MetricsSidebarProvider } from './sidebar/MetricsSidebarProvider';
+import { ChangeMapProvider } from './changeMap/ChangeMapProvider';
 import { processRiskEvent } from './extension/riskAnalysis/llmTrigger';
 
 // Store current session ID at module level for file watcher access
@@ -185,6 +186,15 @@ export function activate(context: vscode.ExtensionContext): void {
       vscode.window.registerWebviewViewProvider(MetricsSidebarProvider.viewType, sidebarProvider)
     );
     context.subscriptions.push(sidebarProvider);
+  }
+
+  // Register change map tree view
+  if (workspaceRoot) {
+    const changeMapProvider = new ChangeMapProvider(workspaceRoot, currentSessionId);
+    context.subscriptions.push(
+      vscode.window.registerTreeDataProvider(ChangeMapProvider.viewType, changeMapProvider)
+    );
+    context.subscriptions.push(changeMapProvider);
   }
 
   // Register command: ClineShield: Generate Test Metrics
