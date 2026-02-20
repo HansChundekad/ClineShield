@@ -22,6 +22,7 @@ interface ClineShieldConfig {
   'no-nuke'?: NoNukeConfig;
   sanity?: SanityConfig;
   risk?: RiskConfig;
+  gemini_api_key?: string;
 }
 
 const CONFIG_FILE = '.cline-shield.yml';
@@ -83,6 +84,10 @@ export function loadConfig(workspaceRoot: string): void {
       }
     }
 
+    if (typeof config.gemini_api_key === 'string' && config.gemini_api_key.trim()) {
+      process.env.CLINESHIELD_GEMINI_KEY = config.gemini_api_key.trim();
+    }
+
     console.log(`ClineShield: config loaded from ${CONFIG_FILE}`);
     console.log(`  no-nuke  → MAX_FUNCTIONS=${process.env.CLINESHIELD_MAX_FUNCTIONS ?? '(default)'}`);
     console.log(`             MIN_LINES=${process.env.CLINESHIELD_MIN_LINES ?? '(default)'}`);
@@ -91,6 +96,7 @@ export function loadConfig(workspaceRoot: string): void {
     console.log(`             MAX_RETRIES=${process.env.CLINESHIELD_MAX_RETRIES ?? '(default)'}`);
     console.log(`             TIMEOUT=${process.env.CLINESHIELD_TIMEOUT ?? '(default)'}`);
     console.log(`  risk     → PROTECTED_PATHS=${process.env.CLINESHIELD_PROTECTED_PATHS ?? '(default)'}`);
+    console.log(`  gemini   → KEY=${process.env.CLINESHIELD_GEMINI_KEY ? '(set)' : '(not set)'}`);
   } catch (err) {
     console.error(`ClineShield: failed to parse ${CONFIG_FILE} — ${(err as Error).message}`);
     console.error('ClineShield: using hook defaults');

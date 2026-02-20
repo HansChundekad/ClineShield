@@ -99,18 +99,40 @@ Integration tested:
   - edit-blocked shows "Risk: — (edit was blocked)"
   - edit-allowed shows score + LOW/MEDIUM/HIGH badge (green/yellow/red)
 
-## Phase 6: LLM Analysis 🔄 IN PROGRESS
+## Phase 6: LLM Analysis ✅ COMPLETE
 
-- [x] llmAnalyzer.ts — Gemini 2.5 Flash caller, never throws, returns null on any failure
-- [ ] Step 1: Sidecar write in PostToolUse hook (diff-context.json, file-path matched)
-- [ ] Step 2: llmTrigger.ts + wire into extension.ts watcher + integration tests
-- [ ] Step 3: README — document CLINESHIELD_GEMINI_KEY env var
-- [ ] Step 4: Sidebar display of llm-analysis summary
-- [ ] Step 5: Smoke test, mark complete
+- [x] llmAnalyzer.ts — callGemini(diff, fileContents, filePath, rulesScore, reasons) → GeminiAnalysis | null
+  - GeminiAnalysis = { explanation: string } — LLM explains why, rules engine owns score/level/reasons
+  - Prompt: rules engine context given upfront, LLM asked for 2-3 sentence code-level explanation only
+- [x] Step 1: Sidecar write in test-workspace PostToolUse hook (diff-context.json, file-path matched, inside || true block)
+- [x] Step 2: llmTrigger.ts — processRiskEvent() reads sidecar + file contents, calls Gemini, appends llm-analysis event
+  - Wired into extension.ts watcher: seen Set deduplicated, void fire-and-forget per medium/high risk event
+  - reasoning = result.explanation (plain string, fits LLMAnalysisEvent schema directly, no JSON.stringify)
+  - Rate limited: 6s minimum between Gemini calls (free tier: 10 RPM); sequential queue, no drops
+- [x] Step 3: Sidebar display of llm-analysis summary
+  - MetricsSidebarProvider finds llm-analysis by relatedRiskEventTimestamp
+  - llmPending flag drives 10s "Analyzing..." loading state in webview
+  - metrics.html getLlmHtml() renders Gemini Analysis block when reasoning arrives
+- [x] Step 4: Smoke test (scripts/smoke-test-phase6.js, npm run smoke:phase6)
+  - Builds TypeScript, sets up temp workspace with realistic auth diff + sidecar
+  - Calls processRiskEvent with real callGemini, waits up to 15s, prints reasoning
+  - Always exits 0 — LLM failure never causes test failure
+- [x] Fix: Gemini calls now trigger correctly — atomic rename fires onDidCreate not onDidChange;
+  watcher now handles both events
 
 Key decisions:
 - Sidecar bridges diff from hook process to extension process (matched on file path, not timestamp)
-- LLM is best-effort: null result is silent, no schema changes, reasoning = JSON.stringify({summary, risks, confidence})
+- Post-edit file contents read by extension — gives Gemini real code even when diff unavailable
+- seen Set lives in extension.ts module scope; llmTrigger processes one event at a time
+- LLM explains why the code is risky — score, level, reasons owned by rules engine only
+
+Known limitations:
+- Sidecar race: rapid consecutive edits can overwrite diff-context.json before extension reads it;
+  path-matching guard ensures wrong diff → empty diff (not wrong diff applied to wrong file)
+- Cross-process writes (hook bash → extension Node) not serialised by the in-process write queue;
+  unique temp paths prevent JSON corruption but a hook and extension writing simultaneously may
+  lose one event (last rename wins). Acceptable given hooks and extension rarely write concurrently.
+  
 ## Phase 7: Change Map TreeView ⏸️ NOT STARTED
 
 ---

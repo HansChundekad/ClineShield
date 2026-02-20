@@ -445,6 +445,22 @@ fi
   log "Risk score: $RISK_SCORE ($RISK_LEVEL) for $FILE_RELATIVE"
   write_risk_event "$RISK_SCORE" "$RISK_LEVEL" "$REASONS"
 
+  # ── Diff sidecar for LLM analysis (best-effort) ───────────────────────────
+  # Writes .cline-shield/diff-context.json so the extension process can pass
+  # the real diff to Gemini. Matched on file path (not timestamp) to avoid
+  # clock skew. Overwritten on each edit — no deletion needed.
+  # Failure here is already swallowed by the outer || true.
+  SIDECAR_PATH="${WORKSPACE_ROOT}/.cline-shield/diff-context.json"
+  SIDECAR_DIFF=""
+  if [[ "$TOOL" == "apply_patch" && -n "$PATCH_INPUT" ]]; then
+    SIDECAR_DIFF=$(echo "$PATCH_INPUT" | head -c 4000)
+  fi
+  SIDECAR_TEMP="${SIDECAR_PATH}.tmp.$$"
+  jq -n --arg file "$FILE_RELATIVE" --arg diff "$SIDECAR_DIFF" \
+    '{"file": $file, "diff": $diff}' > "$SIDECAR_TEMP"
+  mv "$SIDECAR_TEMP" "$SIDECAR_PATH"
+  log "Wrote diff sidecar for $FILE_RELATIVE (${#SIDECAR_DIFF} chars)"
+
 } || true
 
 exit 0

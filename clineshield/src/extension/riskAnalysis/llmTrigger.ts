@@ -28,6 +28,7 @@ export async function processRiskEvent(
 ): Promise<void> {
   try {
     const { file, rulesScore, reasons } = riskEvent.data;
+    console.log(`[CS:llm] processRiskEvent start — file:${file} score:${rulesScore}`);
 
     // Read diff sidecar — match on file path to guard against race overwrites
     let diff = '';
@@ -37,9 +38,12 @@ export async function processRiskEvent(
       const sidecar = JSON.parse(raw) as { file?: string; diff?: string };
       if (sidecar.file === file && typeof sidecar.diff === 'string') {
         diff = sidecar.diff;
+        console.log(`[CS:llm] sidecar matched — diff length:${diff.length}`);
+      } else {
+        console.log(`[CS:llm] sidecar mismatch — sidecar.file:${sidecar.file} event.file:${file}`);
       }
-    } catch {
-      // Sidecar absent or unreadable — proceed without diff
+    } catch (e) {
+      console.log(`[CS:llm] sidecar read failed — ${(e as Error).message}`);
     }
 
     // Read post-edit file contents (capped to avoid token bloat)
@@ -50,12 +54,15 @@ export async function processRiskEvent(
       fileContents = raw.length > MAX_FILE_CHARS
         ? raw.slice(0, MAX_FILE_CHARS) + '\n... [truncated]'
         : raw;
-    } catch {
-      // File unreadable — proceed without contents
+      console.log(`[CS:llm] file read ok — length:${fileContents.length}`);
+    } catch (e) {
+      console.log(`[CS:llm] file read failed — ${(e as Error).message}`);
     }
 
+    console.log(`[CS:llm] calling Gemini...`);
     const startMs = Date.now();
     const result = await geminiCaller(diff, fileContents, file, rulesScore, reasons);
+    console.log(`[CS:llm] Gemini returned — ${result ? 'got explanation' : 'null (failed or no key)'} in ${Date.now() - startMs}ms`);
 
     if (!result) { return; }
 

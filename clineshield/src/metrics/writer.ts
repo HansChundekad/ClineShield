@@ -11,6 +11,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { randomBytes } from 'crypto';
 import type { MetricsEvent } from '../types/metrics';
 
 const METRICS_DIR = '.cline-shield';
@@ -40,7 +41,22 @@ function getMetricsDir(workspaceRoot: string): string {
  * @param event - The metrics event to append
  * @param workspaceRoot - The workspace root directory
  */
+// Per-workspace write queue: serialises read-modify-write within this process,
+// preventing concurrent writes from racing on the same metrics.json.
+const writeQueues = new Map<string, Promise<void>>();
+
 export async function appendEvent(
+  event: MetricsEvent,
+  workspaceRoot: string
+): Promise<void> {
+  const key = getMetricsPath(workspaceRoot);
+  const prev = writeQueues.get(key) ?? Promise.resolve();
+  const next = prev.then(() => doAppend(event, workspaceRoot)).catch(() => {});
+  writeQueues.set(key, next);
+  return next;
+}
+
+async function doAppend(
   event: MetricsEvent,
   workspaceRoot: string
 ): Promise<void> {
@@ -80,11 +96,16 @@ export async function appendEvent(
     // Append new event
     events.push(event);
 
-    // Atomic write: temp file + rename
-    // This prevents corruption if process crashes mid-write
-    const tempPath = `${metricsPath}.tmp`;
+    // Unique temp path prevents concurrent writers from clobbering each other's temp.
+    const suffix = `${Date.now()}.${randomBytes(4).toString('hex')}`;
+    const tempPath = `${metricsPath}.${suffix}.tmp`;
     await fs.writeFile(tempPath, JSON.stringify(events, null, 2), 'utf-8');
-    await fs.rename(tempPath, metricsPath);
+    try {
+      await fs.rename(tempPath, metricsPath);
+    } catch (renameError) {
+      try { await fs.unlink(tempPath); } catch { /* ignore */ }
+      throw renameError;
+    }
   } catch (error) {
     console.error('[ClineShield] Failed to append event to metrics.json:', error);
     // Don't throw - hooks must not crash
