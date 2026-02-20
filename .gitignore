@@ -7,3 +7,4 @@ clineshield/dist/
 
 # Local ClineShield config (use .cline-shield.example.yml as a template)
 .cline-shield.yml
+test-workspace/
