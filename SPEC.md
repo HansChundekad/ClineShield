@@ -110,27 +110,31 @@ Cline CLI / SDK agent loop
 | A hook that throws or times out is swallowed (returns `undefined`): `beforeTool` fails **open**, `afterTool` feedback is lost silently | `sdk/packages/core/src/extensions/plugin/plugin-registry.ts` |
 | Plugins load from `<workspace>/.cline/plugins/` or `~/.cline/plugins/`; installed with `cline plugin install <git url | npm | local path>`; single-file URL installs may only import Node builtins and `@cline/*` | [docs: Plugins](https://docs.cline.bot/customization/plugins), [Writing Plugins](https://docs.cline.bot/sdk/guides/writing-plugins) |
 | Closest upstream template: `sdk/examples/plugins/gitignore-read-files-guard.ts` | [examples](https://github.com/cline/cline/tree/main/sdk/examples/plugins) |
+| `setup(api, ctx)` gets the host session id as `ctx.session.sessionId`, the workspace root as `ctx.workspaceInfo.rootPath` and the session cwd as `ctx.cwd`. Hook snapshots carry only `agentId` / `conversationId` / `runId`, not the session id | `sdk/packages/shared/src/extensions/contribution-registry.ts` L113–114, L165, L177, L206; `agent.ts` `AgentRuntimeStateSnapshot` |
+| Each session gets its own worker-process copy of the plugin, so the plugin and the VS Code extension write `metrics.json` from different processes | `plugin-registry.ts` `loadForSession` → `startWorkerCopy` (`transport: "worker"`) |
+| A git install clones the whole repo, runs `npm install --omit=dev --omit=peer` at the repo root, and loads the entry files listed in the root `package.json` `cline.plugins` (paths relative to the repo root; with no list it scans the whole tree). There is no subdirectory syntax, only `@ref` | `sdk/packages/core/src/services/plugin-install.ts` `installGitPackage`, `installPackageDependencies`, `collectPluginEntries`, `splitGitRef` |
+| `.ts` entries are loaded through jiti (`^2.7.0`), so relative TypeScript imports such as `../metrics/writer` work at runtime without a build step | `plugin-sandbox.ts` (bootstrap script, `createJiti`); `plugin-loader.ts` → `plugin-module-import.ts` |
 
 ### Features
 
 #### Plugin package & install
 Ships ClineShield as a Cline plugin package that a user installs with one command.
-- [ ] Plugin package in the repo with a `package.json` `cline.plugins` entry and `capabilities: ["hooks"]`
-- [ ] Exports an `AgentPlugin`; `setup()` is synchronous and fast (no heavy work before the first model call)
+- [x] Plugin package in the repo with a `package.json` `cline.plugins` entry and `capabilities: ["hooks"]` (root `package.json` → `clineshield/src/plugin/index.ts`; see Open decision #5)
+- [x] Exports an `AgentPlugin`; `setup()` is synchronous and fast (no heavy work before the first model call)
 - [ ] Installs locally: `cline plugin install <path>` (or a `.cline/plugins/` link) loads it in `test-workspace/`; `cline doctor` lists it
 - [ ] Installs from git with one command (`cline plugin install https://github.com/HansChundekad/ClineShield…`) — verified on a clean machine/dir
-- [ ] Any hook error is caught inside the plugin, logged to stderr, and never crashes the run
+- [x] Any hook error is caught inside the plugin, logged to stderr, and never crashes the run
 
 #### Session identity
 Every event a run writes carries the same session ID, without the VS Code extension creating it.
-- [ ] Session ID taken from the Cline runtime/plugin context (fallback: UUID generated in `setup()`)
-- [ ] Sidebar's "this session" view still works with plugin-written events (see Dashboard compatibility)
+- [x] Session ID taken from the Cline runtime/plugin context (fallback: UUID generated in `setup()`). Source: `ctx.session.sessionId` in `setup()`
+- [ ] Sidebar's "this session" view still works with plugin-written events (see Dashboard compatibility). The plugin writes the same `session-start` marker as `extension.ts`, but the sidebar filters on the extension's own UUID, so it will not show plugin events until the extension follows the latest `session-start`
 
 #### Metrics writer (shared contract)
 The plugin writes the exact same events as 1.x, using the existing writer.
-- [ ] Plugin imports `appendEvent()` from `src/metrics/writer.ts` — no second writer, no `jq`
-- [ ] Every event validates against `src/types/metrics.ts` (unit test)
-- [ ] Writes are atomic and queued; concurrent plugin + extension writes do not corrupt the file (covered by `scripts/benchmark-atomic-writes.js` or a test)
+- [x] Plugin imports `appendEvent()` from `src/metrics/writer.ts` — no second writer, no `jq`
+- [x] Every event validates against `src/types/metrics.ts` (unit test)
+- [~] Writes are atomic and queued; concurrent plugin + extension writes do not corrupt the file (covered by `scripts/benchmark-atomic-writes.js` or a test). The no-corruption part is tested across real processes (`src/plugin/__tests__/concurrentWrites.test.ts`). But the queue only works within one process, so cross-process writes **lose events** (last rename wins): 28–31 of 100 kept with 4 processes; 1 of 2 kept with one plugin and one extension write. See Open decision #6
 
 #### Edit Size Policy (three tiers: allow · require approval · block)
 Replaces No-Nuke. Measures each `apply_patch` / `editor` edit to a TS/JS file and responds in proportion.
@@ -219,4 +223,5 @@ A small, honest measurement of what ClineShield catches and costs.
 | 2 | How to record medium-tier "approval required" outcomes (reuse `edit-allowed`/`edit-blocked` after the user decides, or new event type) | open |
 | 3 | Whether to record sanity checks that missed the time budget (would need a new event type) | open |
 | 4 | Final tier thresholds for Edit Size Policy and Shell Command Guard (defaults above are proposals) | open |
-| 5 | Plugin package location: `clineshield/plugin/` inside the existing package, or a separate top-level package | open |
+| 5 | Plugin package location: `clineshield/plugin/` inside the existing package, or a separate top-level package | **proposed — awaiting owner:** plugin source in `clineshield/src/plugin/` (shares the extension's tsconfig, jest and `metrics/writer.ts` through a relative import), plus a minimal **root** `package.json` whose `cline.plugins` lists `./clineshield/src/plugin/index.ts`. Evidence: a git install has no subdirectory option and only reads the root `package.json` (`plugin-install.ts` `collectPluginEntries`; without that list it would load every `.js`/`.ts` in the repo). jiti loads the `.ts` entry and its relative imports without a build (checked locally with jiti 2.7.0 and the sandbox's options). The plugin imports only Node builtins, so the root `npm install --omit=dev` needs no dependencies. A separate top-level package would still need the root manifest and would import `writer.ts` across package boundaries, so it buys nothing |
+| 6 | Cross-process writes to `metrics.json` lose events (plugin worker vs. extension host, or two parallel Cline sessions). Options: a lock file in `appendEvent()` (costs hook time and needs stale-lock handling), one file per writer merged by the reader, or accept the loss | open |
