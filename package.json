@@ -8,6 +8,9 @@
     "type": "git",
     "url": "https://github.com/HansChundekad/ClineShield"
   },
+  "dependencies": {
+    "js-yaml": "^4.1.1"
+  },
   "cline": {
     "plugins": [
       "./clineshield/src/plugin/index.ts"
