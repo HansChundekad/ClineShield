@@ -11,7 +11,8 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { readEventsBySession } from '../metrics/reader';
+import { readEvents } from '../metrics/reader';
+import { filterVisibleEvents } from '../metrics/sessions';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -116,6 +117,7 @@ export class ChangeMapProvider implements vscode.TreeDataProvider<ChangeMapItem>
   constructor(
     private readonly workspaceRoot: string,
     private readonly sessionId: string,
+    private readonly activationTime: number,
   ) {
     // Own watcher — isolated from extension.ts watcher and MetricsSidebarProvider watcher.
     // Atomic writes (temp+rename) fire onDidCreate on macOS, not onDidChange.
@@ -145,8 +147,13 @@ export class ChangeMapProvider implements vscode.TreeDataProvider<ChangeMapItem>
   // ── Aggregation ─────────────────────────────────────────────────────────────
 
   private async aggregateStats(): Promise<Map<string, FileStats>> {
-    // readEventsBySession returns [] on any error — safe to call without extra try/catch
-    const events = await readEventsBySession(this.sessionId, this.workspaceRoot);
+    // readEvents returns [] on any error — safe to call without extra try/catch.
+    // Shows every session started since activation (see metrics/sessions.ts).
+    const events = filterVisibleEvents(
+      await readEvents(this.workspaceRoot),
+      this.activationTime,
+      this.sessionId
+    );
 
     const statsMap = new Map<string, FileStats>();
 
