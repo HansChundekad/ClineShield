@@ -11,15 +11,15 @@ The configuration is divided into 4 sections:
 - **risk** — Specifies protected files and directories that add additional weight to the risk score.
 - Gemini api key - users will paste their api key in here to access the LLM analysis feature.
 
-The config file is gitignored by default, allowing each developer to adjust safety thresholds locally without affecting the team.
+Add `.cline-shield.yml` to your `.gitignore` so each developer can adjust safety thresholds locally without affecting the team.
 
 ---
 
-**Hooks Automation**
+**Installing the hooks**
 
-ClineShield provides a **Generate Hooks** command that installs the required PreToolUse and PostToolUse scripts directly into `.clinerules/hooks/`.
+Copy `clineshield/hooks/PreToolUse` and `clineshield/hooks/PostToolUse` into your project's `.clinerules/hooks/` and make them executable (`chmod +x`). The hooks need `jq` on your PATH.
 
-Install the extension, add your YAML configuration, and run **Generate Hooks** — protection is applied automatically. No manual script placement or additional setup required.
+> **Note:** ClineShield is being rebuilt as a Cline plugin (2.0). See [SPEC.md](SPEC.md) for status — in current Cline versions a blocked edit from these hook files ends the whole task.
 
 ## No-Nuke Hook (Blocks Destructive Edits)
 

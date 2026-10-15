@@ -42,7 +42,7 @@ After editing `.cline-shield.yml`, run `Ctrl+Shift+P → ClineShield: Reload Con
 | Feature | When it fires | What it does |
 |---|---|---|
 | **No-Nuke** | Before the edit (PreToolUse) | Blocks edits that delete too many functions or change too much structure |
-| **Sanity Checker** | After the edit (PostToolUse) | Runs eslint → tsc → prettier, injects error context for Cline to fix |
+| **Sanity Checker** | After the edit (PostToolUse) | Runs prettier → eslint → tsc, injects error context for Cline to fix |
 | **Risk Engine** | After the edit (PostToolUse) | Scores the edit 0–100, writes risk-assessed event |
 | **Metrics Sidebar** | Live, on every write | Shows session stats and the risk level of the most recent edit |
 | **LLM Analysis** | After risk scoring (medium/high only) | Gemini explains in 2–3 sentences why the edit is risky; appears in sidebar below the risk badge |
