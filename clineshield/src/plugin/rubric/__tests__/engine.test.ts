@@ -1,6 +1,6 @@
 import { DEADLINE_MS, levelFor, scoreAction } from '../engine';
 import { validateConfig, withDefaults } from '../../config/schema';
-import { OPTS, action, change, update } from './fixtures';
+import { KEPT_HEAD, OPTS, PRODUCT_LINES, PRODUCT_REWRITE, PRODUCT_TEXT, action, change, update } from './fixtures';
 import type { Check } from '../types';
 
 const cfg = (raw: unknown = {}) => withDefaults(validateConfig(raw).config);
@@ -10,6 +10,77 @@ const known = (file: string, removed: number, total: number) => {
   c.matched = true;
   return c;
 };
+
+const productRewrite = (file: string) => {
+  const c = change(update(file, PRODUCT_LINES.slice(KEPT_HEAD), PRODUCT_REWRITE, []), { original: PRODUCT_TEXT });
+  c.matched = true;
+  return c;
+};
+const pts = (d: ReturnType<typeof scoreAction>, id: string) => d.files[0].findings.filter(f => f.id === id).reduce((s, f) => s + f.points, 0);
+
+describe('lost code counts once per file', () => {
+  it('class-file rewrite: asked under balanced, blocked under strict and in a protected path', () => {
+    const d = scoreAction(action([productRewrite('src/models/product.ts')]), cfg());
+    const f = d.files[0];
+    expect(f.findings.map(x => x.id)).toEqual(expect.arrayContaining(['rewrite_share', 'functions_removed', 'exports_removed']));
+    expect(f.score).toBe(60); // max(rewrite 50, functions 40 + exports 20), not 110
+    expect(d.tier).toBe('ask');
+    expect(scoreAction(action([productRewrite('src/models/product.ts')]), cfg({ preset: 'strict' })).tier).toBe('block');
+    const prot = scoreAction(action([productRewrite('src/auth/product.ts')]), cfg());
+    expect(prot.files[0].score).toBe(90);
+    expect(prot.tier).toBe('block');
+  });
+
+  it('the side that does not count keeps its findings with 0 points', () => {
+    const d = scoreAction(action([productRewrite('src/models/product.ts')]), cfg());
+    const share = d.files[0].findings.find(x => x.id === 'rewrite_share')!;
+    expect(share.points).toBe(0);
+    expect(share.detail).toContain('(counted in functions removed)');
+    expect(pts(d, 'functions_removed')).toBe(40);
+    expect(pts(d, 'exports_removed')).toBe(20);
+  });
+
+  it('when rewrite share is larger it counts and the structure findings are 0 points', () => {
+    const d = scoreAction(action([productRewrite('src/models/product.ts')]), cfg({ categories: { functions_removed: 20, exports_removed: 10 } }));
+    expect(d.files[0].score).toBe(50);
+    expect(pts(d, 'rewrite_share')).toBe(50);
+    expect(pts(d, 'functions_removed')).toBe(0);
+    expect(d.files[0].findings.find(x => x.id === 'functions_removed')!.detail).toContain('(counted in rewrite share)');
+  });
+
+  it('event counts are unchanged', () => {
+    const f = scoreAction(action([productRewrite('src/models/product.ts')]), cfg()).files[0];
+    expect(f.functionsDeleted).toBeGreaterThan(0);
+    expect(f.exportsDeleted).toBe(1);
+    expect(f.structuralChangePercent).toBeGreaterThanOrEqual(75);
+  });
+
+  it('small edit deleting 4 functions in a big file → functions_removed 40, ask', () => {
+    const fns = ['a', 'b', 'c', 'd'].flatMap(n => [`function ${n}() {`, '  return 1;', '}']);
+    const c = change(update('lib/big.ts', fns, ['// gone'], []), { original: [...fns, ...lines(1000)].join('\n') + '\n' });
+    c.matched = true;
+    const d = scoreAction(action([c]), cfg());
+    expect(pts(d, 'functions_removed')).toBe(40);
+    expect(d.files[0].score).toBe(40);
+    expect(d.tier).toBe('ask');
+  });
+
+  it('rewrite share 50% band (25) + 3 functions removed (30) scores 30, not 55', () => {
+    const fns = ['a', 'b', 'c'].flatMap(n => [`function ${n}() {`, '  return 1;', '}']);
+    const rest = lines(100 - fns.length);
+    const original = [...fns, ...rest];
+    const c = change(update('lib/mid.ts', [...fns, ...rest.slice(0, 41)], ['x'], []), { original: original.join('\n') + '\n' });
+    c.matched = true;
+    const d = scoreAction(action([c]), cfg());
+    expect(pts(d, 'rewrite_share') + pts(d, 'functions_removed')).toBe(30);
+    expect(d.files[0].score).toBe(30);
+  });
+
+  it('a category set to block still blocks', () => {
+    const d = scoreAction(action([productRewrite('src/models/product.ts')]), cfg({ categories: { rewrite_share: 'block' } }));
+    expect(d.tier).toBe('block');
+  });
+});
 
 describe('scoreAction', () => {
   it('small edit to a big file → allow, low', () => {

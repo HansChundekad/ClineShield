@@ -10,6 +10,7 @@ import { createClineShieldPlugin, TOOL_REJECTION_SUFFIX } from '../index';
 import type { AgentToolResult, ClineShieldPlugin } from '../index';
 import { validateEvent } from './validateEvent';
 import * as gather from '../rubric/gather';
+import { KEPT_HEAD, PRODUCT_LINES, PRODUCT_REWRITE, PRODUCT_TEXT } from '../rubric/__tests__/fixtures';
 
 type Event = { type: string; data: Record<string, unknown> };
 const snapshot = { agentId: 'a', conversationId: 'conv-1', runId: 'r' };
@@ -53,6 +54,18 @@ describe('Risk rubric (plugin)', () => {
     jest.restoreAllMocks();
     await fs.rm(root, { recursive: true, force: true });
     await fs.rm(home, { recursive: true, force: true });
+  });
+
+  it('full rewrite of a class file (apply_patch and editor) → asked, not blocked', async () => {
+    await fs.mkdir(path.join(root, 'src', 'models'), { recursive: true });
+    await fs.writeFile(path.join(root, 'src', 'models', 'product.ts'), PRODUCT_TEXT);
+    const removed = PRODUCT_LINES.slice(KEPT_HEAD);
+    const viaPatch = await call('apply_patch', patch('*** Update File: src/models/product.ts', '@@', ...removed.map(l => `-${l}`), ...PRODUCT_REWRITE.map(l => `+${l}`))).before();
+    expect(viaPatch).toMatchObject({ policy: { autoApprove: false } });
+    expect(viaPatch).not.toHaveProperty('skip');
+    const viaEditor = await call('editor', { path: 'src/models/product.ts', old_text: removed.join('\n'), new_text: PRODUCT_REWRITE.join('\n') }).before();
+    expect(viaEditor).toMatchObject({ policy: { autoApprove: false } });
+    expect(viaEditor).not.toHaveProperty('skip');
   });
 
   it('small edit to a big file → allowed, edit-allowed + risk-assessed low', async () => {

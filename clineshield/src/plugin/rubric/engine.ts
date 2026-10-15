@@ -40,7 +40,29 @@ function toFinding(raw: RawFinding, setting: number | 'off' | 'block'): Finding 
   return { ...base, points: Math.round(setting * raw.weight), block: false, logOnly: false };
 }
 
+/**
+ * Lost code counts once per file: only the larger of rewrite_share and
+ * functions_removed + exports_removed scores. The smaller side stays in the
+ * findings (reasons, counts) with 0 points. Safe to run again after more
+ * findings are added.
+ */
+function countLostCodeOnce(findings: Finding[]): void {
+  const sum = (ids: string[]) => findings.filter(x => ids.includes(x.id)).reduce((s, x) => s + x.points, 0);
+  const rewrite = findings.filter(x => x.id === 'rewrite_share');
+  const structure = findings.filter(x => x.id === 'functions_removed' || x.id === 'exports_removed');
+  const rewritePoints = sum(['rewrite_share']);
+  const structurePoints = sum(['functions_removed', 'exports_removed']);
+  if (rewritePoints === 0 || structurePoints === 0) return;
+  const [loser, note] = rewritePoints >= structurePoints ? [structure, 'rewrite share'] : [rewrite, 'functions removed'];
+  for (const x of loser) {
+    if (x.points === 0) continue;
+    x.points = 0;
+    x.detail += ` (counted in ${note})`;
+  }
+}
+
 function finalize(f: FileScore, isTest: boolean): void {
+  countLostCodeOnce(f.findings);
   const scored = f.findings.filter(x => !x.logOnly);
   let score = scored.reduce((s, x) => s + x.points, 0);
   if (isTest) {
