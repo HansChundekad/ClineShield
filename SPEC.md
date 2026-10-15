@@ -185,6 +185,25 @@ The extension becomes a viewer: open the workspace in VS Code, run Cline from th
 - [ ] Extension no longer needs to set env vars for hooks; it still works when no plugin has run yet
 - [ ] Manual check: one real CLI session in `test-workspace/` with the sidebar open
 
+#### LLM risk explanation (opt-in)
+For medium/high risk edits, the VS Code extension asks an LLM for a 2–3 sentence plain-English explanation
+and shows it in the sidebar. The rules engine still owns the score; the LLM only explains. The call stays in
+the extension (not the plugin): it is a display feature, and plugin hooks have a 3 s budget. Cline's plugin
+API gives plugins no access to the user's Cline model or credentials, so ClineShield uses its own key.
+- [ ] **Off by default.** Enabled only by an explicit opt-in (setting or first-run prompt) that states the diff and file contents are sent to the provider
+- [ ] **One provider in 2.0: bring-your-own Gemini key** (Gemini 2.5 Flash, existing `llmAnalyzer.ts`)
+- [ ] Key stored in VS Code SecretStorage via a "ClineShield: Set Gemini API Key" command (and a matching "Clear" command); never in YAML, settings.json or logs
+- [ ] `gemini_api_key` in `.cline-shield.yml` is ignored and triggers a one-time warning pointing to the command
+- [ ] Secrets stripped from the diff and file contents before sending (API keys, tokens, `.env`-style assignments); unit-tested
+- [ ] Plugin writes the diff sidecar the extension reads (1.x behaviour); no LLM call happens in the plugin
+- [ ] Extension works fully with the feature off or no key set (rules-only scoring); existing rate limit (6 s) kept
+- [ ] README explains what is sent, to whom, and how to turn it off
+
+Later (not in 2.0 — add a feature section here before building):
+- VS Code Language Model API (`vscode.lm`) — no key; uses models other extensions register (in practice GitHub Copilot). Not usable by Claude Code-only users.
+- OpenAI-compatible endpoint (base URL + model + key) — covers OpenRouter, local Ollama (free, nothing leaves the machine), and others.
+- CLI-only users without VS Code: plugin-side explanation using a `CLINESHIELD_LLM_API_KEY` env var.
+
 #### Automated tests & CI
 - [ ] Unit tests for every new module (policy tiers, patch parser, command parser, sanity budget, config)
 - [ ] Plugin-level tests: call `beforeTool` / `afterTool` with fake tool calls and assert results + metrics events
