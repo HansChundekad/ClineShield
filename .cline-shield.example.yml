@@ -1,60 +1,45 @@
-# ClineShield Configuration
-# Copy this file to .cline-shield.yml and customize for your project.
-# .cline-shield.yml is gitignored — each developer sets their own thresholds.
+# ClineShield configuration (2.0 plugin). Every key is optional; no file = balanced.
+#
+# Copy to ~/.cline-shield.yml; it applies to every repo. The plugin never reads a
+# .cline-shield.yml inside a repo, so a cloned repo can't change your settings.
+# Hard rules (self-protection, placeholder rewrites, secrets added) can't be configured.
 
-no-nuke:
-  # Maximum number of functions Cline may delete in a single edit.
-  # Edits that exceed this are blocked and must be split into smaller changes.
-  max_deleted_functions: 3
+mode: enforce          # enforce | observe (log asks/blocks; hard rules still block)
+preset: balanced       # relaxed (60/90) | balanced (40/70) | strict (25/50)
+on_error: ask          # ask | allow: what happens if ClineShield fails
+offline: false         # true = no package registry lookups
 
-  # Minimum number of structural-change lines required before the percent
-  # threshold is also applied. Prevents false positives on tiny files.
-  max_structural_change_lines: 10
+# Override the preset's cut-offs (0-100, ask < block)
+# cutoffs: { ask: 40, block: 70 }
 
-  # Maximum percentage of functions that may be added/removed in one edit
-  # (only enforced when max_structural_change_lines is also exceeded).
-  max_structural_change_percent: 75
+# Change a category's points (its maximum; bands scale with it), or off / block.
+# Category ids are listed in SPEC.md "Risk rubric".
+# categories:
+#   ci_config: 40
+#   generated: off
+#   tests_skipped: block
 
-sanity:
-  # Linting/formatting tools to run after every Cline file write.
-  # Supported values: prettier, eslint, tsc
-  # Tools run sequentially; the chain stops on the first failure.
-  tools:
-    - prettier
-    - eslint
-    - tsc
+# Protected paths (globs); setting this key replaces the defaults:
+# src/auth/**, src/config/**, src/middleware/**, auth/**, config/**.
+# CODEOWNERS paths are always protected.
+# protected_paths: ["src/payments/**"]
 
-  # How many times Cline is allowed to retry a failing sanity check
-  # before ClineShield stops injecting contextModification messages.
-  max_retries: 3
+# trusted_commands: ["npm test", "make build"]   # never scored
+# trusted_domains: ["api.mycompany.com"]         # not counted as new domains
 
-  # Seconds to wait for a single tool (prettier/eslint/tsc) before
-  # killing the process and treating the check as failed.
-  timeout_seconds: 30
+# Per-folder overrides (apply in every repo); the first matching glob wins.
+# paths:
+#   "src/auth/**": { preset: strict }
+#   "tests/**":    { preset: relaxed, categories: { tests_skipped: off } }
 
-# Gemini API key for LLM risk analysis (optional — top-level key, not nested).
-# Get yours at https://aistudio.google.com/apikey
-# Keep .cline-shield.yml out of git if you put your key here.
-# gemini_api_key: YOUR_KEY_HERE
+# Custom rules: match path (glob), content (regex on added lines) or command (regex).
+# Patterns up to 200 characters; a repeated group ((...)+, (...)*, (...){n}) is
+# rejected. Content rules test the first 500 characters of each line.
+# custom_rules:
+#   - { match: path, pattern: "billing/**", points: 40, message: "Billing code: ask first" }
 
-risk:
-  # Files and directories treated as high-risk (+30 points to risk score).
-  #
-  # Trailing slash  → directory prefix match (any file under that path)
-  # No trailing slash → exact filename match (basename only)
-  #
-  # Examples:
-  #   src/auth/    matches src/auth/service.ts, src/auth/middleware.ts
-  #   .env         matches .env only — NOT .env.local or .env.production
-  #   .env.local   list each variant explicitly if you want them all covered
-  #
-  # Set to an empty list ([]) to disable the protected path rule entirely.
-  protected_paths:
-    - src/auth/
-    - src/config/
-    - src/middleware/
-    - auth/
-    - config/
-    - .env
-    - .env.local
-    - .env.production
+# No API keys here: the Gemini key for LLM explanations is set in the VS Code extension.
+#
+# 1.x hook settings (no-nuke, sanity, risk, gemini_api_key) are still read from
+# <workspace>/.cline-shield.yml by the 1.x extension until it is retired, and
+# ignored by the plugin.

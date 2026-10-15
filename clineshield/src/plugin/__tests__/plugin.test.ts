@@ -141,18 +141,12 @@ describe('ClineShield plugin', () => {
   });
 
   describe('hooks', () => {
-    it('beforeTool and afterTool pass through calls the policy cannot parse', async () => {
-      const p = createClineShieldPlugin();
+    it('an edit input the rubric cannot parse is sent to the user (on_error: ask)', async () => {
+      const p = createClineShieldPlugin({ homeDir: root });
       p.setup?.({}, { workspaceInfo: { rootPath: root } });
-      await p.flush();
-
       const before = await p.hooks?.beforeTool?.({ snapshot, tool: { name: 'editor' }, toolCall, input: toolCall.input });
-      const after = await p.hooks?.afterTool?.({
-        snapshot, tool: { name: 'editor' }, toolCall, input: toolCall.input,
-        result: { output: 'ok' }, startedAt: new Date(), endedAt: new Date(), durationMs: 1,
-      });
-      expect(before).toBeUndefined();
-      expect(after).toBeUndefined();
+      expect(before).toMatchObject({ policy: { autoApprove: false } });
+      await p.flush();
     });
 
     it('hooks do not throw when called before setup()', async () => {

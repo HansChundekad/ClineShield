@@ -19,3 +19,17 @@ jobs:
           cache-dependency-path: clineshield/package-lock.json
       - run: npm ci
       - run: npm test
+
+  plugin-install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install like `cline plugin install` (root deps only)
+        run: npm install --omit=dev
+      - name: Plugin loads without clineshield/node_modules
+        run: |
+          test ! -e clineshield/node_modules
+          npx --yes jiti@2.7.0 clineshield/scripts/check-plugin-load.ts
