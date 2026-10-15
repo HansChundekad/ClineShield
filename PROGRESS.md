@@ -1,22 +1,24 @@
-# ClineShield Development Progress
+# ClineShield 1.x Build Log (frozen)
+
+> **Frozen 2026-10-14.** This is the history of how 1.x (VS Code extension + hook files) was built.
+> It is no longer updated. Current features, status and roadmap live in **[SPEC.md](SPEC.md)**.
 
 ## Phase 0: Foundation ✅ COMPLETE
 - [x] Extension scaffold (activate, deactivate, status bar)
 - [x] metrics.json schema defined (src/types/metrics.ts)
-- [x] Reader utilities (src/utils/metricsReader.ts)
-- [x] Writer utilities (src/utils/metricsWriter.ts)
+- [x] Reader utilities (src/metrics/reader.ts)
+- [x] Writer utilities (src/metrics/writer.ts)
 - [x] File watcher for metrics.json
 - [x] sessionId generation and passing via env var
 
-## Phase 1: No-Nuke Hook (PreToolUse) 🔄 IN PROGRESS
-- [x] AST analyzer skeleton
-- [x] Patch parsing (Cline's custom format)
-- [x] Function deletion detection (regex-based)
+## Phase 1: No-Nuke Hook (PreToolUse) ✅ COMPLETE
+- [x] AST analyzer prototype (src/hooks/clineshield-analyze.js — standalone, not wired into the hooks)
+- [x] Patch parsing (Cline's custom patch format)
+- [x] Function deletion detection (regex-based; matches `function` declarations and `const x = … =>` only)
 - [x] Structural change calculation
-- [x] Hardcoded blocking thresholds (3 functions, 10+ lines + 75%)
+- [x] Blocking thresholds (3 functions, or 10+ lines and 75% change)
 - [x] Write to metrics.json (edit-blocked, edit-allowed events)
-- [x] Fix function regex (exclude control flow) ← CURRENT
-- [x] Create demo files (user-service.ts)
+- [x] Create demo files
 - [x] End-to-end test (small edit allowed, big rewrite blocked)
 - [x] Verify metrics.json integrity
 
@@ -24,7 +26,7 @@
 
     Step 1 (Basic Hook): ✅
     1.1: Skeleton - verified real Cline input schema before assuming field names
-    1.2: Run tools prettier → eslint → tsc (sequential, stop on first failure, <10s)
+    1.2: Run tools prettier → eslint → tsc (sequential, stop on first failure)
     1.3: Write sanity-passed/sanity-failed to metrics.json (atomic write, schema-exact)
 
     Step 2 (Retry Logic): ✅
@@ -40,8 +42,7 @@
     - package.json (prettier, eslint, typescript-eslint, typescript)
     - .prettierrc, eslint.config.js, tsconfig.json
 
-    
-## Phase 3: YAML Config → Hook Generator
+## Phase 3: YAML Config ✅ COMPLETE
 - [x] Created .cline-shield.example.yml (committed template with comments)
 - [x] Created .cline-shield.yml (local config, gitignored)
 - [x] Added .cline-shield.yml to .gitignore
@@ -65,10 +66,9 @@ Implementation: Environment variable approach (no code generation)
 - [x] generateTestMetrics command for dev/demo population
 - [x] Session-scoped stats (readEventsBySession — not all-time)
 - [x] 5 stat rows: Edits Blocked, Edits Allowed, Sanity Passed, Sanity Failed, Avg Retries
-- [x] Avg Retries: averages max retryCount per unique file (correct formula)
+- [x] Avg Retries: averages max retryCount per unique file
 - [x] Most Recent Edit panel with badge + relative timestamp
 - [x] session-start synthetic event excluded from Edits Allowed counter
-- [x] Merged onto feature/phase-4-merging (cherry-pick strategy, Phase 3 preserved)
 
 Integration tested:
 - Sidebar shows 0 on fresh session (session isolation confirmed)
@@ -87,14 +87,13 @@ Integration tested:
   - Score capped [0, 100]; level: low(0-30), medium(31-60), high(61-100)
   - RiskReason shape matches RiskAssessedEvent.data.reasons schema
 - [x] rulesEngine.test.ts (51 tests, all passing)
-- [x] Wire into PostToolUse hook (read structuralChangePercent/deletedFunctions from metrics.json, write risk-assessed event)
+- [x] Wired into PostToolUse hook as a bash port (reads structuralChangePercent/deletedFunctions from metrics.json, writes risk-assessed event)
 - [x] Wire protected_paths to YAML config (configLoader.ts + .cline-shield.example.yml)
   - Colon-separated env var CLINESHIELD_PROTECTED_PATHS
   - Trailing slash = directory prefix match; no trailing slash = exact basename match
   - Empty list sets "none" sentinel to disable rule
-  - Bash hook loop replaces hardcoded regex
-- [x] Surface risk level in sidebar (Most Recent Edit panel, Option B)
-  - mostRecent scoped to edit-allowed/edit-blocked only (risk-assessed events no longer overwrite panel)
+- [x] Surface risk level in sidebar (Most Recent Edit panel)
+  - mostRecent scoped to edit-allowed/edit-blocked only
   - risk-assessed event linked by file + timestamp >= edit timestamp
   - edit-blocked shows "Risk: — (edit was blocked)"
   - edit-allowed shows score + LOW/MEDIUM/HIGH badge (green/yellow/red)
@@ -103,62 +102,42 @@ Integration tested:
 
 - [x] llmAnalyzer.ts — callGemini(diff, fileContents, filePath, rulesScore, reasons) → GeminiAnalysis | null
   - GeminiAnalysis = { explanation: string } — LLM explains why, rules engine owns score/level/reasons
-  - Prompt: rules engine context given upfront, LLM asked for 2-3 sentence code-level explanation only
-- [x] Step 1: Sidecar write in test-workspace PostToolUse hook (diff-context.json, file-path matched, inside || true block)
-- [x] Step 2: llmTrigger.ts — processRiskEvent() reads sidecar + file contents, calls Gemini, appends llm-analysis event
-  - Wired into extension.ts watcher: seen Set deduplicated, void fire-and-forget per medium/high risk event
-  - reasoning = result.explanation (plain string, fits LLMAnalysisEvent schema directly, no JSON.stringify)
+- [x] Sidecar write in PostToolUse hook (.cline-shield/diff-context.json, file-path matched)
+- [x] llmTrigger.ts — processRiskEvent() reads sidecar + file contents, calls Gemini, appends llm-analysis event
+  - Wired into extension.ts watcher: seen Set deduplicated, fire-and-forget per medium/high risk event
   - Rate limited: 6s minimum between Gemini calls (free tier: 10 RPM); sequential queue, no drops
-- [x] Step 3: Sidebar display of llm-analysis summary
-  - MetricsSidebarProvider finds llm-analysis by relatedRiskEventTimestamp
-  - llmPending flag drives 10s "Analyzing..." loading state in webview
-  - metrics.html getLlmHtml() renders Gemini Analysis block when reasoning arrives
-- [x] Step 4: Smoke test (scripts/smoke-test-phase6.js, npm run smoke:phase6)
-  - Builds TypeScript, sets up temp workspace with realistic auth diff + sidecar
-  - Calls processRiskEvent with real callGemini, waits up to 15s, prints reasoning
-  - Always exits 0 — LLM failure never causes test failure
-- [x] Fix: Gemini calls now trigger correctly — atomic rename fires onDidCreate not onDidChange;
-  watcher now handles both events
+- [x] Sidebar display of llm-analysis summary (10s "Analyzing..." loading state)
+- [x] Smoke test (scripts/smoke-test-phase6.js, npm run smoke:phase6) — always exits 0
+- [x] Fix: atomic rename fires onDidCreate not onDidChange; watcher handles both events
 
 Key decisions:
 - Sidecar bridges diff from hook process to extension process (matched on file path, not timestamp)
 - Post-edit file contents read by extension — gives Gemini real code even when diff unavailable
-- seen Set lives in extension.ts module scope; llmTrigger processes one event at a time
 - LLM explains why the code is risky — score, level, reasons owned by rules engine only
 
 Known limitations:
 - Sidecar race: rapid consecutive edits can overwrite diff-context.json before extension reads it;
   path-matching guard ensures wrong diff → empty diff (not wrong diff applied to wrong file)
-- Cross-process writes (hook bash → extension Node) not serialised by the in-process write queue;
-  unique temp paths prevent JSON corruption but a hook and extension writing simultaneously may
-  lose one event (last rename wins). Acceptable given hooks and extension rarely write concurrently.
-  
+- Cross-process writes (hook bash → extension Node) are not serialised by the in-process write queue;
+  unique temp paths prevent JSON corruption but simultaneous writes may lose one event (last rename wins)
+
 ## Phase 7: Change Map TreeView ✅ COMPLETE
 
-- [x] ChangeMapProvider (src/changeMap/ChangeMapProvider.ts)
-  - Implements vscode.TreeDataProvider — read-only, never writes to metrics.json
-  - Aggregates per file: edit count (edit-allowed + edit-blocked) and worst risk level from risk-assessed events
-  - Folder nodes derive color from worst child file level
-  - File nodes: colored circle icon (green/yellow/red), filename label, edit count + risk level description
-  - Folder nodes: colored folder icon, folder name label, total edits + worst level, expanded by default
-  - Empty state: "No edits recorded this session" when no events exist
-  - Own FileSystemWatcher (isolated from extension.ts and MetricsSidebarProvider watchers)
-  - Full error isolation: getChildren() returns [] on any failure, other features unaffected
-- [x] Registered in extension.ts (registerTreeDataProvider, added to context.subscriptions)
-- [x] Registered in package.json (clineshield.changeMapView, stacked below Metrics panel)
-- [x] Click behaviour: file nodes open current file via vscode.open (absolute path from workspaceRoot + relative filePath)
+- [x] ChangeMapProvider (src/changeMap/ChangeMapProvider.ts) — read-only TreeDataProvider
+  - Per file: edit count (edit-allowed + edit-blocked) and worst risk level from risk-assessed events
+  - Folder nodes derive color from worst child file; empty state when no events
+  - Own FileSystemWatcher; getChildren() returns [] on any failure
+- [x] Registered in extension.ts and package.json (clineshield.changeMapView, below Metrics)
+- [x] Click opens the file
 
-## Phase 8: Final Touches ⏸️ NOT STARTED
+## Phase 8: Generate Hooks command ❌ CANCELLED
+Superseded by ClineShield 2.0 (Cline plugin). See SPEC.md Part 2.
 
-- [ ] "Generate Hooks" command — copies PreToolUse and PostToolUse scripts into `.clinerules/hooks/` automatically so users don't have to place them manually
-- [ ] User installs extension, adds `.cline-shield.yml`, clicks Generate Hooks, and Cline is protected — no manual file setup needed
+## Release
+- v0.1.0 VSIX published: https://github.com/HansChundekad/ClineShield/releases/tag/v0.1.0
 
 ---
 
-## Known Issues / Decisions
-- structuralChangePercent unreliable with no-context patches (demo workaround: min 10 lines threshold)
-- Function regex needs to exclude control flow (if/while/for/switch)
-- Risk scoring will replace structuralChangePercent threshold post-hackathon
-
-## Next Session Reminder
-Read PROGRESS.md first to see current state before asking what to do next.
+## Known Issues (1.x)
+- structuralChangePercent is unreliable with no-context patches (mitigated by the 10-line minimum)
+- In current Cline (SDK-based), a PreToolUse `cancel` aborts the whole task — see SPEC.md "Why 1.x is out of date"

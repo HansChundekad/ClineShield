@@ -189,6 +189,16 @@ The extension becomes a viewer: open the workspace in VS Code, run Cline from th
 - [ ] Extension no longer needs to set env vars for hooks; it still works when no plugin has run yet
 - [ ] Manual check: one real CLI session in `test-workspace/` with the sidebar open
 
+#### Terminal visibility (Cline CLI)
+CLI users without VS Code can see what ClineShield did this session without leaving the terminal. (Owner agreed 2026-10-14.)
+- [ ] Plugin declares the `"commands"` capability (alongside `"hooks"`) and registers `/clineshield` with `api.registerCommand` in `setup()`
+- [ ] `/clineshield` prints this session's stats (edits allowed / held for approval / blocked, sanity passed / failed, avg retries) read from `metrics.json` filtered on the plugin's session id
+- [ ] Also prints the riskiest files this session (top 5 by worst `risk-assessed` score, with level)
+- [ ] Prints a clear one-liner when there are no events yet; never throws (errors caught like the hooks)
+- [ ] Unit test: command handler output against a fixture `metrics.json`
+- [ ] Manual check (CLI): how the CLI displays a `beforeTool` `skip` reason — does the user see it, or only the model? Record the answer here
+- [ ] Manual check (CLI): how the CLI shows the approval prompt and whether the `appendContext` note explaining *why* is visible to the user. Record the answer here
+
 #### LLM risk explanation (opt-in)
 For medium/high risk edits, the VS Code extension asks an LLM for a 2–3 sentence plain-English explanation
 and shows it in the sidebar. The rules engine still owns the score; the LLM only explains. The call stays in

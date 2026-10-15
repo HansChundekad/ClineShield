@@ -32,11 +32,10 @@ sanity:
   # killing the process and treating the check as failed.
   timeout_seconds: 30
 
-llm:
-  # Gemini API key for LLM risk analysis (Phase 6).
-  # Get yours at https://aistudio.google.com/apikey
-  # .cline-shield.yml is gitignored — safe to put your key here.
-  # gemini_api_key: YOUR_KEY_HERE
+# Gemini API key for LLM risk analysis (optional — top-level key, not nested).
+# Get yours at https://aistudio.google.com/apikey
+# Keep .cline-shield.yml out of git if you put your key here.
+# gemini_api_key: YOUR_KEY_HERE
 
 risk:
   # Files and directories treated as high-risk (+30 points to risk score).

@@ -1,58 +1,28 @@
-# ClineShield Hook Testing
+# ClineShield Hook Testing (1.x hook files)
 
-## Status: Phase 2 Complete ✅
-- Direct patch parsing (no patch command needed)
-- Detects added/deleted lines and functions
-- Calculates structural change percentage
-- Warnings for large changes (>50%) or deletions (>3 functions)
-- Fast (<100ms) and reliable
+> These are the 1.x bash hooks. They are being replaced by the 2.0 Cline plugin — see `SPEC.md`.
+> The canonical copies live in `clineshield/hooks/`; the copies in this folder may lag behind.
 
----
+## What PreToolUse does
+- Parses Cline's `apply_patch` format directly (no `patch` / `git apply`)
+- Counts added/deleted lines and deleted functions in TS/JS files
+- Calculates structural change % (changed lines ÷ patch lines)
+- **Blocks** (`{"cancel": true, "errorMessage": …}`) when more than 3 functions are deleted, or the patch is
+  more than 10 lines with more than 75% change (thresholds configurable via `.cline-shield.yml`)
+- Writes `edit-blocked` / `edit-allowed` to `.cline-shield/metrics.json` in the current directory
+- Requires `jq`; without it the hook allows everything and logs a warning
 
-## Implementation Approach
-
-**Parses Cline's custom patch format directly:**
-- No temp files needed
-- No `patch` or `git apply` command
-- Simple line-by-line parsing
-- Pattern matching for function signatures
-
-**Function Detection Patterns:**
-- `function foo()` and `async function foo()`
-- `methodName(): Type {` (TypeScript methods)
-- `async methodName()` (async methods)
-- `const foo = () => {}` and `const foo = async () => {}`
-
----
-
-## Quick Test with Cline
-
-**Setup:** Enable Cline hooks in VS Code settings
-
-**Test 1 - Small edit:**
-```
-Ask Cline: "Add logging to validateEmail in user-service.ts"
-Expected: Low change % (e.g., 20%), 0 functions deleted → ALLOWED
-```
-
-**Test 2 - Large change:**
-```
-Ask Cline: "Rewrite user-service.ts to be more concise"
-Expected: ⚠️ WARNING: Large structural change (100%)
-Expected: ⚠️ WARNING: Multiple functions deleted (8)
-```
-
-**Test 3 - Non-JS file:**
-```
-Create a test.json file, then ask Cline: "Edit test.json"
-Expected: "Skipping analysis (not a TS/JS file)"
-```
+**Function detection** (regex): `function foo(`, `export [async] function foo`, `const foo = … =>`.
+Class methods are not detected.
 
 ---
 
 ## Manual Tests
 
-**Test 1: Basic function addition**
+Run these from a scratch directory — the hook writes `.cline-shield/metrics.json` into the current directory.
+Use `cat <<'EOF'` (not `echo`) so `\n` escapes stay inside the JSON.
+
+**Test 1: Function addition → allowed**
 ```bash
 cat > /tmp/test1.json << 'EOF'
 {
@@ -64,11 +34,11 @@ cat > /tmp/test1.json << 'EOF'
   }
 }
 EOF
-cat /tmp/test1.json | .clinerules/hooks/PreToolUse 2>&1 | grep "ANALYSIS RESULTS" -A 5
+cat /tmp/test1.json | path/to/PreToolUse 2>/dev/null
 ```
-**Expected:** 1 added function detected
+**Expected:** `{"cancel":false}`
 
-**Test 2: Function deletion with warning**
+**Test 2: Four function deletions → blocked**
 ```bash
 cat > /tmp/test2.json << 'EOF'
 {
@@ -80,11 +50,11 @@ cat > /tmp/test2.json << 'EOF'
   }
 }
 EOF
-cat /tmp/test2.json | .clinerules/hooks/PreToolUse 2>&1 | grep "WARNING"
+cat /tmp/test2.json | path/to/PreToolUse 2>/dev/null
 ```
-**Expected:** ⚠️ WARNING: Multiple functions deleted (4)
+**Expected:** `{"cancel":true,"errorMessage":"⛔ ClineShield: 4 functions deleted, 100% structural change. …"}`
 
-**Test 3: Large structural change**
+**Test 3: Structural change calculation**
 ```bash
 cat > /tmp/test3.json << 'EOF'
 {
@@ -96,14 +66,12 @@ cat > /tmp/test3.json << 'EOF'
   }
 }
 EOF
-cat /tmp/test3.json | .clinerules/hooks/PreToolUse 2>&1 | grep "Structural change"
+cat /tmp/test3.json | path/to/PreToolUse 2>&1 >/dev/null | grep "Structural change"
 ```
-**Expected:** Structural change: ~88% (8/9 lines)
+**Expected:** `Structural change: 88% (8/9 lines)` — allowed, because the patch is not over 10 lines.
 
 ---
 
 ## Performance
-
-- **Target:** <2 seconds (per CLAUDE.md requirement)
-- **Actual:** <100ms (pure bash parsing, no external tools)
-- **Memory:** Minimal (no temp files, streams data)
+- **Target:** < 2 seconds
+- **Measured:** ~80 ms per call for a blocked `apply_patch` (macOS, 2026-10-14)

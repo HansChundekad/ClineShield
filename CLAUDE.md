@@ -2,7 +2,7 @@
 
 **ClineShield** - VS Code extension adding safety guardrails to Cline AI through hooks and quality checks.
 
-PROGRESS.md tracks completed work and current status, make sure to update it once a feature or step is completed
+**SPEC.md is the source of truth** for features, status and roadmap. Read the relevant section before starting work, and tick its checkboxes in the same commit once a feature is implemented and tested. If the spec turns out to be wrong, fix it in that commit. PROGRESS.md is the frozen 1.x build log — do not update it.
 
 metrics.json:
 - Format: JSON array (NOT JSONL)
@@ -52,24 +52,25 @@ sessionId:
 
 ## File Organization
 
+Current layout (1.x). The 2.0 plugin layout is decided in SPEC.md.
+
 ```
-src/
-├── config/
-│   └── configLoader.ts           // <100 lines - reads .cline-shield.yml, sets env vars
-├── extension/
-│   ├── extension.ts              // <100 lines - activation only
-│   ├── hookGenerator.ts          // <200 lines - YAML → scripts
-│   ├── metricsWatcher.ts         // <150 lines - file watcher
-│   ├── sidebar/provider.ts       // <200 lines - webview logic
-│   ├── changeMap/provider.ts     // <250 lines - TreeView logic
-│   └── riskAnalysis/
-│       ├── rulesEngine.ts        // <150 lines - scoring logic
-│       └── llmAnalyzer.ts        // <100 lines - vscode.lm wrapper
-└── hooks/
-    ├── preToolUse.template.sh    // <150 lines - hook scaffold
-    ├── postToolUse.template.sh   // <200 lines - sanity + risk
-    └── analyze.template.js       // <200 lines - AST diff logic
+clineshield/
+├── hooks/
+│   ├── PreToolUse                // bash - No-Nuke guard (canonical copy)
+│   └── PostToolUse               // bash - sanity checks + bash port of risk rules + diff sidecar
+├── scripts/                      // smoke-test-phase6.js, benchmark-atomic-writes.js
+└── src/
+    ├── extension.ts              // activation, status bar, metrics watcher, commands
+    ├── config/configLoader.ts    // reads .cline-shield.yml, sets CLINESHIELD_* env vars
+    ├── types/metrics.ts          // metrics.json schema (source of truth)
+    ├── metrics/{reader,writer}.ts
+    ├── sidebar/                  // MetricsSidebarProvider.ts + metrics.html webview
+    ├── changeMap/ChangeMapProvider.ts
+    ├── extension/riskAnalysis/   // rulesEngine.ts, llmAnalyzer.ts (Gemini), llmTrigger.ts
+    └── hooks/clineshield-analyze.js  // standalone AST prototype, not used by the hooks
 ```
+`.clinerules/hooks/` (repo root) and `test-workspace/.clinerules/hooks/` hold copies of the hooks; `clineshield/hooks/` is canonical.
 
 ## Testing Requirements
 
@@ -113,7 +114,7 @@ Write tests before implementation (TDD). Focus on:
 
 ## Common Pitfalls
 
-- **Check LLM availability** - Extension must work without LLM (Copilot may not be installed)
+- **Check LLM availability** - Extension must work without LLM (no Gemini API key configured)
 - **Use async file operations** - Extension host must not block
 - **Atomic writes for shared state** - Use temp file + rename pattern
 

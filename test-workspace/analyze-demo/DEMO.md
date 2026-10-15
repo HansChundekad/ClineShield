@@ -47,7 +47,6 @@ node clineshield/src/hooks/clineshield-analyze.js \
 ✅ Function expressions assigned to variables
 ✅ Works with both TypeScript and JavaScript
 
-### What's Next (Phase 3):
-- Structural change percentage calculation
-- Export deletion detection
-- Interface/type changes
+### Status
+`clineshield-analyze.js` is a standalone AST prototype. The 1.x hooks do **not** call it — they use
+regex-based patch parsing. Whether the 2.0 plugin adopts it is tracked in `SPEC.md`.
