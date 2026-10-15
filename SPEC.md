@@ -106,6 +106,7 @@ Cline CLI / SDK agent loop
 | `afterTool` receives `result` and `durationMs`; may return `{ result }` (replace output), `{ appendContext }`, `{ stop }` | same files (`AgentAfterToolResult`) |
 | `appendContext` text is injected as a `<hook_context>` message the model sees on its next request | `agent-runtime.ts` |
 | Requiring approval with no approval callback configured (headless runs) **denies** the call | `agent-runtime.ts` `requestToolApproval` |
+| A denied approval becomes a skip: `afterTool` still runs, with `result.isError` and output `{ error: "<reason> -- " + TOOL_REJECTION_SUFFIX }`. A `beforeTool` `appendContext` is queued even when the call is then denied or skipped | `agent-runtime.ts` L2432–2483 (hook loop, approval), L2547 (skip → error result), L2592 (afterTool); `TOOL_REJECTION_SUFFIX` in `sdk/packages/shared/src/llms/tools.ts` L104 |
 | Plugin hooks time out after **3000 ms** (host option, no env override) | `sdk/packages/core/src/extensions/plugin/plugin-sandbox.ts` |
 | A hook that throws or times out is swallowed (returns `undefined`): `beforeTool` fails **open**, `afterTool` feedback is lost silently | `sdk/packages/core/src/extensions/plugin/plugin-registry.ts` |
 | Plugins load from `<workspace>/.cline/plugins/` or `~/.cline/plugins/`; installed with `cline plugin install <git url | npm | local path>`; single-file URL installs may only import Node builtins and `@cline/*` | [docs: Plugins](https://docs.cline.bot/customization/plugins), [Writing Plugins](https://docs.cline.bot/sdk/guides/writing-plugins) |
@@ -141,13 +142,20 @@ Replaces No-Nuke. Measures each `apply_patch` / `editor` edit to a TS/JS file an
 - **Small** → allowed silently, writes `edit-allowed`.
 - **Medium** → user must approve (`policy: { autoApprove: false }`) and Cline is told why via `appendContext`.
 - **Destructive** → skipped with `{ skip: true, reason }`; Cline sees the reason, the task continues, writes `edit-blocked`.
-- [ ] Measures deleted functions and structural change % for `apply_patch` (port of the 1.x patch parser) and `editor` edits
-- [ ] Tier thresholds come from config; proposed defaults — block: > 3 deleted functions, or > 75 % change on a > 10-line patch (1.x behaviour); approve: 2–3 deleted functions, or 40–75 % change on a > 10-line patch
-- [ ] Destructive edits are skipped, not stopped: the run continues and the model receives the reason
-- [ ] Medium edits trigger an approval prompt in the CLI; in headless runs they are denied (documented)
-- [ ] Non-TS/JS files and non-edit tools pass through untouched
-- [ ] Finishes well inside the 3 s hook limit (target < 200 ms)
-- [ ] Unit tests for each tier boundary and for the patch parser
+- After the user decides on a medium edit, `afterTool` writes one `edit-approval` per file with `approved` (Open decision #2).
+- Code: `clineshield/src/plugin/patch/` (pure patch parser + `editor` adapter, reusable for an in-memory apply),
+  `clineshield/src/plugin/editPolicy/measure.ts` (1.x measurement port), `editPolicy/policy.ts` (tiers, messages), hooks in `plugin/index.ts`.
+- Measurement notes: structural change % = changed ÷ (changed + context) lines, floored, per file (1.x). An `editor`
+  replacement is line-diffed so its unchanged lines count as context. New files (`*** Add File`, `editor` create) are
+  always allowed. `*** Delete File` is not evaluated yet (Open decision #7). Multi-file patches: each TS/JS file is
+  evaluated, the worst tier decides the call, one event per evaluated file.
+- [x] Measures deleted functions and structural change % for `apply_patch` (port of the 1.x patch parser) and `editor` edits
+- [ ] Tier thresholds come from config; proposed defaults — block: > 3 deleted functions, or > 75 % change on a > 10-line patch (1.x behaviour); approve: 2–3 deleted functions, or 40–75 % change on a > 10-line patch. Defaults hard-coded in `EDIT_SIZE_THRESHOLDS` (`editPolicy/policy.ts`, Open decision #4); reading them from config comes with the Configuration feature
+- [x] Destructive edits are skipped, not stopped: the run continues and the model receives the reason
+- [ ] Medium edits trigger an approval prompt in the CLI; in headless runs they are denied (documented). Headless denial is implemented, tested (`approved: false`) and documented here and in the README; the CLI prompt needs a manual check with the Cline CLI
+- [x] Non-TS/JS files and non-edit tools pass through untouched
+- [x] Finishes well inside the 3 s hook limit (target < 200 ms) — tests assert < 200 ms for 15,000- and 20,000-line patches
+- [x] Unit tests for each tier boundary and for the patch parser
 
 #### Shell Command Guard
 Inspects `run_commands` calls and stops dangerous commands before they run, with the same three tiers.
@@ -249,8 +257,9 @@ A small, honest measurement of what ClineShield catches and costs.
 | # | Question | Status |
 |---|---|---|
 | 1 | How to record shell-command blocks/approvals in `metrics.json` without changing the schema (or approve a schema change) | open |
-| 2 | How to record medium-tier "approval required" outcomes (reuse `edit-allowed`/`edit-blocked` after the user decides, or new event type) | open |
+| 2 | How to record medium-tier "approval required" outcomes (reuse `edit-allowed`/`edit-blocked` after the user decides, or new event type) | **decided 2026-10-14:** new event type `edit-approval`, `data: { file, structuralChangePercent, functionsDeleted, exportsDeleted, reason, approved }`, written in `afterTool` (matched by `toolCallId`) for edits `beforeTool` sent to approval. `approved` is false when the result is the runtime's approval-denied error (carries `TOOL_REJECTION_SUFFIX`; includes headless runs), true otherwise. Only schema change allowed for this feature. Implemented and tested; dashboard count comes later |
 | 3 | Whether to record sanity checks that missed the time budget (would need a new event type) | open |
-| 4 | Final tier thresholds for Edit Size Policy and Shell Command Guard (defaults above are proposals) | open |
+| 4 | Final tier thresholds for Edit Size Policy and Shell Command Guard (defaults above are proposals) | **decided 2026-10-14 (Edit Size Policy):** hard-code the proposed defaults now, in one constant (`EDIT_SIZE_THRESHOLDS`); configurable later. Shell Command Guard thresholds still open |
 | 5 | Plugin package location: `clineshield/plugin/` inside the existing package, or a separate top-level package | **decided 2026-10-14:** plugin source in `clineshield/src/plugin/` (reuses `metrics/writer.ts` through a relative import), plus a minimal root `package.json` whose `cline.plugins` lists `./clineshield/src/plugin/index.ts`. Why: a git install has no subdirectory option, reads only the root `package.json` (`plugin-install.ts` `collectPluginEntries`), and loads `.ts` entries through jiti with no build step |
 | 6 | Cross-process writes to `metrics.json` lost events (plugin worker vs. extension host, or two Cline sessions in the same folder): last rename wins | **decided 2026-10-14:** lock file in `appendEvent()` (`metrics.json.lock`, created exclusively, taken over after 5 s as stale, written without the lock after 1 s of waiting so hooks never block). Rejected: one file per session, because it changes the fixed `metrics.json` location contract and every reader; accepting the loss. Implemented and tested |
+| 7 | Edit Size Policy gaps found while porting 1.x: (a) `*** Delete File` of a TS/JS file is not evaluated (1.x ignored it; the parser has no file contents); (b) the 1.x % rule treats pure additions the same as rewrites, so adding a new 11+ line function with little context is blocked (> 75 %) or held for approval | open |

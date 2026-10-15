@@ -141,7 +141,7 @@ describe('ClineShield plugin', () => {
   });
 
   describe('hooks', () => {
-    it('beforeTool and afterTool are no-ops for now', async () => {
+    it('beforeTool and afterTool pass through calls the policy cannot parse', async () => {
       const p = createClineShieldPlugin();
       p.setup?.({}, { workspaceInfo: { rootPath: root } });
       await p.flush();

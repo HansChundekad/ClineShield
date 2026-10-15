@@ -27,6 +27,7 @@ interface BaseEvent {
   type EventType = 
     | 'edit-blocked'      // No-Nuke: PreToolUse blocked edit
     | 'edit-allowed'      // No-Nuke: PreToolUse allowed edit
+    | 'edit-approval'     // Edit Size Policy: user decided on a medium-tier edit
     | 'sanity-failed'     // Sanity Check: PostToolUse found errors
     | 'sanity-passed'     // Sanity Check: PostToolUse all checks green
     | 'risk-assessed'     // Rules Engine: PostToolUse scored edit
@@ -59,6 +60,22 @@ interface BaseEvent {
     };
   }
   
+  /**
+   * Written by: plugin afterTool for a medium-tier edit that beforeTool sent
+   * to user approval (Open decision #2, decided 2026-10-14). One per file.
+   */
+  export interface EditApprovalEvent extends BaseEvent {
+    type: 'edit-approval';
+    data: {
+      file: string;                    // Required
+      structuralChangePercent: number; // Required
+      functionsDeleted: number;        // Required
+      exportsDeleted: number;          // Required
+      reason: string;                  // Required - why approval was needed (shown to Cline)
+      approved: boolean;               // Required - false when denied (incl. headless runs)
+    };
+  }
+
   // ============================================================================
   // SANITY CHECK HOOK EVENTS
   // ============================================================================
@@ -127,6 +144,7 @@ interface BaseEvent {
   export type MetricsEvent = 
     | EditBlockedEvent
     | EditAllowedEvent
+    | EditApprovalEvent
     | SanityFailedEvent
     | SanityPassedEvent
     | RiskAssessedEvent
@@ -142,6 +160,10 @@ interface BaseEvent {
     return event.type === 'edit-blocked';
   }
   
+  export function isEditApprovalEvent(event: MetricsEvent): event is EditApprovalEvent {
+    return event.type === 'edit-approval';
+  }
+
   export function isRiskAssessedEvent(event: MetricsEvent): event is RiskAssessedEvent {
     return event.type === 'risk-assessed';
   }
