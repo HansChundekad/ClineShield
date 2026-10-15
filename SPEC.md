@@ -134,7 +134,7 @@ Every event a run writes carries the same session ID, without the VS Code extens
 The plugin writes the exact same events as 1.x, using the existing writer.
 - [x] Plugin imports `appendEvent()` from `src/metrics/writer.ts` — no second writer, no `jq`
 - [x] Every event validates against `src/types/metrics.ts` (unit test)
-- [~] Writes are atomic and queued; concurrent plugin + extension writes do not corrupt the file (covered by `scripts/benchmark-atomic-writes.js` or a test). The no-corruption part is tested across real processes (`src/plugin/__tests__/concurrentWrites.test.ts`). But the queue only works within one process, so cross-process writes **lose events** (last rename wins): 28–31 of 100 kept with 4 processes; 1 of 2 kept with one plugin and one extension write. See Open decision #6
+- [x] Writes are atomic and queued; concurrent plugin + extension writes do not corrupt the file (covered by `scripts/benchmark-atomic-writes.js` or a test). Covered by `src/plugin/__tests__/concurrentWrites.test.ts`: 4 real processes × 25 events, all 100 kept. Cross-process writes are serialised by a `metrics.json.lock` file in `appendEvent()` (Open decision #6)
 
 #### Edit Size Policy (three tiers: allow · require approval · block)
 Replaces No-Nuke. Measures each `apply_patch` / `editor` edit to a TS/JS file and responds in proportion.
@@ -183,7 +183,7 @@ Every allowed edit gets the same deterministic score as 1.x.
 - [ ] `.cline-shield.example.yml` documents every key
 
 #### Dashboard compatibility (VS Code extension)
-The extension becomes a viewer: open the workspace in VS Code, run Cline from the CLI, watch the dashboards.
+The extension becomes a viewer: open the workspace in VS Code, run Cline from the CLI, watch the dashboards. (Owner confirmed 2026-10-14: keep the extension as a viewer; do not drop it.)
 - [ ] Sidebar, Change Map and status bar update live from plugin-written events
 - [ ] Gemini explanation still triggers for medium/high `risk-assessed` events (diff sidecar written by the plugin)
 - [ ] Extension no longer needs to set env vars for hooks; it still works when no plugin has run yet
@@ -223,5 +223,5 @@ A small, honest measurement of what ClineShield catches and costs.
 | 2 | How to record medium-tier "approval required" outcomes (reuse `edit-allowed`/`edit-blocked` after the user decides, or new event type) | open |
 | 3 | Whether to record sanity checks that missed the time budget (would need a new event type) | open |
 | 4 | Final tier thresholds for Edit Size Policy and Shell Command Guard (defaults above are proposals) | open |
-| 5 | Plugin package location: `clineshield/plugin/` inside the existing package, or a separate top-level package | **proposed — awaiting owner:** plugin source in `clineshield/src/plugin/` (shares the extension's tsconfig, jest and `metrics/writer.ts` through a relative import), plus a minimal **root** `package.json` whose `cline.plugins` lists `./clineshield/src/plugin/index.ts`. Evidence: a git install has no subdirectory option and only reads the root `package.json` (`plugin-install.ts` `collectPluginEntries`; without that list it would load every `.js`/`.ts` in the repo). jiti loads the `.ts` entry and its relative imports without a build (checked locally with jiti 2.7.0 and the sandbox's options). The plugin imports only Node builtins, so the root `npm install --omit=dev` needs no dependencies. A separate top-level package would still need the root manifest and would import `writer.ts` across package boundaries, so it buys nothing |
-| 6 | Cross-process writes to `metrics.json` lose events (plugin worker vs. extension host, or two parallel Cline sessions). Options: a lock file in `appendEvent()` (costs hook time and needs stale-lock handling), one file per writer merged by the reader, or accept the loss | open |
+| 5 | Plugin package location: `clineshield/plugin/` inside the existing package, or a separate top-level package | **decided 2026-10-14:** plugin source in `clineshield/src/plugin/` (reuses `metrics/writer.ts` through a relative import), plus a minimal root `package.json` whose `cline.plugins` lists `./clineshield/src/plugin/index.ts`. Why: a git install has no subdirectory option, reads only the root `package.json` (`plugin-install.ts` `collectPluginEntries`), and loads `.ts` entries through jiti with no build step |
+| 6 | Cross-process writes to `metrics.json` lost events (plugin worker vs. extension host, or two Cline sessions in the same folder): last rename wins | **decided 2026-10-14:** lock file in `appendEvent()` (`metrics.json.lock`, created exclusively, taken over after 5 s as stale, written without the lock after 1 s of waiting so hooks never block). Rejected: one file per session, because it changes the fixed `metrics.json` location contract and every reader; accepting the loss. Implemented and tested |

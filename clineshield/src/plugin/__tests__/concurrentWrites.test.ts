@@ -1,8 +1,8 @@
 /**
  * The plugin runs in a Cline worker process while the VS Code extension
  * writes from the extension host, so appendEvent()'s in-process queue does
- * not serialise them. This test runs real separate Node processes against
- * one metrics.json and checks the file is never corrupted.
+ * not serialise them; the lock file does. This test runs real separate Node
+ * processes against one metrics.json and checks nothing is corrupted or lost.
  */
 import { spawn } from 'child_process';
 import * as fs from 'fs/promises';
@@ -52,7 +52,7 @@ describe('metrics.json under concurrent writes from separate processes', () => {
     await fs.rm(dir, { recursive: true, force: true });
   });
 
-  it('leaves a valid JSON array of valid events, with no temp files left behind', async () => {
+  it('leaves a valid JSON array of valid events, with every event kept and no temp or lock files left behind', async () => {
     const codes = await Promise.all(
       Array.from({ length: PROCESSES }, (_, p) =>
         run(path.join(dir, 'worker.js'), [root, `proc-${p}`, String(EVENTS_PER_PROCESS)]),
@@ -63,13 +63,13 @@ describe('metrics.json under concurrent writes from separate processes', () => {
     const raw = await fs.readFile(path.join(root, '.cline-shield', 'metrics.json'), 'utf-8');
     const events: unknown[] = JSON.parse(raw);
     expect(Array.isArray(events)).toBe(true);
-    expect(events.length).toBeGreaterThan(0);
-    expect(events.length).toBeLessThanOrEqual(PROCESSES * EVENTS_PER_PROCESS);
+    // The lock file in appendEvent() must keep every event, not just a valid file.
+    expect(events).toHaveLength(PROCESSES * EVENTS_PER_PROCESS);
     for (const event of events) {
       expect(validateEvent(event)).toEqual([]);
     }
 
-    const leftovers = (await fs.readdir(path.join(root, '.cline-shield'))).filter(f => f.endsWith('.tmp'));
+    const leftovers = (await fs.readdir(path.join(root, '.cline-shield'))).filter(f => f.endsWith('.tmp') || f.endsWith('.lock'));
     expect(leftovers).toEqual([]);
   }, 30000);
 });

@@ -1,6 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { appendEvent } from '../writer';
+import { appendEvent, LOCK_STALE_MS, LOCK_WAIT_MS } from '../writer';
 import type { EditBlockedEvent, EditAllowedEvent } from '../../types/metrics';
 
 describe('metricsWriter', () => {
@@ -282,6 +282,62 @@ describe('metricsWriter', () => {
       expect(Array.isArray(events)).toBe(true);
       expect(events).toHaveLength(3);
       expect(events.map(e => e.data.file).sort()).toEqual(['test1.ts', 'test2.ts', 'test3.ts']);
+    });
+  });
+
+  // Cross-process lock: another process (plugin worker / extension host)
+  // is simulated by creating metrics.json.lock directly.
+  describe('lock file', () => {
+    const lockPath = `${metricsPath}.lock`;
+    const event: EditAllowedEvent = {
+      timestamp: new Date().toISOString(),
+      sessionId: 'lock-session',
+      type: 'edit-allowed',
+      data: { file: 'lock.ts', structuralChangePercent: 0, functionsDeleted: 0, exportsDeleted: 0 },
+    };
+
+    beforeEach(async () => {
+      await fs.mkdir(path.dirname(metricsPath), { recursive: true });
+    });
+
+    it('removes its lock after writing', async () => {
+      await appendEvent(event, testWorkspaceRoot);
+      await expect(fs.access(lockPath)).rejects.toThrow();
+    });
+
+    it('waits for a lock held by another writer, then writes', async () => {
+      await fs.writeFile(lockPath, 'other-writer');
+      setTimeout(() => { void fs.unlink(lockPath); }, 100);
+
+      const started = Date.now();
+      await appendEvent(event, testWorkspaceRoot);
+
+      expect(Date.now() - started).toBeGreaterThanOrEqual(90);
+      expect(JSON.parse(await fs.readFile(metricsPath, 'utf-8'))).toHaveLength(1);
+    });
+
+    it('takes over a stale lock left by a crashed writer', async () => {
+      await fs.writeFile(lockPath, 'crashed-writer');
+      const old = new Date(Date.now() - LOCK_STALE_MS - 1000);
+      await fs.utimes(lockPath, old, old);
+
+      const started = Date.now();
+      await appendEvent(event, testWorkspaceRoot);
+
+      expect(Date.now() - started).toBeLessThan(LOCK_WAIT_MS);
+      expect(JSON.parse(await fs.readFile(metricsPath, 'utf-8'))).toHaveLength(1);
+      await expect(fs.access(lockPath)).rejects.toThrow();
+    });
+
+    it('writes anyway after the wait budget if the lock is never released', async () => {
+      await fs.writeFile(lockPath, 'stuck-writer');
+
+      await appendEvent(event, testWorkspaceRoot);
+
+      expect(JSON.parse(await fs.readFile(metricsPath, 'utf-8'))).toHaveLength(1);
+      // Never delete a lock this writer does not own.
+      expect(await fs.readFile(lockPath, 'utf-8')).toBe('stuck-writer');
+      expect(console.error).toHaveBeenCalledWith(expect.stringContaining('lock'));
     });
   });
 });
