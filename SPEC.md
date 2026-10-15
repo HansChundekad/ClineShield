@@ -211,7 +211,7 @@ Later (not in 2.0 — add a feature section here before building):
 #### Automated tests & CI
 - [ ] Unit tests for every new module (policy tiers, patch parser, command parser, sanity budget, config)
 - [ ] Plugin-level tests: call `beforeTool` / `afterTool` with fake tool calls and assert results + metrics events
-- [ ] GitHub Actions workflow runs `npm ci && npm test` on every push and PR (Node 20)
+- [x] GitHub Actions workflow runs `npm ci && npm test` on every push and PR (Node 20) — `.github/workflows/ci.yml`
 - [ ] CI badge in README
 
 #### Evaluation ⛔ owner must approve the task set and budget before any run
