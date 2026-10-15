@@ -139,7 +139,7 @@ describe('evaluateEdit', () => {
     expect(evaluateEdit('editor', { path: 'a.ts' })).toBeUndefined();
   });
 
-  it('does not evaluate Delete File operations (1.x behaviour, Open decision #7)', () => {
+  it('does not evaluate Delete File operations (1.x behaviour, Open decision #8)', () => {
     expect(evaluateEdit('apply_patch', { input: '*** Begin Patch\n*** Delete File: a.ts\n*** End Patch' })).toBeUndefined();
   });
 

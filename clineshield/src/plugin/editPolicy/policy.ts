@@ -126,7 +126,7 @@ export function approvalMessage(files: FileVerdict[]): string {
 /**
  * Evaluates one tool call. Returns undefined when the policy has no opinion:
  * not an edit tool, malformed input, or no TS/JS file updated or created.
- * Delete File operations are not evaluated (1.x behaviour; Open decision #7).
+ * Delete File operations are not evaluated (1.x behaviour; Open decision #8).
  */
 export function evaluateEdit(toolName: string, input: unknown, options: EvaluateOptions = {}): EditDecision | undefined {
   const ops = operationsFor(toolName, input);
