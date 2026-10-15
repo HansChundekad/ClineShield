@@ -6,8 +6,8 @@
  * the tier. Pure apart from Date.now() (injectable) and stderr logging.
  */
 
-import { CATEGORIES, SIZE_GROUP, TEST_FILE_DISCOUNT } from './categories';
-import type { Cutoffs } from './categories';
+import { CATEGORIES, DISCOUNTED, TEST_FILE_DISCOUNT } from './categories';
+import type { Cutoffs, Preset, RiskGroup } from './categories';
 import { ALL_CHECKS } from './checks';
 import { rewriteShare } from './checks/files';
 import { matchesGlob } from './glob';
@@ -40,38 +40,49 @@ function toFinding(raw: RawFinding, setting: number | 'off' | 'block'): Finding 
   return { ...base, points: Math.round(setting * raw.weight), block: false, logOnly: false };
 }
 
+const groupOf = (id: string): RiskGroup | null => (id.startsWith('custom:') ? 'custom' : CATEGORIES[id as CategoryId].group);
+
 /**
- * Lost code counts once per file: only the larger of rewrite_share and
- * functions_removed + exports_removed scores. The smaller side stays in the
- * findings (reasons, counts) with 0 points. Safe to run again after more
- * findings are added.
+ * Each risk group counts once per file: only its highest-scoring finding keeps
+ * its points (first wins a tie). The others stay in the list (reasons, counts)
+ * with 0 points and a note. Returns copies; `raw` is untouched.
  */
-function countLostCodeOnce(findings: Finding[]): void {
-  const sum = (ids: string[]) => findings.filter(x => ids.includes(x.id)).reduce((s, x) => s + x.points, 0);
-  const rewrite = findings.filter(x => x.id === 'rewrite_share');
-  const structure = findings.filter(x => x.id === 'functions_removed' || x.id === 'exports_removed');
-  const rewritePoints = sum(['rewrite_share']);
-  const structurePoints = sum(['functions_removed', 'exports_removed']);
-  if (rewritePoints === 0 || structurePoints === 0) return;
-  const [loser, note] = rewritePoints >= structurePoints ? [structure, 'rewrite share'] : [rewrite, 'functions removed'];
-  for (const x of loser) {
-    if (x.points === 0) continue;
-    x.points = 0;
-    x.detail += ` (counted in ${note})`;
+function countGroupsOnce(raw: Finding[]): Finding[] {
+  const out = raw.map(x => ({ ...x }));
+  const winner = new Map<RiskGroup, Finding>();
+  for (const x of out) {
+    const g = groupOf(x.id);
+    if (!g || x.points === 0) continue;
+    const w = winner.get(g);
+    if (!w || x.points > w.points) winner.set(g, x);
   }
+  for (const x of out) {
+    const w = winner.get(groupOf(x.id)!);
+    if (!w || x === w || x.points === 0) continue;
+    x.points = 0;
+    x.detail += ` (counted in ${w.id})`;
+  }
+  return out;
 }
 
-function finalize(f: FileScore, isTest: boolean): void {
-  countLostCodeOnce(f.findings);
+/**
+ * Hard rules and `block` settings always block. On points, strict blocks at
+ * its cut-off; relaxed and balanced also need two risk groups to score, so one
+ * kind of risk asks and only combined risks block.
+ */
+function finalize(f: FileScore, raw: Finding[], preset: Preset, isTest: boolean): void {
+  f.findings = countGroupsOnce(raw);
   const scored = f.findings.filter(x => !x.logOnly);
   let score = scored.reduce((s, x) => s + x.points, 0);
   if (isTest) {
-    const size = scored.filter(x => SIZE_GROUP.has(x.id as CategoryId)).reduce((s, x) => s + x.points, 0);
+    const size = scored.filter(x => DISCOUNTED.has(x.id as CategoryId)).reduce((s, x) => s + x.points, 0);
     score -= Math.min(TEST_FILE_DISCOUNT, size);
   }
   f.score = Math.max(0, Math.min(100, score));
   const blocked = scored.some(x => x.block);
-  f.tier = blocked || f.score >= f.cutoffs.block ? 'block' : f.score >= f.cutoffs.ask ? 'ask' : 'allow';
+  const groups = new Set(scored.filter(x => x.points > 0).map(x => groupOf(x.id))).size;
+  const overBlock = f.score >= f.cutoffs.block && (preset === 'strict' || groups >= 2);
+  f.tier = blocked || overBlock ? 'block' : f.score >= f.cutoffs.ask ? 'ask' : 'allow';
   f.level = blocked ? 'high' : levelFor(f.score, f.cutoffs);
 }
 
@@ -96,7 +107,9 @@ export function scoreAction(action: ActionContext, config: RubricConfig, options
     }
   };
 
-  const files: FileScore[] = action.changes.map(c => {
+  const raw: Finding[][] = [];
+  const presets: Preset[] = [];
+  const files: FileScore[] = action.changes.map((c, i) => {
     const policy = resolveFilePolicy(config, c.path);
     const skipped: string[] = [];
     const raws = checks.filter(k => !k.perAction).flatMap(k => runCheck(k, c, skipped));
@@ -112,7 +125,9 @@ export function scoreAction(action: ActionContext, config: RubricConfig, options
       structuralChangePercent: share === undefined ? 0 : Math.floor(share * 100),
       functionsDeleted: count('functionsDeleted'), exportsDeleted: count('exportsDeleted'),
     };
-    finalize(f, c.isTest);
+    raw[i] = findings;
+    presets[i] = policy.preset;
+    finalize(f, findings, policy.preset, c.isTest);
     return f;
   });
 
@@ -123,10 +138,10 @@ export function scoreAction(action: ActionContext, config: RubricConfig, options
     for (const k of checks.filter(x => x.perAction)) {
       for (const r of runCheck(k, action.changes[0], worst.skipped)) {
         const f = toFinding(r, policy.points[r.category]);
-        if (f) worst.findings.push(f);
+        if (f) raw[worstIdx].push(f);
       }
     }
-    finalize(worst, action.changes[worstIdx].isTest);
+    finalize(worst, raw[worstIdx], presets[worstIdx], action.changes[worstIdx].isTest);
   }
 
   let tier = files.reduce<Tier>((t, f) => (RANK[f.tier] > RANK[t] ? f.tier : t), 'allow');

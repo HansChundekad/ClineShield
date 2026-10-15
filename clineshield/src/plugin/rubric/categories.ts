@@ -9,12 +9,17 @@
 
 import type { CategoryId, CheckKind } from './types';
 
-export type Group = 'hard' | 'size' | 'fileops' | 'sensitive' | 'weakening' | 'content' | 'structure';
+/**
+ * Risk group: per file, each group counts only its biggest finding, and
+ * relaxed/balanced block on points only when two groups score. Hard and
+ * log-only categories have none. Custom rules form the 'custom' group.
+ */
+export type RiskGroup = 'lost_code' | 'scope' | 'file_ops' | 'unrecoverable' | 'location' | 'weakening' | 'content' | 'custom';
 
 export interface CategoryDef {
   max: number;
   kind: CheckKind;
-  group: Group;
+  group: RiskGroup | null;
   /** One fixed "safer alternative" sentence shown to Cline. */
   fix: string;
 }
@@ -29,32 +34,32 @@ export const PRESET_CUTOFFS: Record<Preset, Cutoffs> = {
 };
 
 /** Size/scope categories: the only ones the test-file discount reduces. */
-export const SIZE_GROUP: ReadonlySet<CategoryId> = new Set(['rewrite_share', 'lines_removed', 'files_touched']);
+export const DISCOUNTED: ReadonlySet<CategoryId> = new Set(['rewrite_share', 'lines_removed', 'files_touched']);
 export const TEST_FILE_DISCOUNT = 10;
 
-const def = (max: number, kind: CheckKind, group: Group, fix: string): CategoryDef => ({ max, kind, group, fix });
+const def = (max: number, kind: CheckKind, group: RiskGroup | null, fix: string): CategoryDef => ({ max, kind, group, fix });
 
 export const CATEGORIES: Record<CategoryId, CategoryDef> = {
-  self_protection: def(0, 'hard', 'hard', 'Do not change ClineShield files; ask the user to edit them by hand.'),
-  placeholder: def(0, 'hard', 'hard', 'Write out the full code you are keeping, or change only the lines you need.'),
-  secret_added: def(0, 'hard', 'hard', 'Read the secret from an environment variable or secrets manager instead of writing it into the file.'),
-  rewrite_share: def(50, 'signal', 'size', 'Change one function or block at a time and keep the rest of the file as it is.'),
-  lines_removed: def(30, 'signal', 'size', 'Remove less code per edit, and only what the task requires.'),
-  files_touched: def(30, 'signal', 'size', 'Split the change into smaller actions that touch fewer files.'),
-  deletion_heavy: def(20, 'logOnly', 'size', 'Delete only what the task requires.'),
-  file_deleted: def(35, 'critical', 'fileops', 'Only delete files the task requires; confirm with the user if unsure.'),
-  move_overwrites: def(40, 'critical', 'fileops', 'Move to a path that does not exist yet, or ask the user before replacing that file.'),
-  uncommitted_lost: def(30, 'critical', 'fileops', 'Ask the user to commit or stash their changes first.'),
-  outside_workspace: def(50, 'critical', 'fileops', 'Keep changes inside the project folder.'),
-  secrets_file: def(45, 'critical', 'sensitive', 'Leave secrets files to the user unless the task is explicitly about them.'),
-  ci_config: def(35, 'critical', 'sensitive', 'Change CI configuration only when the task asks for it.'),
-  infra: def(30, 'critical', 'sensitive', 'Change infrastructure files only when the task asks for it.'),
-  migration: def(30, 'critical', 'sensitive', 'Add a new migration instead of editing an existing one.'),
-  protected_path: def(30, 'critical', 'sensitive', 'This path is protected; keep the change minimal and explain why it is needed.'),
-  gitignore_changed: def(15, 'critical', 'sensitive', 'Change .gitignore only when the task asks for it.'),
-  gitignore_unignores_secrets: def(60, 'critical', 'sensitive', 'Keep secrets files ignored by git.'),
-  manifest: def(15, 'signal', 'sensitive', 'Change dependencies only when the task needs it.'),
-  generated: def(20, 'signal', 'sensitive', 'Edit the source that generates this file instead.'),
+  self_protection: def(0, 'hard', null, 'Do not change ClineShield files; ask the user to edit them by hand.'),
+  placeholder: def(0, 'hard', null, 'Write out the full code you are keeping, or change only the lines you need.'),
+  secret_added: def(0, 'hard', null, 'Read the secret from an environment variable or secrets manager instead of writing it into the file.'),
+  rewrite_share: def(50, 'signal', 'lost_code', 'Change one function or block at a time and keep the rest of the file as it is.'),
+  lines_removed: def(30, 'signal', 'lost_code', 'Remove less code per edit, and only what the task requires.'),
+  files_touched: def(30, 'signal', 'scope', 'Split the change into smaller actions that touch fewer files.'),
+  deletion_heavy: def(20, 'logOnly', null, 'Delete only what the task requires.'),
+  file_deleted: def(35, 'critical', 'file_ops', 'Only delete files the task requires; confirm with the user if unsure.'),
+  move_overwrites: def(40, 'critical', 'file_ops', 'Move to a path that does not exist yet, or ask the user before replacing that file.'),
+  uncommitted_lost: def(30, 'critical', 'unrecoverable', 'Ask the user to commit or stash their changes first.'),
+  outside_workspace: def(50, 'critical', 'file_ops', 'Keep changes inside the project folder.'),
+  secrets_file: def(45, 'critical', 'location', 'Leave secrets files to the user unless the task is explicitly about them.'),
+  ci_config: def(35, 'critical', 'location', 'Change CI configuration only when the task asks for it.'),
+  infra: def(30, 'critical', 'location', 'Change infrastructure files only when the task asks for it.'),
+  migration: def(30, 'critical', 'location', 'Add a new migration instead of editing an existing one.'),
+  protected_path: def(30, 'critical', 'location', 'This path is protected; keep the change minimal and explain why it is needed.'),
+  gitignore_changed: def(15, 'critical', 'location', 'Change .gitignore only when the task asks for it.'),
+  gitignore_unignores_secrets: def(60, 'critical', 'location', 'Keep secrets files ignored by git.'),
+  manifest: def(15, 'signal', 'location', 'Change dependencies only when the task needs it.'),
+  generated: def(20, 'signal', 'location', 'Edit the source that generates this file instead.'),
   tests_deleted: def(40, 'signal', 'weakening', 'Keep existing tests; fix the code so they pass.'),
   tests_skipped: def(30, 'signal', 'weakening', 'Do not skip tests; fix the code so they pass.'),
   checks_disabled: def(20, 'signal', 'weakening', 'Fix the warning instead of disabling the check.'),
@@ -68,8 +73,8 @@ export const CATEGORIES: Record<CategoryId, CategoryDef> = {
   new_domain: def(20, 'signal', 'content', 'Only call services the project already uses, or ask the user first.'),
   empty_catch: def(10, 'signal', 'content', 'Handle or log the error instead of ignoring it.'),
   commented_out_block: def(10, 'signal', 'content', 'Delete unused code instead of commenting it out.'),
-  functions_removed: def(40, 'signal', 'structure', 'Do not delete functions or classes the task does not require.'),
-  exports_removed: def(40, 'signal', 'structure', 'Keep exported names; other code may depend on them.'),
-  signature_changed: def(15, 'logOnly', 'structure', 'Keep public signatures unless the task requires a change.'),
-  env_key_renamed: def(20, 'logOnly', 'structure', 'Keep environment variable and config key names unless the task requires a rename.'),
+  functions_removed: def(40, 'signal', 'lost_code', 'Do not delete functions or classes the task does not require.'),
+  exports_removed: def(40, 'signal', 'lost_code', 'Keep exported names; other code may depend on them.'),
+  signature_changed: def(15, 'logOnly', null, 'Keep public signatures unless the task requires a change.'),
+  env_key_renamed: def(20, 'logOnly', null, 'Keep environment variable and config key names unless the task requires a rename.'),
 };

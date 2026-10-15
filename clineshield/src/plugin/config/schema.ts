@@ -45,7 +45,7 @@ export interface RubricConfig {
   customRules: CustomRule[];
 }
 
-export interface FilePolicy { cutoffs: Cutoffs; points: Record<CategoryId, PointsSetting> }
+export interface FilePolicy { preset: Preset; cutoffs: Cutoffs; points: Record<CategoryId, PointsSetting> }
 
 /** 1.x `risk.protected_paths` directories; `.env*` is covered by `secrets_file`. */
 export const DEFAULT_PROTECTED_PATHS = ['src/auth/**', 'src/config/**', 'src/middleware/**', 'auth/**', 'config/**'];
@@ -189,5 +189,5 @@ export function resolveFilePolicy(config: RubricConfig, path: string): FilePolic
   for (const [id, def] of Object.entries(CATEGORIES) as Array<[CategoryId, (typeof CATEGORIES)[CategoryId]]>) {
     points[id] = def.kind === 'hard' ? 'block' : folder?.categories?.[id] ?? config.categories[id] ?? def.max;
   }
-  return { cutoffs, points };
+  return { preset: folder?.preset ?? config.preset, cutoffs, points };
 }

@@ -18,34 +18,34 @@ const productRewrite = (file: string) => {
 };
 const pts = (d: ReturnType<typeof scoreAction>, id: string) => d.files[0].findings.filter(f => f.id === id).reduce((s, f) => s + f.points, 0);
 
-describe('lost code counts once per file', () => {
-  it('class-file rewrite: asked under balanced, blocked under strict and in a protected path', () => {
+/** Case 4: 64% rewrite of a 100-line file removing 6 exported + 1 private function. */
+const wideRewrite = (file: string) => {
+  const fns = [...['a', 'b', 'c', 'd', 'e', 'f'].map(n => `export function ${n}() {`), 'function g() {'].flatMap(h => [h, '  return 1;', '}']);
+  const rest = lines(100 - fns.length);
+  const c = change(update(file, [...fns, ...rest.slice(0, 43)], ['x'], []), { original: [...fns, ...rest].join('\n') + '\n' });
+  c.matched = true;
+  return c;
+};
+const ciEdit = () => change(update('.github/workflows/ci.yml', ['a'], ['b']));
+
+describe('risk groups: each kind of risk counts once per file', () => {
+  it('lost code: only the biggest of rewrite_share, functions_removed, exports_removed counts', () => {
     const d = scoreAction(action([productRewrite('src/models/product.ts')]), cfg());
     const f = d.files[0];
     expect(f.findings.map(x => x.id)).toEqual(expect.arrayContaining(['rewrite_share', 'functions_removed', 'exports_removed']));
-    expect(f.score).toBe(60); // max(rewrite 50, functions 40 + exports 20), not 110
-    expect(d.tier).toBe('ask');
-    expect(scoreAction(action([productRewrite('src/models/product.ts')]), cfg({ preset: 'strict' })).tier).toBe('block');
-    const prot = scoreAction(action([productRewrite('src/auth/product.ts')]), cfg());
-    expect(prot.files[0].score).toBe(90);
-    expect(prot.tier).toBe('block');
-  });
-
-  it('the side that does not count keeps its findings with 0 points', () => {
-    const d = scoreAction(action([productRewrite('src/models/product.ts')]), cfg());
-    const share = d.files[0].findings.find(x => x.id === 'rewrite_share')!;
-    expect(share.points).toBe(0);
-    expect(share.detail).toContain('(counted in functions removed)');
-    expect(pts(d, 'functions_removed')).toBe(40);
-    expect(pts(d, 'exports_removed')).toBe(20);
-  });
-
-  it('when rewrite share is larger it counts and the structure findings are 0 points', () => {
-    const d = scoreAction(action([productRewrite('src/models/product.ts')]), cfg({ categories: { functions_removed: 20, exports_removed: 10 } }));
-    expect(d.files[0].score).toBe(50);
     expect(pts(d, 'rewrite_share')).toBe(50);
     expect(pts(d, 'functions_removed')).toBe(0);
-    expect(d.files[0].findings.find(x => x.id === 'functions_removed')!.detail).toContain('(counted in rewrite share)');
+    expect(pts(d, 'exports_removed')).toBe(0);
+    expect(f.findings.find(x => x.id === 'functions_removed')!.detail).toMatch(/\(counted in rewrite_share\)$/);
+    expect(f.findings.find(x => x.id === 'exports_removed')!.detail).toMatch(/\(counted in rewrite_share\)$/);
+    expect(f.findings.find(x => x.id === 'rewrite_share')!.detail).not.toMatch(/counted in/);
+  });
+
+  it('when structure is bigger it wins and rewrite share is noted', () => {
+    const d = scoreAction(action([productRewrite('src/models/product.ts')]), cfg({ categories: { rewrite_share: 20 } }));
+    expect(d.files[0].score).toBe(40);
+    expect(pts(d, 'functions_removed')).toBe(40);
+    expect(d.files[0].findings.find(x => x.id === 'rewrite_share')!.detail).toMatch(/\(counted in functions_removed\)$/);
   });
 
   it('event counts are unchanged', () => {
@@ -74,6 +74,111 @@ describe('lost code counts once per file', () => {
     const d = scoreAction(action([c]), cfg());
     expect(pts(d, 'rewrite_share') + pts(d, 'functions_removed')).toBe(30);
     expect(d.files[0].score).toBe(30);
+  });
+
+  it('weakening group counts once, including the per-action test_and_source', () => {
+    const t = change(update('src/a.test.ts', ['expect(x).toBe(1);'], ["it.skip('x', () => {})", 'expect(x).toBeDefined();']));
+    const s = change(update('src/a.ts', ['a'], ['b']));
+    const d = scoreAction(action([t, s]), cfg());
+    const f = d.files.find(x => x.file === 'src/a.test.ts')!;
+    expect(f.findings.map(x => x.id)).toEqual(expect.arrayContaining(['tests_skipped', 'assertions_weakened', 'test_and_source']));
+    expect(f.score).toBe(30);
+    expect(f.findings.filter(x => x.points > 0)).toHaveLength(1);
+  });
+
+  it('custom rules share one group', () => {
+    const c = change(update('billing/pay.ts', [], ['legacyCharge()']));
+    const d = scoreAction(action([c]), cfg({ custom_rules: [
+      { match: 'path', pattern: 'billing/**', points: 30, message: 'Billing code' },
+      { match: 'content', pattern: 'legacyCharge', points: 25, message: 'Use charge()' },
+    ] }));
+    expect(d.files[0].score).toBe(30);
+    expect(d.files[0].findings.find(x => x.id === 'custom:1')!.detail).toMatch(/\(counted in custom:0\)$/);
+  });
+
+  it('test-file discount applies only to size points that counted', () => {
+    // rewrite_share (50, counted) on a test file: 50 - 10.
+    expect(scoreAction(action([known('src/a.test.ts', 38, 40)]), cfg()).files[0].score).toBe(40);
+    // lines_removed loses to functions_removed: no discount.
+    const fns = ['a', 'b', 'c', 'd'].flatMap(n => [`function ${n}() {`, '  return 1;', '}']);
+    const removed = [...fns, ...lines(100)];
+    const c = change(update('lib/big.test.ts', removed, ['x'], []), { original: [...removed, ...lines(1000, 'k')].join('\n') + '\n' });
+    c.matched = true;
+    const d = scoreAction(action([c]), cfg());
+    expect(pts(d, 'lines_removed')).toBe(0);
+    expect(d.files[0].score).toBe(40);
+  });
+});
+
+describe('blocking needs two kinds of risk (relaxed, balanced)', () => {
+  it('1: full rewrite of a class file → 50, ask', () => {
+    const d = scoreAction(action([productRewrite('src/models/product.ts')]), cfg());
+    expect(d.files[0].score).toBe(50);
+    expect(d.tier).toBe('ask');
+  });
+
+  it('2: same file with uncommitted changes → 80 (2 groups), block', () => {
+    const c = productRewrite('src/models/product.ts');
+    c.gitDirty = true;
+    const d = scoreAction(action([c]), cfg());
+    expect(d.files[0].score).toBe(80);
+    expect(d.tier).toBe('block');
+  });
+
+  it('3: same file under src/auth/ → 80 (2 groups), block', () => {
+    const d = scoreAction(action([productRewrite('src/auth/product.ts')]), cfg());
+    expect(d.files[0].score).toBe(80);
+    expect(d.tier).toBe('block');
+  });
+
+  it('4: 64% rewrite, 7 functions, 6 exports removed → 40, ask', () => {
+    const d = scoreAction(action([wideRewrite('lib/wide.ts')]), cfg());
+    expect(d.files[0].functionsDeleted).toBe(7);
+    expect(d.files[0].exportsDeleted).toBe(6);
+    expect(d.files[0].structuralChangePercent).toBe(64);
+    expect(d.files[0].score).toBe(40);
+    expect(d.tier).toBe('ask');
+  });
+
+  it('8: one group above the block cut-off → ask under balanced, block under strict', () => {
+    const d = scoreAction(action([ciEdit()]), cfg({ categories: { ci_config: 80 } }));
+    expect(d.files[0].score).toBe(80);
+    expect(d.tier).toBe('ask');
+    expect(d.files[0].level).toBe('high');
+    expect(scoreAction(action([ciEdit()]), cfg({ preset: 'strict', categories: { ci_config: 80 } })).tier).toBe('block');
+  });
+
+  it('9: case 1 under strict → 50, block', () => {
+    const d = scoreAction(action([productRewrite('src/models/product.ts')]), cfg({ preset: 'strict' }));
+    expect(d.files[0].score).toBe(50);
+    expect(d.tier).toBe('block');
+  });
+
+  it('10: case 2 under relaxed → 80, ask', () => {
+    const c = productRewrite('src/models/product.ts');
+    c.gitDirty = true;
+    const d = scoreAction(action([c]), cfg({ preset: 'relaxed' }));
+    expect(d.files[0].score).toBe(80);
+    expect(d.tier).toBe('ask');
+  });
+
+  it('relaxed: two groups at or above 90 → block', () => {
+    const d = scoreAction(action([productRewrite('src/auth/product.ts')]), cfg({ preset: 'relaxed', categories: { protected_path: 40 } }));
+    expect(d.files[0].score).toBe(90);
+    expect(d.tier).toBe('block');
+  });
+
+  it('11: a hard rule blocks in every preset', () => {
+    for (const preset of ['relaxed', 'balanced', 'strict']) {
+      const c = change(update('lib/a.ts', ['real()'], ['// ... rest of code unchanged']));
+      expect(scoreAction(action([c]), cfg({ preset })).tier).toBe('block');
+    }
+  });
+
+  it('12: a per-folder strict preset decides for files under it', () => {
+    const d = scoreAction(action([productRewrite('lib/product.ts')]), cfg({ paths: { 'lib/**': { preset: 'strict' } } }));
+    expect(d.files[0].score).toBe(50);
+    expect(d.tier).toBe('block');
   });
 
   it('a category set to block still blocks', () => {
@@ -113,8 +218,6 @@ describe('scoreAction', () => {
   });
 
   it('test-file discount reduces size points only', () => {
-    const t = known('src/a.test.ts', 38, 40);
-    expect(scoreAction(action([t]), cfg()).files[0].score).toBe(40);
     const skip = change(update('src/a.test.ts', [], ["it.skip('x', () => {})"]));
     expect(scoreAction(action([skip]), cfg()).files[0].score).toBe(30);
   });

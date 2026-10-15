@@ -92,7 +92,12 @@ Designed with the owner 2026-10-15; points are starting values, tuned by the eva
 
 **Cut-offs (ask / block):** relaxed 60 / 90 · **balanced 40 / 70** (default) · strict 25 / 50. Multi-file action:
 each file scored, worst file decides, `files_touched` adds to it, a hard rule on any file blocks the whole action.
-Lost code counts once per file: the larger of `rewrite_share` and `functions_removed` + `exports_removed`.
+**Risk groups:** per file, each group counts only its biggest finding (the rest are listed with 0 points). Groups:
+lost code (`rewrite_share`, `lines_removed`, `functions_removed`, `exports_removed`) · scope · file ops · unrecoverable
+(`uncommitted_lost`) · location (sensitive files, `manifest`, `generated`) · weakening safety · content · custom rules.
+**Block rule:** hard rules and categories set to `block` always block. Otherwise relaxed and balanced block only when
+the score reaches the block cut-off **and** two or more groups score; strict blocks at the cut-off alone. The file's
+effective preset (per-folder `paths` preset wins) decides.
 
 **Check kinds.** *Hard*: always block, no config can turn it off. *Critical*: if the check itself crashes → `on_error`.
 *Signal*: if it crashes → skipped and logged. *Log-only*: recorded in `reasons[]` with 0 points (description says what
