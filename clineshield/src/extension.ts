@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 import { randomUUID } from 'crypto';
 import { loadConfig } from './config/configLoader';
 import { appendEvent } from './metrics/writer';
-import { readEventsBySession } from './metrics/reader';
+import { readEvents } from './metrics/reader';
+import { selectVisibleSessionIds } from './metrics/sessions';
 import { MetricsSidebarProvider } from './sidebar/MetricsSidebarProvider';
 import { ChangeMapProvider } from './changeMap/ChangeMapProvider';
 import { processRiskEvent } from './extension/riskAnalysis/llmTrigger';
@@ -41,6 +42,11 @@ async function drainGeminiQueue(): Promise<void> {
   geminiDraining = false;
 }
 
+function formatTooltip(clineSessions: number, events: number): string {
+  const label = clineSessions === 1 ? 'session' : 'sessions';
+  return `Following ${clineSessions} Cline ${label} | Events: ${events} | Extension session: ${currentSessionId}`;
+}
+
 /**
  * Extension activation function
  * Called when the extension is activated (on VS Code startup)
@@ -54,7 +60,9 @@ export function activate(context: vscode.ExtensionContext): void {
     loadConfig(workspaceRoot);
   }
 
-  // Generate fresh session ID on each activation (no persistence)
+  // Generate fresh session ID on each activation (no persistence).
+  // Dashboards follow every session whose session-start is at or after this time.
+  const activationTime = Date.now();
   currentSessionId = randomUUID();
   console.log(`ClineShield session ID: ${currentSessionId}`);
 
@@ -67,7 +75,7 @@ export function activate(context: vscode.ExtensionContext): void {
     100
   );
   statusBarItem.text = '🛡️ ClineShield';
-  statusBarItem.tooltip = `Session: ${currentSessionId} | Events: 0`;
+  statusBarItem.tooltip = formatTooltip(0, 0);
 
   // Show status bar item immediately
   statusBarItem.show();
@@ -79,7 +87,7 @@ export function activate(context: vscode.ExtensionContext): void {
   if (workspaceRoot) {
     void appendEvent(
       {
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(activationTime).toISOString(),
         sessionId: currentSessionId,
         type: 'edit-allowed',
         data: {
@@ -151,19 +159,22 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      const events = await readEventsBySession(currentSessionId, workspaceRoot);
+      const allEvents = await readEvents(workspaceRoot);
+      const visibleIds = selectVisibleSessionIds(allEvents, activationTime, currentSessionId);
+      const events = allEvents.filter(e => !!e && visibleIds.has(e.sessionId));
 
-      // Update status bar tooltip with event count
-      statusBarItem.tooltip = `Session: ${currentSessionId} | Events: ${events.length}`;
+      // Update status bar tooltip: Cline sessions followed (excluding our own) + event count
+      statusBarItem.tooltip = formatTooltip(visibleIds.size - 1, events.length);
 
       // Fire LLM analysis for any new medium/high risk-assessed events
       for (const event of events) {
         if (
           event.type === 'risk-assessed' &&
           event.data.level !== 'low' &&
-          !processedRiskTimestamps.has(event.timestamp)
+          !processedRiskTimestamps.has(`${event.sessionId}|${event.timestamp}|${event.data.file}`)
         ) {
-          processedRiskTimestamps.add(event.timestamp);
+          // Keyed by session too: parallel sessions can write in the same millisecond.
+          processedRiskTimestamps.add(`${event.sessionId}|${event.timestamp}|${event.data.file}`);
           console.log(`[CS:llm] enqueuing Gemini call — level:${event.data.level} score:${event.data.rulesScore} file:${event.data.file}`);
           enqueueGeminiCall(() => void processRiskEvent(event, currentSessionId!, workspaceRoot));
         }
@@ -181,7 +192,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Register metrics sidebar
   if (workspaceRoot) {
-    const sidebarProvider = new MetricsSidebarProvider(context.extensionUri, workspaceRoot, currentSessionId);
+    const sidebarProvider = new MetricsSidebarProvider(context.extensionUri, workspaceRoot, currentSessionId, activationTime);
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider(MetricsSidebarProvider.viewType, sidebarProvider)
     );
@@ -190,7 +201,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Register change map tree view
   if (workspaceRoot) {
-    const changeMapProvider = new ChangeMapProvider(workspaceRoot, currentSessionId);
+    const changeMapProvider = new ChangeMapProvider(workspaceRoot, currentSessionId, activationTime);
     context.subscriptions.push(
       vscode.window.registerTreeDataProvider(ChangeMapProvider.viewType, changeMapProvider)
     );
