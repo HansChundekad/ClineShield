@@ -1,9 +1,9 @@
 import { DEADLINE_MS, levelFor, scoreAction } from '../engine';
-import { mergeConfigs, validateConfig } from '../../config/schema';
+import { validateConfig, withDefaults } from '../../config/schema';
 import { OPTS, action, change, update } from './fixtures';
 import type { Check } from '../types';
 
-const cfg = (raw: unknown = {}) => mergeConfigs(validateConfig(raw, 'personal').config, {});
+const cfg = (raw: unknown = {}) => withDefaults(validateConfig(raw).config);
 const lines = (n: number, p = 'l') => Array.from({ length: n }, (_, i) => `${p}${i}`);
 const known = (file: string, removed: number, total: number) => {
   const c = change(update(file, lines(removed), ['x'], []), { original: lines(total).join('\n') + '\n' });

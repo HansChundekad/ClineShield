@@ -1,27 +1,28 @@
 /**
  * store.ts
  *
- * Loads ~/.cline-shield.yml (personal) and <workspace>/.cline-shield.yml
- * (project), re-parsing only when a file's mtime or size changes. Never throws.
+ * Loads ~/.cline-shield.yml, the plugin's only config source (SPEC.md
+ * Decision 10): a .cline-shield.yml inside a repo is never read. Re-parses
+ * only when the file's mtime or size changes. Never throws.
  */
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import { mergeConfigs, validateConfig } from './schema';
-import type { PartialConfig, RubricConfig, Source } from './schema';
+import { validateConfig, withDefaults } from './schema';
+import type { RubricConfig } from './schema';
 
 export const CONFIG_FILE = '.cline-shield.yml';
+const LABEL = `~/${CONFIG_FILE}`;
 
-interface Cached { key: string; config: PartialConfig; warnings: string[] }
+interface Cached { key: string; config: RubricConfig; warnings: string[] }
 
 export class ConfigStore {
-  private cache = new Map<Source, Cached>();
-  constructor(private readonly opts: { workspaceRoot: string; homeDir: string }) {}
+  private cache: Cached | undefined;
+  constructor(private readonly opts: { homeDir: string }) {}
 
-  private async load(source: Source): Promise<Cached> {
-    const file = path.join(source === 'personal' ? this.opts.homeDir : this.opts.workspaceRoot, CONFIG_FILE);
-    const label = source === 'personal' ? `~/${CONFIG_FILE}` : CONFIG_FILE;
+  async get(): Promise<{ config: RubricConfig; warnings: string[] }> {
+    const file = path.join(this.opts.homeDir, CONFIG_FILE);
     let key = 'missing';
     try {
       const st = await fs.stat(file);
@@ -29,25 +30,19 @@ export class ConfigStore {
     } catch {
       key = 'missing';
     }
-    const hit = this.cache.get(source);
-    if (hit && hit.key === key) return hit;
+    if (this.cache && this.cache.key === key) return this.cache;
 
-    let entry: Cached = { key, config: {}, warnings: [] };
+    let entry: Cached = { key, config: withDefaults({}), warnings: [] };
     if (key !== 'missing') {
       try {
         const raw = yaml.load(await fs.readFile(file, 'utf-8'), { schema: yaml.CORE_SCHEMA });
-        const { config, warnings } = validateConfig(raw, source);
-        entry = { key, config, warnings: warnings.map(w => `${label}: ${w}`) };
+        const { config, warnings } = validateConfig(raw);
+        entry = { key, config: withDefaults(config), warnings: warnings.map(w => `${LABEL}: ${w}`) };
       } catch {
-        entry = { key, config: {}, warnings: [`${label}: YAML parse error, file ignored`] };
+        entry = { key, config: withDefaults({}), warnings: [`${LABEL}: YAML parse error, file ignored`] };
       }
     }
-    this.cache.set(source, entry);
+    this.cache = entry;
     return entry;
-  }
-
-  async get(): Promise<{ config: RubricConfig; warnings: string[] }> {
-    const [personal, project] = await Promise.all([this.load('personal'), this.load('project')]);
-    return { config: mergeConfigs(personal.config, project.config), warnings: [...personal.warnings, ...project.warnings] };
   }
 }

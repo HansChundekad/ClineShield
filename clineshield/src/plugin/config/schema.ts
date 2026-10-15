@@ -2,7 +2,7 @@
  * schema.ts
  *
  * Rubric configuration (SPEC.md "Rubric configuration"): allowlist
- * validation, personal + project merge, and per-file policy resolution.
+ * validation of ~/.cline-shield.yml, defaults, and per-file policy resolution.
  * Pure. Bad values fall back to defaults with a warning; never throws.
  */
 
@@ -12,7 +12,6 @@ import { matchesGlob } from '../rubric/glob';
 import type { CategoryId } from '../rubric/types';
 
 export type PointsSetting = number | 'off' | 'block';
-export type Source = 'personal' | 'project';
 type Categories = Partial<Record<CategoryId, PointsSetting>>;
 
 export interface FolderOverride { preset?: Preset; cutoffs?: Partial<Cutoffs>; categories?: Categories }
@@ -58,7 +57,6 @@ export const DEFAULT_CONFIG: RubricConfig = {
 
 const PRESETS = ['relaxed', 'balanced', 'strict'];
 const LEGACY_KEYS = new Set(['no-nuke', 'sanity', 'risk', 'gemini_api_key']);
-const PERSONAL_ONLY = new Set(['mode', 'on_error', 'offline', 'trusted_commands']);
 const MAX_PATTERN = 200;
 const NESTED_QUANTIFIER = /\((?:[^()\\]|\\.)*[+*}]\)[+*{?]/;
 
@@ -111,7 +109,7 @@ function customRulesOf(raw: unknown, warn: (m: string) => void): CustomRule[] {
   return out;
 }
 
-export function validateConfig(raw: unknown, source: Source): { config: PartialConfig; warnings: string[] } {
+export function validateConfig(raw: unknown): { config: PartialConfig; warnings: string[] } {
   const warnings: string[] = [];
   const warn = (m: string) => warnings.push(m);
   const config: PartialConfig = {};
@@ -120,7 +118,6 @@ export function validateConfig(raw: unknown, source: Source): { config: PartialC
 
   for (const [key, val] of Object.entries(raw)) {
     if (LEGACY_KEYS.has(key)) continue;
-    if (source === 'project' && PERSONAL_ONLY.has(key)) { warn(`"${key}" is only read from ~/.cline-shield.yml; ignored in the project file`); continue; }
     switch (key) {
       case 'mode': if (val === 'enforce' || val === 'observe') config.mode = val; else warn('mode must be enforce or observe; ignored'); break;
       case 'preset': if (PRESETS.includes(val as string)) config.preset = val as Preset; else warn('preset must be relaxed, balanced or strict; ignored'); break;
@@ -152,21 +149,20 @@ export function validateConfig(raw: unknown, source: Source): { config: PartialC
   return { config, warnings };
 }
 
-export function mergeConfigs(personal: PartialConfig, project: PartialConfig): RubricConfig {
-  const pick = <K extends keyof PartialConfig>(k: K) => project[k] ?? personal[k];
-  const protectedSet = personal.protectedPaths !== undefined || project.protectedPaths !== undefined;
+/** Fills unset keys with defaults; `protected_paths` replaces the defaults only when set. */
+export function withDefaults(c: PartialConfig): RubricConfig {
   return {
-    mode: pick('mode') ?? DEFAULT_CONFIG.mode,
-    preset: pick('preset') ?? DEFAULT_CONFIG.preset,
-    onError: pick('onError') ?? DEFAULT_CONFIG.onError,
-    offline: pick('offline') ?? DEFAULT_CONFIG.offline,
-    cutoffs: { ...personal.cutoffs, ...project.cutoffs },
-    categories: { ...personal.categories, ...project.categories },
-    protectedPaths: protectedSet ? [...(personal.protectedPaths ?? []), ...(project.protectedPaths ?? [])] : DEFAULT_PROTECTED_PATHS,
-    trustedCommands: [...(personal.trustedCommands ?? []), ...(project.trustedCommands ?? [])],
-    trustedDomains: [...(personal.trustedDomains ?? []), ...(project.trustedDomains ?? [])],
-    paths: [...(project.paths ?? []), ...(personal.paths ?? [])],
-    customRules: [...(personal.customRules ?? []), ...(project.customRules ?? [])],
+    mode: c.mode ?? DEFAULT_CONFIG.mode,
+    preset: c.preset ?? DEFAULT_CONFIG.preset,
+    onError: c.onError ?? DEFAULT_CONFIG.onError,
+    offline: c.offline ?? DEFAULT_CONFIG.offline,
+    cutoffs: c.cutoffs ?? {},
+    categories: c.categories ?? {},
+    protectedPaths: c.protectedPaths ?? DEFAULT_PROTECTED_PATHS,
+    trustedCommands: c.trustedCommands ?? [],
+    trustedDomains: c.trustedDomains ?? [],
+    paths: c.paths ?? [],
+    customRules: c.customRules ?? [],
   };
 }
 

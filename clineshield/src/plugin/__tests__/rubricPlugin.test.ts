@@ -108,11 +108,19 @@ describe('Risk rubric (plugin)', () => {
     expect(await call('editor', { path: 'lib/a.ts' }).before()).toBeUndefined();
   });
 
-  it('a project file cannot switch protection off', async () => {
-    await fs.writeFile(path.join(root, '.cline-shield.yml'), 'mode: observe\n');
-    const r = await call('apply_patch', patch('*** Update File: lib/small.ts', '@@', '-l1', '+// ... rest of code unchanged')).before();
-    expect(r).toMatchObject({ skip: true });
-    expect(plugin.configWarnings.join('\n')).toMatch(/"mode" is only read/);
+  it('a project .cline-shield.yml has no effect', async () => {
+    await fs.writeFile(path.join(root, '.cline-shield.yml'),
+      'mode: observe\npreset: relaxed\ncutoffs: { ask: 99, block: 100 }\ncategories: { rewrite_share: off, protected_path: off }\nprotected_paths: []\n');
+    const rewrite = await call('apply_patch', patch('*** Update File: lib/small.ts', '@@', ...lines(38).map(l => `-${l}`), '+x')).before();
+    expect(rewrite).toMatchObject({ policy: { autoApprove: false } });
+    await fs.mkdir(path.join(root, 'src', 'auth'), { recursive: true });
+    await fs.writeFile(path.join(root, 'src', 'auth', 'a.ts'), 'a\n');
+    const c = call('apply_patch', patch('*** Update File: src/auth/a.ts', '@@', '-a', '+b'));
+    await c.before();
+    await c.after();
+    const [risk] = (await events('risk-assessed')).filter(e => e.data.file === 'src/auth/a.ts');
+    expect(risk.data.reasons).toEqual(expect.arrayContaining([expect.objectContaining({ rule: 'protected_path' })]));
+    expect(plugin.configWarnings).toEqual([]);
   });
 
   it('observe mode (personal) logs what would have happened but never blocks', async () => {

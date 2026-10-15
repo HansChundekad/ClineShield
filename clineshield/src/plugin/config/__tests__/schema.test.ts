@@ -1,6 +1,6 @@
-import { DEFAULT_PROTECTED_PATHS, mergeConfigs, resolveFilePolicy, validateConfig } from '../schema';
+import { DEFAULT_PROTECTED_PATHS, resolveFilePolicy, validateConfig, withDefaults } from '../schema';
 
-const v = (raw: unknown, source: 'personal' | 'project' = 'personal') => validateConfig(raw, source);
+const v = (raw: unknown) => validateConfig(raw);
 
 describe('validateConfig', () => {
   it('accepts the spec example', () => {
@@ -23,11 +23,10 @@ describe('validateConfig', () => {
     expect(warnings).toEqual(['unknown key "bogus" ignored']);
   });
 
-  it('loosening keys are personal-only', () => {
-    const { config, warnings } = v({ mode: 'observe', on_error: 'allow', offline: true, trusted_commands: ['x'], preset: 'strict' }, 'project');
-    expect(config).toEqual({ preset: 'strict' });
-    expect(warnings).toHaveLength(4);
-    expect(warnings[0]).toMatch(/only read from ~\/\.cline-shield\.yml/);
+  it('loosening keys are accepted (only the personal file is read)', () => {
+    const { config, warnings } = v({ mode: 'observe', on_error: 'allow', offline: true, trusted_commands: ['x'] });
+    expect(config).toEqual({ mode: 'observe', onError: 'allow', offline: true, trustedCommands: ['x'] });
+    expect(warnings).toEqual([]);
   });
 
   it('bad values fall back with a warning', () => {
@@ -57,9 +56,9 @@ describe('validateConfig', () => {
   });
 });
 
-describe('mergeConfigs + resolveFilePolicy', () => {
+describe('withDefaults + resolveFilePolicy', () => {
   it('defaults: balanced, ask on error, default protected paths', () => {
-    const c = mergeConfigs({}, {});
+    const c = withDefaults({});
     expect(c).toMatchObject({ mode: 'enforce', preset: 'balanced', onError: 'ask', offline: false });
     expect(c.protectedPaths).toEqual(DEFAULT_PROTECTED_PATHS);
     const p = resolveFilePolicy(c, 'src/a.ts');
@@ -68,23 +67,20 @@ describe('mergeConfigs + resolveFilePolicy', () => {
     expect(p.points.placeholder).toBe('block');
   });
 
-  it('project overrides personal key by key; lists combine', () => {
-    const personal = v({ preset: 'relaxed', categories: { ci_config: 10 }, protected_paths: ['a/**'] }).config;
-    const project = v({ preset: 'strict', categories: { infra: 5 }, protected_paths: ['b/**'] }, 'project').config;
-    const c = mergeConfigs(personal, project);
-    expect(c.preset).toBe('strict');
-    expect(c.categories).toEqual({ ci_config: 10, infra: 5 });
-    expect(c.protectedPaths).toEqual(['a/**', 'b/**']);
+  it('protected_paths: defaults unless the file sets the key', () => {
+    expect(withDefaults(v({ protected_paths: ['a/**'] }).config).protectedPaths).toEqual(['a/**']);
+    expect(withDefaults(v({ protected_paths: [] }).config).protectedPaths).toEqual([]);
+    expect(withDefaults(v({ preset: 'strict' }).config).protectedPaths).toEqual(DEFAULT_PROTECTED_PATHS);
   });
 
   it('per-folder override: first match wins, preset then cutoffs then categories', () => {
-    const c = mergeConfigs(v({ paths: { 'src/auth/**': { preset: 'strict', categories: { manifest: 'off' } }, 'src/**': { preset: 'relaxed' } } }).config, {});
+    const c = withDefaults(v({ paths: { 'src/auth/**': { preset: 'strict', categories: { manifest: 'off' } }, 'src/**': { preset: 'relaxed' } } }).config);
     expect(resolveFilePolicy(c, 'src/auth/login.ts')).toMatchObject({ cutoffs: { ask: 25, block: 50 }, points: { manifest: 'off' } });
     expect(resolveFilePolicy(c, 'src/x.ts').cutoffs).toEqual({ ask: 60, block: 90 });
     expect(resolveFilePolicy(c, 'docs/x.md').cutoffs).toEqual({ ask: 40, block: 70 });
   });
 
   it('config points replace the category max', () => {
-    expect(resolveFilePolicy(mergeConfigs(v({ categories: { rewrite_share: 80 } }).config, {}), 'a.ts').points.rewrite_share).toBe(80);
+    expect(resolveFilePolicy(withDefaults(v({ categories: { rewrite_share: 80 } }).config), 'a.ts').points.rewrite_share).toBe(80);
   });
 });

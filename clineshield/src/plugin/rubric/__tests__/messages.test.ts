@@ -1,9 +1,9 @@
 import { askMessage, blockMessage } from '../messages';
 import { scoreAction } from '../engine';
-import { mergeConfigs } from '../../config/schema';
+import { withDefaults } from '../../config/schema';
 import { action, change, update } from './fixtures';
 
-const cfg = mergeConfigs({}, {});
+const cfg = withDefaults({});
 
 describe('messages', () => {
   it('block message: reasons and fix, no points or cut-offs', () => {

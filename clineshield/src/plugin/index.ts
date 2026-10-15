@@ -7,7 +7,7 @@
  * Session identity + session-start event, and the Risk rubric for file
  * edits: beforeTool parses apply_patch / editor input, gathers the files
  * (rubric/gather.ts), scores the action (rubric/engine.ts) under the
- * personal + project config (config/store.ts) and maps the tier to
+ * ~/.cline-shield.yml config (config/store.ts) and maps the tier to
  * allow · ask · block. afterTool records the user's decision on asked
  * actions and one risk-assessed event per file of every successful edit.
  */
@@ -169,7 +169,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
   async function beforeTool(ctx: AgentBeforeToolContext): Promise<AgentBeforeToolResult | undefined> {
     const toolName = ctx.toolCall?.toolName ?? ctx.tool?.name;
     if (!EDIT_TOOLS.has(toolName) || !workspaceRoot) return undefined;
-    store ??= new ConfigStore({ workspaceRoot, homeDir });
+    store ??= new ConfigStore({ homeDir });
     let result: { decision: Decision; config: RubricConfig } | undefined;
     try {
       result = await decide(toolName, ctx.input);
@@ -240,7 +240,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     // No beforeTool decision (e.g. hook added mid-session): patch-only re-score; the file has already changed.
     const ops = operationsFor(toolName, ctx.input);
     if (!ops) return undefined;
-    store ??= new ConfigStore({ workspaceRoot, homeDir });
+    store ??= new ConfigStore({ homeDir });
     const config = await loadConfig();
     const root = workspaceRoot;
     const changes = ops.map(op => buildChange(op, { binary: false, outsideWorkspace: false }, p => toDisplayPath(p, root), path.resolve(root, op.path)));

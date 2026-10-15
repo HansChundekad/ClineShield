@@ -1,6 +1,7 @@
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
+import { DEFAULT_CONFIG } from '../schema';
 import { ConfigStore } from '../store';
 
 describe('ConfigStore', () => {
@@ -16,22 +17,30 @@ describe('ConfigStore', () => {
   });
 
   it('zero config → balanced defaults, no warnings', async () => {
-    const { config, warnings } = await new ConfigStore({ workspaceRoot: ws, homeDir: home }).get();
+    const { config, warnings } = await new ConfigStore({ homeDir: home }).get();
     expect(config.preset).toBe('balanced');
     expect(warnings).toEqual([]);
   });
 
-  it('merges personal and project; project cannot loosen', async () => {
-    await fs.writeFile(path.join(home, '.cline-shield.yml'), 'preset: relaxed\non_error: allow\n');
-    await fs.writeFile(path.join(ws, '.cline-shield.yml'), 'preset: strict\nmode: observe\n');
-    const { config, warnings } = await new ConfigStore({ workspaceRoot: ws, homeDir: home }).get();
-    expect(config).toMatchObject({ preset: 'strict', onError: 'allow', mode: 'enforce' });
-    expect(warnings.join('\n')).toMatch(/\.cline-shield\.yml: "mode" is only read/);
+  it('reads the personal file', async () => {
+    await fs.writeFile(path.join(home, '.cline-shield.yml'), 'preset: strict\non_error: allow\nmode: observe\n');
+    const { config, warnings } = await new ConfigStore({ homeDir: home }).get();
+    expect(config).toMatchObject({ preset: 'strict', onError: 'allow', mode: 'observe' });
+    expect(warnings).toEqual([]);
+  });
+
+  it('never reads a project .cline-shield.yml (no effect, no warning)', async () => {
+    await fs.writeFile(path.join(ws, '.cline-shield.yml'),
+      'mode: observe\non_error: allow\npreset: relaxed\ncutoffs: { ask: 99, block: 100 }\ncategories: { rewrite_share: off, ci_config: off }\nprotected_paths: []\nbogus: 1\n');
+    const store = new ConfigStore({ homeDir: home, workspaceRoot: ws } as never);
+    const { config, warnings } = await store.get();
+    expect(config).toEqual(DEFAULT_CONFIG);
+    expect(warnings).toEqual([]);
   });
 
   it('re-reads after the file changes', async () => {
-    const store = new ConfigStore({ workspaceRoot: ws, homeDir: home });
-    const file = path.join(ws, '.cline-shield.yml');
+    const store = new ConfigStore({ homeDir: home });
+    const file = path.join(home, '.cline-shield.yml');
     await fs.writeFile(file, 'preset: strict\n');
     expect((await store.get()).config.preset).toBe('strict');
     await fs.writeFile(file, 'preset: relaxed   \n');
@@ -41,20 +50,20 @@ describe('ConfigStore', () => {
   });
 
   it('broken YAML → file ignored with a warning', async () => {
-    await fs.writeFile(path.join(ws, '.cline-shield.yml'), 'preset: [unclosed\n');
-    const { config, warnings } = await new ConfigStore({ workspaceRoot: ws, homeDir: home }).get();
+    await fs.writeFile(path.join(home, '.cline-shield.yml'), 'preset: [unclosed\n');
+    const { config, warnings } = await new ConfigStore({ homeDir: home }).get();
     expect(config.preset).toBe('balanced');
     expect(warnings[0]).toMatch(/YAML parse error/);
   });
 
   it('a 1.x config file loads without warnings', async () => {
     await fs.copyFile(path.join(__dirname, '../../../../../.cline-shield.example.yml'), path.join(home, '.cline-shield.yml'));
-    const { warnings } = await new ConfigStore({ workspaceRoot: ws, homeDir: home }).get();
+    const { warnings } = await new ConfigStore({ homeDir: home }).get();
     expect(warnings).toEqual([]);
   });
 
   it('literal 1.x keys load without warnings', async () => {
-    await fs.writeFile(path.join(ws, '.cline-shield.yml'), 'no-nuke:\n  max_deleted_functions: 3\nsanity:\n  tools: [eslint]\nrisk:\n  protected_paths: [src/auth/]\n');
-    expect((await new ConfigStore({ workspaceRoot: ws, homeDir: home }).get()).warnings).toEqual([]);
+    await fs.writeFile(path.join(home, '.cline-shield.yml'), 'no-nuke:\n  max_deleted_functions: 3\nsanity:\n  tools: [eslint]\nrisk:\n  protected_paths: [src/auth/]\n');
+    expect((await new ConfigStore({ homeDir: home }).get()).warnings).toEqual([]);
   });
 });
