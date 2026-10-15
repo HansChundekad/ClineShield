@@ -11,7 +11,7 @@ import type { Cutoffs } from './categories';
 import { ALL_CHECKS } from './checks';
 import { rewriteShare } from './checks/files';
 import { matchesGlob } from './glob';
-import { resolveFilePolicy } from '../config/schema';
+import { MAX_LINE_SCAN, resolveFilePolicy } from '../config/schema';
 import type { RubricConfig } from '../config/schema';
 import type { ActionContext, Check, CategoryId, FileChange, RawFinding, Tier } from './types';
 
@@ -80,7 +80,7 @@ export function scoreAction(action: ActionContext, config: RubricConfig, options
     const raws = checks.filter(k => !k.perAction).flatMap(k => runCheck(k, c, skipped));
     const findings = raws.map(r => toFinding(r, policy.points[r.category])).filter((x): x is Finding => !!x);
     config.customRules.forEach((rule, i) => {
-      const hit = rule.match === 'path' ? matchesGlob(c.path, rule.pattern) : rule.match === 'content' ? c.added.some(l => rule.regex!.test(l)) : false;
+      const hit = rule.match === 'path' ? matchesGlob(c.path, rule.pattern) : rule.match === 'content' ? c.added.some(l => rule.regex!.test(l.slice(0, MAX_LINE_SCAN))) : false;
       if (hit) findings.push({ id: `custom:${i}`, points: rule.points === 'block' ? 0 : rule.points, block: rule.points === 'block', logOnly: false, detail: rule.message, fix: rule.message });
     });
     const count = (k: 'functionsDeleted' | 'exportsDeleted') => raws.reduce((n, r) => n + (r.counts?.[k] ?? 0), 0);

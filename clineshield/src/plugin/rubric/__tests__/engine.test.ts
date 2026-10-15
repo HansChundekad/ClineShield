@@ -73,6 +73,17 @@ describe('scoreAction', () => {
     expect(d.files[0].findings.map(f => f.id)).toEqual(['custom:0', 'custom:1']);
   });
 
+  it('custom content rules test only the first 500 chars of a line', () => {
+    const long = '1'.repeat(50_000);
+    const rules = cfg({ custom_rules: [{ match: 'content', pattern: '\\d+x', points: 10, message: 'm' }] });
+    const start = Date.now();
+    const d = scoreAction(action([change(update('lib/a.ts', [], [long]))]), rules);
+    expect(Date.now() - start).toBeLessThan(200);
+    expect(d.files[0].findings.some(f => f.id === 'custom:0')).toBe(false);
+    const hit = scoreAction(action([change(update('lib/a.ts', [], ['12x' + long]))]), rules);
+    expect(hit.files[0].findings.some(f => f.id === 'custom:0')).toBe(true);
+  });
+
   it('files_touched is added to the worst file once', () => {
     const cs = lines(6).map(n => change(update(`lib/${n}.ts`, ['a'], ['b'])));
     const d = scoreAction(action(cs), cfg());

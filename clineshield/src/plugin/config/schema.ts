@@ -58,7 +58,21 @@ export const DEFAULT_CONFIG: RubricConfig = {
 const PRESETS = ['relaxed', 'balanced', 'strict'];
 const LEGACY_KEYS = new Set(['no-nuke', 'sanity', 'risk', 'gemini_api_key']);
 const MAX_PATTERN = 200;
-const NESTED_QUANTIFIER = /\((?:[^()\\]|\\.)*[+*}]\)[+*{?]/;
+/** Custom content rules only test this many characters of each line. */
+export const MAX_LINE_SCAN = 500;
+
+/** True when a quantifier (`+ * ? {n}`) applies to a group: the usual source of catastrophic backtracking. */
+function hasQuantifiedGroup(pattern: string): boolean {
+  let inClass = false;
+  for (let i = 0; i < pattern.length; i++) {
+    const ch = pattern[i];
+    if (ch === '\\') { i++; continue; }
+    if (inClass) { if (ch === ']') inClass = false; continue; }
+    if (ch === '[') inClass = true;
+    else if (ch === ')' && /^(?:[+*?]|\{\d)/.test(pattern.slice(i + 1))) return true;
+  }
+  return false;
+}
 
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 const isInt = (x: unknown) => typeof x === 'number' && Number.isInteger(x) && x >= 0 && x <= 100;
@@ -101,7 +115,7 @@ function customRulesOf(raw: unknown, warn: (m: string) => void): CustomRule[] {
     if (r.pattern.length > MAX_PATTERN || r.message.length > MAX_PATTERN) { warn(`${where} pattern/message longer than ${MAX_PATTERN} chars; ignored`); return; }
     const rule: CustomRule = { match: r.match as CustomRule['match'], pattern: r.pattern, points: r.points as number | 'block', message: r.message };
     if (rule.match !== 'path') {
-      if (NESTED_QUANTIFIER.test(rule.pattern)) { warn(`${where}.pattern has nested repeats that could hang; ignored`); return; }
+      if (hasQuantifiedGroup(rule.pattern)) { warn(`${where}.pattern repeats a group ((...)+, (...)*, (...){n}), which could hang; ignored`); return; }
       try { rule.regex = new RegExp(rule.pattern); } catch { warn(`${where}.pattern is not a valid regex; ignored`); return; }
     }
     out.push(rule);

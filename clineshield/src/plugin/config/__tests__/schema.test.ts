@@ -50,6 +50,16 @@ describe('validateConfig', () => {
     expect(warnings).toHaveLength(3);
   });
 
+  it('rejects quantified groups; accepts plain patterns', () => {
+    const rule = (pattern: string) => ({ match: 'content', pattern, points: 10, message: 'x' });
+    const { config, warnings } = v({
+      custom_rules: ['(\\w+\\s?)+$', '(a|aa)+$', '(.*a){20}', '(?:ab)*c', 'TODO', 'legacyCharge\\(', 'foo\\d+bar', '\\(x\\)+'].map(rule),
+    });
+    expect(config.customRules?.map(r => r.pattern)).toEqual(['TODO', 'legacyCharge\\(', 'foo\\d+bar', '\\(x\\)+']);
+    expect(warnings).toHaveLength(4);
+    expect(warnings[0]).toMatch(/custom_rules\[0\]\.pattern/);
+  });
+
   it('non-object root → warning, empty config', () => {
     expect(v('just a string')).toEqual({ config: {}, warnings: ['config is not a YAML mapping; ignored'] });
     expect(v(null)).toEqual({ config: {}, warnings: [] });
