@@ -128,7 +128,7 @@ Ships ClineShield as a Cline plugin package that a user installs with one comman
 #### Session identity
 Every event a run writes carries the same session ID, without the VS Code extension creating it.
 - [x] Session ID taken from the Cline runtime/plugin context (fallback: UUID generated in `setup()`). Source: `ctx.session.sessionId` in `setup()`
-- [ ] Sidebar's "this session" view still works with plugin-written events (see Dashboard compatibility). The plugin writes the same `session-start` marker as `extension.ts`, but the sidebar filters on the extension's own UUID, so it will not show plugin events until the extension follows the latest `session-start`
+- [x] Sidebar's "this session" view works with plugin-written events (see Dashboard compatibility). The plugin writes the same `session-start` marker as `extension.ts` (an `edit-allowed` event with `data.file: "session-start"`). The dashboards show **every session that started since the extension activated**: all session ids whose `session-start` timestamp is ≥ activation time, plus the extension's own id (Open decision #7). Parallel sessions (e.g. CLI + Kanban) are merged; the set resets on reload. Logic: `selectVisibleSessionIds()` / `filterVisibleEvents()` in `src/metrics/sessions.ts`, unit-tested in `src/metrics/__tests__/sessions.test.ts`
 
 #### Metrics writer (shared contract)
 The plugin writes the exact same events as 1.x, using the existing writer.
@@ -184,7 +184,7 @@ Every allowed edit gets the same deterministic score as 1.x.
 
 #### Dashboard compatibility (VS Code extension)
 The extension becomes a viewer: open the workspace in VS Code, run Cline from the CLI, watch the dashboards. (Owner confirmed 2026-10-14: keep the extension as a viewer; do not drop it.)
-- [ ] Sidebar, Change Map and status bar update live from plugin-written events
+- [x] Sidebar, Change Map and status bar update live from plugin-written events — all three filter through `filterVisibleEvents()` / `selectVisibleSessionIds()` (sessions started since activation + the extension's own session, Open decision #7); existing watchers handle both `onDidCreate` and `onDidChange`. Status bar tooltip shows how many Cline sessions are being followed. Live behaviour with a real CLI run is the manual check below
 - [ ] Gemini explanation still triggers for medium/high `risk-assessed` events (diff sidecar written by the plugin)
 - [ ] Extension no longer needs to set env vars for hooks; it still works when no plugin has run yet
 - [ ] Manual check: one real CLI session in `test-workspace/` with the sidebar open
@@ -254,3 +254,4 @@ A small, honest measurement of what ClineShield catches and costs.
 | 4 | Final tier thresholds for Edit Size Policy and Shell Command Guard (defaults above are proposals) | open |
 | 5 | Plugin package location: `clineshield/plugin/` inside the existing package, or a separate top-level package | **decided 2026-10-14:** plugin source in `clineshield/src/plugin/` (reuses `metrics/writer.ts` through a relative import), plus a minimal root `package.json` whose `cline.plugins` lists `./clineshield/src/plugin/index.ts`. Why: a git install has no subdirectory option, reads only the root `package.json` (`plugin-install.ts` `collectPluginEntries`), and loads `.ts` entries through jiti with no build step |
 | 6 | Cross-process writes to `metrics.json` lost events (plugin worker vs. extension host, or two Cline sessions in the same folder): last rename wins | **decided 2026-10-14:** lock file in `appendEvent()` (`metrics.json.lock`, created exclusively, taken over after 5 s as stale, written without the lock after 1 s of waiting so hooks never block). Rejected: one file per session, because it changes the fixed `metrics.json` location contract and every reader; accepting the loss. Implemented and tested |
+| 7 | Which sessions the VS Code dashboards show, now that plugin events carry the Cline session id instead of the extension's UUID | **decided 2026-10-14:** every session that started since the extension activated — session ids whose `session-start` marker timestamp is ≥ activation time, plus the extension's own session id (so "Generate Test Metrics" and `llm-analysis` events still show). Parallel sessions (CLI + Kanban) are merged; resets on reload. Sessions without a `session-start` marker, or started before activation, are hidden. Implemented in `src/metrics/sessions.ts` |
