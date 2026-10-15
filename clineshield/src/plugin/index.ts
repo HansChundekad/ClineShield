@@ -7,13 +7,15 @@
  * Session identity + session-start event, and the Edit Size Policy:
  * beforeTool classifies apply_patch / editor edits to TS/JS files
  * (editPolicy/policy.ts) as allow · approve · block; afterTool records the
- * user's decision on edits that were sent to approval.
+ * user's decision on edits that were sent to approval, then scores every
+ * successful edit with the 1.x rules engine (risk-assessed).
  */
 
 import { randomUUID } from 'crypto';
 import * as path from 'path';
 import { appendEvent } from '../metrics/writer';
 import type { MetricsEvent } from '../types/metrics';
+import { computeRiskScore } from '../extension/riskAnalysis/rulesEngine';
 import { evaluateEdit } from './editPolicy/policy';
 import type { FileVerdict } from './editPolicy/policy';
 import type {
@@ -91,6 +93,8 @@ export function createClineShieldPlugin(): ClineShieldPlugin {
   const pending = new Set<Promise<void>>();
   /** Edits sent to user approval, by toolCallId, awaiting afterTool. */
   const awaitingApproval = new Map<string, { files: FileVerdict[]; reason: string }>();
+  /** beforeTool measurements by toolCallId, reused by afterTool risk scoring. */
+  const measured = new Map<string, FileVerdict[]>();
 
   function record(event: MetricsEvent): void {
     if (!workspaceRoot) return;
@@ -103,10 +107,44 @@ export function createClineShieldPlugin(): ClineShieldPlugin {
     return { file: f.file, structuralChangePercent, functionsDeleted, exportsDeleted };
   }
 
+  function evaluate(toolName: string, input: unknown) {
+    return evaluateEdit(toolName, input, { displayPath: p => toDisplayPath(p, workspaceRoot) });
+  }
+
+  /**
+   * One risk-assessed event per file, scored by the 1.x rules engine.
+   * Sanity checks are not built in the plugin yet, so every edit counts as
+   * "sanity not failed". Diff size = changed (+/-) lines of that file, as the
+   * 1.x hook counted them. A new file cannot be a structural rewrite, so it
+   * scores on path and size only.
+   */
+  function recordRisk(files: FileVerdict[]): void {
+    const timestamp = new Date().toISOString();
+    for (const f of files) {
+      const m = f.measurement;
+      const isNew = m.operation === 'add';
+      const { score, level, reasons } = computeRiskScore({
+        filePath: f.file,
+        structuralChangePercent: isNew ? 0 : m.structuralChangePercent,
+        deletedFunctions: isNew ? 0 : m.functionsDeleted,
+        sanityPassed: true,
+        diffLineCount: m.addedLines + m.removedLines,
+      });
+      record({
+        timestamp,
+        sessionId: sessionId ?? 'unknown-session',
+        type: 'risk-assessed',
+        data: { file: f.file, rulesScore: score, level, reasons },
+      });
+    }
+  }
+
   function beforeTool(ctx: AgentBeforeToolContext): AgentBeforeToolResult | undefined {
     const toolName = ctx.toolCall?.toolName ?? ctx.tool?.name;
-    const decision = evaluateEdit(toolName, ctx.input, { displayPath: p => toDisplayPath(p, workspaceRoot) });
+    const decision = evaluate(toolName, ctx.input);
     if (!decision) return undefined;
+    const id = ctx.toolCall?.toolCallId;
+    if (id !== undefined && decision.tier !== 'block') measured.set(id, decision.files);
     const timestamp = new Date().toISOString();
     const sid = sessionId ?? 'unknown-session';
 
@@ -130,20 +168,28 @@ export function createClineShieldPlugin(): ClineShieldPlugin {
 
   function afterTool(ctx: AgentAfterToolContext): AgentAfterToolResult | undefined {
     const id = ctx.toolCall?.toolCallId;
-    const awaiting = id === undefined ? undefined : awaitingApproval.get(id);
-    if (!awaiting) return undefined;
-    awaitingApproval.delete(id);
+    const cached = id === undefined ? undefined : measured.get(id);
+    if (id !== undefined) measured.delete(id);
 
-    const approved = !isApprovalDenied(ctx.result);
-    const timestamp = new Date().toISOString();
-    for (const f of awaiting.files) {
-      record({
-        timestamp,
-        sessionId: sessionId ?? 'unknown-session',
-        type: 'edit-approval',
-        data: { ...editData(f), reason: awaiting.reason, approved },
-      });
+    const awaiting = id === undefined ? undefined : awaitingApproval.get(id);
+    if (awaiting) {
+      awaitingApproval.delete(id!);
+      const approved = !isApprovalDenied(ctx.result);
+      const timestamp = new Date().toISOString();
+      for (const f of awaiting.files) {
+        record({
+          timestamp,
+          sessionId: sessionId ?? 'unknown-session',
+          type: 'edit-approval',
+          data: { ...editData(f), reason: awaiting.reason, approved },
+        });
+      }
     }
+
+    // Only edits that actually ran: denied, skipped (blocked) and failed calls all arrive with isError.
+    if (ctx.result?.isError) return undefined;
+    const files = cached ?? evaluate(ctx.toolCall?.toolName ?? ctx.tool?.name, ctx.input)?.files;
+    if (files) recordRisk(files);
     return undefined;
   }
 

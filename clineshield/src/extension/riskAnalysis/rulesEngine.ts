@@ -30,19 +30,20 @@ export interface RiskResult {
   reasons: RiskReason[];
 }
 
-// ── Protected path config (hardcoded for Phase 5; YAML-configurable in Phase 3) ──
+// ── Protected paths ──────────────────────────────────────────────────────────
 
-const PROTECTED_PATH_PREFIXES = [
+/**
+ * 1.x default protected paths (hooks/PostToolUse `_DEFAULT_PATHS`,
+ * .cline-shield.example.yml `risk.protected_paths`). Trailing slash =
+ * directory prefix from the workspace root; otherwise an exact basename.
+ * Hard-coded until the plugin reads `.cline-shield.yml` (SPEC.md Configuration).
+ */
+export const DEFAULT_PROTECTED_PATHS: readonly string[] = [
   'src/config/',
   'src/auth/',
   'src/middleware/',
   'auth/',
   'config/',
-];
-
-// Exact basename matches — trailing-slash entries above cover directories,
-// these cover individual files. Aligns with bash hook behaviour.
-const PROTECTED_FILE_EXACT = [
   '.env',
   '.env.local',
   '.env.production',
@@ -54,12 +55,8 @@ const PROTECTED_FILE_EXACT = [
 function isProtectedPath(filePath: string): boolean {
   const normalized = filePath.replace(/\\/g, '/');
   const basename = normalized.split('/').pop() ?? normalized;
-
-  if (PROTECTED_FILE_EXACT.includes(basename)) {
-    return true;
-  }
-  // Prefix match from path root only — consistent with bash `[[ path == prefix* ]]`
-  return PROTECTED_PATH_PREFIXES.some(prefix => normalized.startsWith(prefix));
+  // Same rule as the bash hook: `[[ path == prefix* ]]` / `[[ basename == p ]]`.
+  return DEFAULT_PROTECTED_PATHS.some(p => (p.endsWith('/') ? normalized.startsWith(p) : basename === p));
 }
 
 function isTestFile(filePath: string): boolean {

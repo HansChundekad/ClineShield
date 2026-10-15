@@ -1,4 +1,4 @@
-import { computeRiskScore } from '../rulesEngine';
+import { computeRiskScore, DEFAULT_PROTECTED_PATHS } from '../rulesEngine';
 import type { RiskInput } from '../rulesEngine';
 
 // Baseline: all-zero input, neutral file, sanity passed
@@ -42,6 +42,17 @@ describe('computeRiskScore', () => {
       const reason = result.reasons.find(r => r.rule === 'protected_path');
       expect(reason).toBeDefined();
       expect(reason!.points).toBe(30);
+    });
+
+    it('defaults equal the 1.x hook defaults (hooks/PostToolUse _DEFAULT_PATHS)', () => {
+      expect(DEFAULT_PROTECTED_PATHS).toEqual([
+        'src/config/', 'src/auth/', 'src/middleware/', 'auth/', 'config/',
+        '.env', '.env.local', '.env.production', '.env.development',
+      ]);
+    });
+
+    it('matches exact protected file names in any directory (1.x basename rule)', () => {
+      expect(computeRiskScore({ ...baseline, filePath: 'packages/api/.env.development' }).score).toBe(30);
     });
 
     it('does not match .env.staging — not in the default exact-file list', () => {
