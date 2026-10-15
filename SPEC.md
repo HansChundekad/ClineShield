@@ -226,7 +226,7 @@ custom_rules:
 ```
 
 #### Ask through the conversation (after Risk rubric ②)
-Cline's auto-approve all (and likely `--yolo`) approves a plugin's `autoApprove: false` without asking, so the ask tier silently allows.
+Cline's interactive auto-approve all approves a plugin's `autoApprove: false` without asking, so the ask tier silently allows (`--yolo` one-shot runs still show the `[y/N]` prompt — tested 2026-10-15).
 - [ ] Ask = skip with a reason telling Cline to ask the user in chat; after the user agrees, the identical action is allowed once
 - [ ] Works the same with auto-approve on or off, interactive and one-shot; headless with no user → stays refused
 - [ ] Report upstream: a plugin's `autoApprove: false` should override auto-approve all
