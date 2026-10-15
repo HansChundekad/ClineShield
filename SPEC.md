@@ -68,7 +68,7 @@ The mechanism every rule uses. Driven by the Risk rubric.
 - [x] Patch parser + `editor` adapter as pure modules (`plugin/patch/`), reusable for in-memory apply
 - [x] ~~Interim scoring: 1.x size rules, TS/JS only, thresholds in `EDIT_SIZE_THRESHOLDS` (Decision 4)~~ Replaced by the Risk rubric (①)
 - [x] < 200 ms on 20,000-line patches; unit tests at every tier boundary
-- [ ] Manual: how the CLI shows the approval prompt and the reason (headless runs deny — tested)
+- [x] Manual (2026-10-15): with Cline's auto-approve all on, the CLI approves an ask without prompting (`approved: true`, no prompt); with it off, one-shot runs show `Approve "editor" <input> [y/N]` without ClineShield's reason. Blocks always apply. Fixed by "Ask through the conversation"
 
 #### Risk scoring after edits
 - [x] `afterTool` scores each successful edit with `computeRiskScore()` and writes `risk-assessed` (lands with PR #18)
@@ -225,6 +225,12 @@ custom_rules:
   - { match: path, pattern: "billing/**", points: 40, message: "Billing code: ask first" }
 ```
 
+#### Ask through the conversation (after Risk rubric ②)
+Cline's auto-approve all (and likely `--yolo`) approves a plugin's `autoApprove: false` without asking, so the ask tier silently allows.
+- [ ] Ask = skip with a reason telling Cline to ask the user in chat; after the user agrees, the identical action is allowed once
+- [ ] Works the same with auto-approve on or off, interactive and one-shot; headless with no user → stays refused
+- [ ] Report upstream: a plugin's `autoApprove: false` should override auto-approve all
+
 #### Post-edit checks (time-budgeted)
 After an edit, run the project's checkers and feed errors back to Cline, without ever hitting the 3 s hook limit.
 - [ ] Checkers configurable per file glob (any language: e.g. `ruff`, `go vet`); default prettier → eslint → tsc for TS/JS
@@ -238,7 +244,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 - [ ] `/clineshield why`: the last ask/block in full (every category, points, total, cut-off)
 - [ ] Shows config warnings and an `on_error: allow` notice
 - [ ] Never throws; clear message when there are no events; unit test against a fixture `metrics.json`
-- [ ] Manual: does the CLI show a block reason to the user, or only to the model? Record here
+- [x] Manual (2026-10-15): the user sees the block reason in the terminal as `Error: ClineShield blocked this action…`
 
 #### VS Code extension (optional dashboard)
 - [ ] Shows `edit-approval` outcomes and rubric categories
@@ -300,4 +306,5 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 | Git install clones the repo, `npm install --omit=dev` at root, loads root `package.json` `cline.plugins`; no subdirectory syntax, only `@ref` | `core/src/services/plugin-install.ts` |
 | `.ts` entries load via jiti, so relative TS imports work without a build | `plugin-sandbox.ts`, `plugin-module-import.ts` |
 | Plugins can add slash commands (`"commands"`, `api.registerCommand`) | [plugin reference](https://github.com/cline/cline/blob/main/.agents/skills/cline-sdk/references/plugins/REFERENCE.md) |
+| CLI auto-approve all (`toolAutoApprove`) returns `approved: true` before looking at the request's policy, so a hook's `autoApprove: false` is overridden | `apps/cli/src/runtime/interactive/approvals.ts` `requestToolApproval` |
 | Plugins load from `<workspace>/.cline/plugins/` or `~/.cline/plugins/`; template: `sdk/examples/plugins/gitignore-read-files-guard.ts` | [docs](https://docs.cline.bot/customization/plugins) |
