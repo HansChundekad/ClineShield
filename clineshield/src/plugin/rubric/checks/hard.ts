@@ -49,8 +49,9 @@ function within(p: string, dir: string): boolean {
 }
 
 function isShieldPath(abs: string, a: ActionContext): boolean {
-  const root = a.workspaceRoot;
-  if (path.basename(abs) === '.cline-shield.yml' && [root, a.homeDir].includes(path.dirname(abs))) return true;
+  // Normalise: hosts may report roots with a trailing slash.
+  const root = path.resolve(a.workspaceRoot);
+  if (path.basename(abs) === '.cline-shield.yml' && [root, path.resolve(a.homeDir)].includes(path.dirname(path.resolve(abs)))) return true;
   return [path.join(root, '.cline-shield'), a.pluginDir, path.join(root, '.cline', 'plugins'), path.join(a.homeDir, '.cline', 'plugins')]
     .some(dir => within(abs, dir));
 }

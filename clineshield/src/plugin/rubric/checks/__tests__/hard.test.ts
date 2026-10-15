@@ -17,6 +17,13 @@ describe('self_protection', () => {
     const c = change(['*** Update File: x.yml', '*** Move to: .cline-shield.yml', '@@', '-a', '+b']);
     expect(ids(run(selfProtection, c))).toEqual(['self_protection']);
   });
+  it('still fires when the host reports roots with a trailing slash', () => {
+    const c = change(update('.cline-shield.yml', ['a'], ['b']));
+    const p = change(update(`${HOME}/.cline-shield.yml`, ['a'], ['b']));
+    const a = action([c], { workspaceRoot: '/ws/', homeDir: `${HOME}/` });
+    expect(ids(selfProtection.run(c, a, OPTS))).toEqual(['self_protection']);
+    expect(ids(selfProtection.run(p, a, OPTS))).toEqual(['self_protection']);
+  });
   it('ignores ordinary files and the example config', () => {
     expect(run(selfProtection, change(update('src/a.ts', ['a'], ['b'])))).toEqual([]);
     expect(run(selfProtection, change(update('.cline-shield.example.yml', ['a'], ['b'])))).toEqual([]);
