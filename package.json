@@ -1,0 +1,16 @@
+{
+  "name": "clineshield-cline-plugin",
+  "version": "0.2.0-dev",
+  "private": true,
+  "description": "ClineShield Cline plugin manifest. The plugin source lives in clineshield/src/plugin/; the VS Code extension package is clineshield/.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HansChundekad/ClineShield"
+  },
+  "cline": {
+    "plugins": [
+      "./clineshield/src/plugin/index.ts"
+    ]
+  }
+}
