@@ -179,9 +179,18 @@ Same prettier → eslint → tsc chain and retry feedback as 1.x, redesigned so 
 
 #### Risk scoring
 Every allowed edit gets the same deterministic score as 1.x.
-- [ ] Plugin calls `computeRiskScore()` from `rulesEngine.ts` directly (the bash port is retired)
-- [ ] Writes `risk-assessed`; protected paths come from config
-- [ ] Existing rules-engine tests keep passing
+- `afterTool` scores each successful `apply_patch` / `editor` edit to a TS/JS file (same file rule as the Edit Size
+  Policy) and writes one `risk-assessed` per file, workspace-relative path. Calls that come back with `isError`
+  (approval denied, blocked/skipped, or the edit itself failed) are not scored. Code: `recordRisk()` in `plugin/index.ts`.
+- Inputs: the `beforeTool` measurement for that `toolCallId` (cached, removed in `afterTool`), else measured again from
+  the input. Diff size = that file's changed (`+`/`-`) lines (1.x counted the whole patch). New files score on path and
+  size only (structural change and deleted functions treated as 0, like 1.x `write_to_file`).
+- Sanity checks are not built in the plugin yet, so every edit is scored as "sanity not failed" (`sanityPassed: true`);
+  wire in the real outcome with Post-edit sanity checks.
+- [x] Plugin calls `computeRiskScore()` from `rulesEngine.ts` directly (the bash port is retired). Tests: `src/plugin/__tests__/riskScoring.test.ts`
+- [x] Writes `risk-assessed` in the existing shape
+- [ ] Protected paths come from config. Until the Configuration feature, the 1.x defaults are hard-coded in one constant, `DEFAULT_PROTECTED_PATHS` (`rulesEngine.ts`): `src/config/`, `src/auth/`, `src/middleware/`, `auth/`, `config/` (prefix) and `.env`, `.env.local`, `.env.production`, `.env.development` (exact file name)
+- [x] Existing rules-engine tests keep passing
 
 #### Configuration
 `.cline-shield.yml` keeps working, read by the plugin itself.

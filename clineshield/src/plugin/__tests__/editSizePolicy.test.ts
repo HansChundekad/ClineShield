@@ -33,7 +33,8 @@ describe('Edit Size Policy (plugin hooks)', () => {
     await plugin.flush();
     const all = JSON.parse(await fs.readFile(path.join(root, '.cline-shield', 'metrics.json'), 'utf-8')) as Event[];
     for (const e of all) expect(validateEvent(e)).toEqual([]);
-    return all.filter(e => e.data.file !== 'session-start');
+    // risk-assessed events are covered by riskScoring.test.ts.
+    return all.filter(e => e.data.file !== 'session-start' && e.type !== 'risk-assessed');
   }
 
   function call(toolName: string, input: unknown) {
