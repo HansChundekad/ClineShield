@@ -84,53 +84,134 @@ The mechanism every rule uses. Today it is driven by the 1.x size rules; the Ris
 ### Next
 
 #### Risk rubric
-One scoring system for **every** Cline action, in **any language**. Each category that fires adds points; the
-total (0–100) picks the tier; the reason lists the categories that fired and how to make the action safer.
-Edits are measured against the **real file**: in `beforeTool` the file is still unchanged on disk, so the
-rubric reads it, applies Cline's change in memory, and compares. Nothing is written until the decision is made.
+One scoring system for **every** Cline action (edits, deletes, moves, commands), in **any language**. Each category
+that fires adds points; the capped total (0–100) picks the tier against the preset's cut-offs. **Hard rules** block
+whatever the total. Edits are measured against the **real file**: in `beforeTool` the file is still unchanged, so
+the rubric reads it, applies Cline's change in memory and compares. Nothing is written until the decision is made.
+Designed with the owner 2026-10-15; points are starting values, tuned by the eval (Decision 9).
 
-| Group | Categories | Applies to |
-|---|---|---|
-| Size | share of the original file removed or rewritten · lines removed · files touched in one action | edits |
-| File operations | file deleted · existing file fully overwritten · file moved/renamed · path outside the workspace | edits |
-| Sensitive files | protected paths (user list) · secrets (`.env*`, keys, certs) · CI config · infra (Dockerfile, Terraform, k8s) · DB migrations · dependency manifests & lockfiles · generated/vendored (`dist/`, `node_modules/`, `vendor/`) | edits |
-| Weakening safety | tests deleted · tests skipped (`.skip`, `xit`, `@Ignore`, `pytest.mark.skip`, `t.Skip`) · checks disabled (`eslint-disable`, `@ts-ignore`, `# noqa`, `# type: ignore`, `//nolint`) | edits |
-| Content | secret added (API key / token patterns in added lines) | edits |
-| Code structure | functions, classes, methods or exports removed (tree-sitter, many languages) | edits |
-| Commands | recursive delete (scored by target: workspace vs. outside/root) · git history rewrite (`reset --hard`, `push --force` but not `--force-with-lease`, `clean -fd`, `branch -D`) · pipe-to-shell (`curl … \| sh`) · `sudo` · destructive SQL (`DROP`, `TRUNCATE`, `DELETE` without `WHERE`) · publish/deploy (`npm publish`, `docker push`, `terraform apply`, `kubectl apply`) | `run_commands` |
-| Discounts | test files · new files that only add code | edits |
+**Cut-offs (ask / block):** relaxed 60 / 90 · **balanced 40 / 70** (default) · strict 25 / 50. Multi-file action:
+each file scored, worst file decides, `files_touched` adds to it, a hard rule on any file blocks the whole action.
 
-- [ ] Rubric engine: categories → points → capped score → tier; extends `rulesEngine.ts`, one engine for before and after the action
-- [ ] Edits measured against the real file via in-memory apply; multi-file actions score each file, worst file decides
-- [ ] Every category except code structure works on paths, lines and text patterns, so it runs on any language and file type
-- [ ] Language pattern packs for "tests skipped" and "checks disabled" (JS/TS, Python, Go, Java, Rust, Ruby to start)
-- [ ] Code structure via tree-sitter: loaded lazily, skipped when the language is unsupported or the time budget is tight
-- [ ] Commands parsed (`&&`, `;`, `|`, `sudo`, quoting) before matching, not raw substring checks
-- [ ] Reason text names the top categories and a safer alternative; same text goes to Cline and the logs
-- [ ] `risk-assessed` `reasons[]` carries the fired categories; `structuralChangePercent` becomes file-relative (same field)
-- [ ] Whole rubric < 200 ms per action (target), well inside the 3 s hook limit
-- [ ] Replaces the interim 1.x size rules and the hard-coded protected paths; closes Decision 8
-- [ ] Unit tests per category, plus: small edit to a big file allowed, full rewrite blocked, file delete, multi-file patch,
-  non-JS files, unreadable file (falls back to patch-only measures), `rm -rf node_modules` vs `rm -rf /`
+**Check kinds.** *Hard*: always block, no config can turn it off. *Critical*: if the check itself crashes → `on_error`.
+*Signal*: if it crashes → skipped and logged. *Log-only*: recorded in `reasons[]` with 0 points (description says what
+it would add); promoted to points only if the eval shows value. PR column = delivery order (see checklist).
+
+| Category (`id`) | Points | Kind | PR |
+|---|---|---|---|
+| **Hard rules** | | | |
+| `self_protection` — edit/command touching `.cline-shield.yml`, `~/.cline-shield.yml`, `.cline-shield/`, the plugin install dir | block | hard | ① |
+| `placeholder` — "rest of code unchanged" / "existing code here" style lines in an edit to an existing file; `TODO: implement` or a stub body (`pass`, `...`, `throw new Error("not implemented")`, `todo!()`, `panic("TODO")`) added in a hunk that removed ≥ 3 real lines. New files never fire | block | hard | ① |
+| `secret_added` — API key / token / private-key patterns in added lines | block | hard | ① |
+| `rm_outside` — recursive delete outside the workspace or on `/`, `~` | block | hard | ② |
+| **Size** (patch-only fallback for huge/unreadable files) | | | |
+| `rewrite_share` — share of original file removed or rewritten (file ≥ 20 lines) | ≥ 40 %: 25 · ≥ 75 %: 50 | signal | ① |
+| `lines_removed` | > 100: 15 · > 300: 30 | signal | ① |
+| `files_touched` — files in one action | > 5: 15 · > 15: 30 | signal | ① |
+| `deletion_heavy` — removed ≥ 4× added and ≥ 30 lines | (20) | log-only | ① |
+| **File operations** | | | |
+| `file_deleted` · `move_overwrites` (move/rename onto an existing file) | 35 · 40 | critical | ① |
+| `uncommitted_lost` — delete, rewrite or move of a file with uncommitted changes (`git status`, cached per action) | +30 | critical | ① |
+| `outside_workspace` — path (or symlink target) outside the workspace | 50 | critical | ① |
+| **Sensitive files** | | | |
+| `secrets_file` (`.env*`, keys, certs) · `ci_config` · `infra` (Dockerfile, Terraform, k8s) · `migration` | 45 · 35 · 30 · 30 | critical | ① |
+| `protected_path` — config `protected_paths` + CODEOWNERS entries (read once per session) | 30 | critical | ① |
+| `gitignore_changed` · `gitignore_unignores_secrets` (`!.env`, `.env`/`*.key` line removed) | 15 · 60 | critical | ① |
+| `manifest` (dependency manifests, lockfiles) · `generated` (`dist/`, `node_modules/`, `vendor/`) | 15 · 20 | signal | ① |
+| **Weakening safety** (pattern packs: JS/TS, Python, Go, Java, Rust, Ruby) | | | |
+| `tests_deleted` · `tests_skipped` · `checks_disabled` | 40 · 30 · 20 | signal | ① |
+| `assertions_weakened` (removed, or `toBe` → `toBeDefined` style) · `expected_changed` (values in assert lines) | 30 · 25 | signal | ① |
+| `test_and_source` — test + source changed in one action · more if the last test run in the session failed | 15 · +25 | signal | ① · ④ |
+| **Content** (added lines only) | | | |
+| `security_weakened` (`rejectUnauthorized: false`, CORS `*`, `eval` / `new Function`, shell-mode child processes, `dangerouslySetInnerHTML`, CSRF off) | 40 | signal | ① |
+| `auth_removed` (auth middleware, guards, permission checks) · `validation_removed` · `sql_string_built` | 45 · 40 · 40 | signal | ① |
+| `new_domain` — URL host not already in the file and not in `trusted_domains` | 20 | signal | ① |
+| `empty_catch` · `commented_out_block` | 10 · 10 | signal | ① |
+| **Code structure** (per-language patterns; tree-sitter later) | | | |
+| `functions_removed` (functions, classes, methods) | 10 each, max 40 | signal | ① |
+| `exports_removed` (removed or renamed) | 20 each, max 40 | signal | ① |
+| `signature_changed` · `env_key_renamed` | (15) · (20) | log-only | ① |
+| **Commands** (parsed: `&&` `;` `\|` `\|\|`, `sudo`, `VAR=x cmd`, one level of `bash -c`; quotes, heredocs, comments masked) | | | |
+| `rm_recursive` in workspace (`node_modules`, `dist`, build dirs = 0) | 20 | critical | ② |
+| `discards_work` (`reset --hard`, `clean -fd`, `checkout -- .`, `restore .`) | 50 dirty tree · 10 clean | critical | ② |
+| `history_rewrite` (`push --force` but not `--force-with-lease`, `branch -D`) | 50 | critical | ② |
+| `pipe_to_shell` · `sudo` · `destructive_sql` (`DROP`, `TRUNCATE`, `DELETE` without `WHERE`) · `publish` (`npm publish`, `docker push`, `terraform apply`, `kubectl apply`) | 45 · 40 · 50 · 60 | critical | ② |
+| `chmod_broad` (`777`, `-R`) | 30 | signal | ② |
+| `secret_exfil` — reads a secrets file and makes a network call in the same action | 70 | critical | ② |
+| File-touching commands (`rm`, `mv`, `cp`, `sed -i`, `>`, `truncate`) run their targets through the path categories above | — | — | ② |
+| **Dependencies** (npm + PyPI; manifest edits **and** `npm install x` / `pip install x`) | | | |
+| `dep_added` · `dep_unpinned` (`*`, `latest`, no version) · `dep_downgrade` | 10 · 15 · 20 | signal | ③ |
+| `dep_missing` — not in the registry (hallucinated) | 80 | signal | ③ |
+| `dep_low_downloads` (< 1,000/week, npm only) · `dep_typosquat` (edit distance ≤ 2 from bundled top-5k list) · `dep_install_scripts` | 40 · 50 · 30 | signal | ③ |
+| `dep_new_registry` (`.npmrc`, `--registry`, `--index-url`) | 45 | critical | ③ |
+| `dep_unverified` — registry slow/offline (800 ms cap, cached per session); scoped/private-registry packages skipped | 10 | signal | ③ |
+| **Session** (in-memory per session) | | | |
+| `edit_loop` (same file ≥ 5× in 10 min) · `unread_file` · `manual_edit_overwritten` · `session_churn` (> 1,000 changed lines) · `stable_file` (no commits 6+ months) | (15) · (10) · (35) · (15) · (10) | log-only | ④ |
+| **Discount** | | | |
+| `test_file` — applies to size/scope signals only, never to the Weakening-safety group | −10 | — | ① |
+
+**Reasons.** Cline gets what happened, the top 3 categories and one fixed "safer alternative" sentence per category,
+**never points or cut-offs** (so it can't learn to slip under them). Block adds: "Don't retry the same change in
+smaller pieces to get around this." After 3 blocks on the same file in one task: "Stop and ask the user how to
+proceed." Ask adds: "If the user says no, don't retry; ask what they want." Points, totals and cut-offs go to the logs
+and `/clineshield why`.
+
+**Failure and time.** Unreadable tool input or a rubric-wide crash → `on_error` (default `ask`). Headless runs: ask =
+deny with a logged reason, never a hang. Internal deadline 2 s (Cline's 3 s timeout fails **open**); order: hard and
+critical path/pattern checks (no I/O) → file read + in-memory apply → `git status` (300 ms cap) → registry (800 ms cap).
+Deadline hit before critical checks finish → `on_error`; later → remaining signals logged "skipped: time".
+
+**Edge cases.** Binary (null byte in first 8 KB): path and file-op checks only. File > 2 MB or unreadable, or patch
+doesn't match: patch-only measures (no ask for a non-matching patch, the tool will fail anyway). Renames: both paths
+checked. CRLF normalised. Parallel tool calls scored independently.
+
+**Logging.** Edits keep `edit-allowed` / `edit-approval` / `edit-blocked` (`structuralChangePercent` becomes
+file-relative, same field) and `risk-assessed` after a successful edit (`reasons[]` = fired categories, `level` from
+cut-offs: below ask = low, ask–block = medium, ≥ block = high). Commands use the new **`command-assessed`** event
+(Decision 1), written when score > 0 or tier ≠ allow.
+
+- [ ] ① Rubric engine: categories → points → capped score → tier; one engine for before and after the action; replaces the interim 1.x size rules and `DEFAULT_PROTECTED_PATHS`; closes Decision 8
+- [ ] ① Edits measured against the real file via in-memory apply; patch-only fallback; worst file decides
+- [ ] ① Hard, File-operation, Sensitive-file, Size, Weakening-safety, Content and Code-structure categories with pattern packs for 6 languages
+- [ ] ① Check kinds enforced: a crashing critical check → `on_error`, a crashing signal → skipped and logged (test per kind)
+- [ ] ① 2 s internal deadline with the check order above; < 200 ms typical per action
+- [ ] ① Reason text as above; same text to Cline and logs; points only in logs
+- [ ] ① Unit tests per category, plus: small edit to a big file allowed, full rewrite asked (balanced) / blocked (strict), placeholder rewrite blocked, file delete with uncommitted changes, multi-file patch, non-JS files, binary, unreadable file
+- [ ] ② `run_commands` input normalised (strings and `{command, args}`, all SDK union shapes); parser above; command categories; `command-assessed` event; `rm -rf node_modules` vs `rm -rf /` tests
+- [ ] ③ Dependency categories; registry lookups with cap, cache and `offline: true`; bundled top-5k lists; tests with a fake registry
+- [ ] ④ Session state store (test-run outcomes, edit history, reads); `test_and_source` +25; log-only session signals
+- [ ] Manual: real CLI session in `test-workspace/` hitting allow, ask and block
 
 #### Rubric configuration
-Zero config works (`balanced` preset). Teams commit a project file; individuals can set personal defaults.
-- [ ] Reads `.cline-shield.yml` (project, meant to be committed) and `~/.cline-shield.yml` (personal); project wins
-- [ ] `preset: relaxed | balanced | strict` (default `balanced`: asks more often than it blocks)
-- [ ] Override tier cut-offs, any category's points, `off`, or `block` (always block when it fires)
-- [ ] Per-folder overrides by glob (e.g. strict on `src/auth/**`, relaxed on `tests/**`)
-- [ ] Custom rules: match a path, content or command pattern → points + message
-- [ ] Validated against an allowlist; bad values fall back to defaults with a warning; regex length capped
-- [ ] Re-read when the file changes; `.cline-shield.example.yml` documents every key
-- [ ] No API keys in this file (the LLM key lives in the VS Code extension)
+Zero config works (`balanced`). Personal `~/.cline-shield.yml` is the main place; a project `.cline-shield.yml` is
+optional and can be committed for the team. Layers: defaults → personal → project, key by key; lists are combined.
+**Loosening keys** (`mode`, `on_error`, `offline`, `trusted_commands`) are read **only from the personal file**; in a
+project file they are ignored with a warning, so a cloned repo can't switch protection off. Hard rules can't be
+configured. Ships with PR ①.
+
+- [ ] Reads both files and merges as above; re-read when either changes (mtime check per action)
+- [ ] `mode: enforce | observe` (observe = score and log, never ask or block); `preset: relaxed | balanced | strict`
+- [ ] `on_error: ask | allow` (default `ask`); `allow` is logged at session start and shown in the extension
+- [ ] Override `cutoffs`, any category's points, `off`, or `block`; `protected_paths`; `trusted_commands` (exact match per parsed command piece, never scored); `trusted_domains`; `offline`
+- [ ] Per-folder overrides by glob, first match wins (preset, cut-offs, categories)
+- [ ] Custom rules: `match: path | content | command`, pattern, `points` or `block`, `message`
+- [ ] Validated against an allowlist: unknown key ignored, bad value → that key's default, unparseable file → skipped; all with a warning in `/clineshield` and the logs, never in Cline's context
+- [ ] Regex patterns capped at 200 chars, nested quantifiers rejected
+- [ ] `yaml` (no install scripts) added to root `package.json` dependencies; CI checks `npm install --omit=dev` from a clean clone loads the plugin
+- [ ] `.cline-shield.example.yml` documents every key; no API keys in this file (the LLM key lives in the VS Code extension)
 
 ```yaml
-preset: balanced
+mode: enforce          # enforce | observe            (personal file only)
+preset: balanced       # relaxed | balanced | strict
+on_error: ask          # ask | allow                  (personal file only)
+offline: false         # true = no registry lookups   (personal file only)
 cutoffs: { ask: 40, block: 70 }
-categories:
+categories:            # points | off | block
   ci_config: 40
-  generated_files: off
-  secret_added: block
+  generated: off
+protected_paths: ["src/payments/**"]
+trusted_commands: ["npm test", "make build"]   # (personal file only)
+trusted_domains: ["api.mycompany.com"]
 paths:
   "src/auth/**": { preset: strict }
   "tests/**":    { preset: relaxed }
@@ -148,6 +229,8 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 
 #### Terminal visibility (`/clineshield`)
 - [ ] Slash command (`"commands"` capability) prints this session's allowed / asked / blocked counts and riskiest files
+- [ ] `/clineshield why`: the last ask/block in full (every category, points, total, cut-off)
+- [ ] Shows config warnings and an `on_error: allow` notice
 - [ ] Never throws; clear message when there are no events; unit test against a fixture `metrics.json`
 - [ ] Manual: does the CLI show a block reason to the user, or only to the model? Record here
 
@@ -172,7 +255,8 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 - `/clineshield init` and `/clineshield preset <name>` (edit the config file; check how the CLI passes command arguments first)
 - LLM providers beyond Gemini: VS Code model API (needs Copilot), OpenAI-compatible endpoints (OpenRouter, local Ollama)
 - LLM explanations for CLI-only users (plugin-side, key from an env var)
-- Session-level signals (e.g. the same file churned many times)
+- Code structure via tree-sitter (WASM `web-tree-sitter` + ~6 grammars, ~10 MB; native bindings ruled out: need a compiler on install). Only if the eval shows patterns miss real deletions
+- Promote log-only signals to points when the eval shows they help
 
 ---
 
@@ -180,18 +264,18 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 
 | # | Question | Status |
 |---|---|---|
-| 1 | How to record command blocks/asks in `metrics.json` (reuse edit events with the command as `file`, or a new event type) | open |
 | 3 | Record post-edit checks that miss the time budget? (new event type) | open |
-| 8 | 1.x port gaps: file deletes not evaluated; pure additions scored like rewrites | open → fixed by Risk rubric |
-| 9 | Rubric defaults: points per category and `balanced` cut-offs (`ask: 40, block: 70` proposed) | open → tune with the eval |
+| 8 | 1.x port gaps: file deletes not evaluated; pure additions scored like rewrites | open → closed by Risk rubric ① |
+| 9 | Rubric defaults: starting points and cut-offs set in Risk rubric (2026-10-15) | open → tune with the eval |
 
 **Decided**
+- **1** — Commands get a new `command-assessed` event (`command, tier, score, reasons, approved?`) added to `metrics.ts`; the extension learns it (2026-10-15).
 - **2** — Ask-tier outcome: new `edit-approval` event (`file, structuralChangePercent, functionsDeleted, exportsDeleted, reason, approved`), written in `afterTool`; `approved: false` on the runtime's denial error (incl. headless).
 - **4** — Interim edit thresholds hard-coded in `EDIT_SIZE_THRESHOLDS`; default preset `balanced` (2026-10-15).
 - **5** — Plugin lives in `clineshield/src/plugin/`; minimal root `package.json` lists it (git install reads only the root manifest; `.ts` loads via jiti).
 - **6** — `metrics.json.lock` in `appendEvent()`: exclusive create, stale after 5 s, write without it after 1 s wait.
 - **7** — Dashboards show every session whose `session-start` is after extension activation, plus the extension's own id.
-- **10** — Config model: committed project `.cline-shield.yml` + optional `~/.cline-shield.yml`, project wins; slash commands are shortcuts only (2026-10-15).
+- **10** — Config model: personal `~/.cline-shield.yml` first, project `.cline-shield.yml` optional (committable), project wins except loosening keys (`mode`, `on_error`, `offline`, `trusted_commands`), which are personal-only; slash commands are shortcuts only (2026-10-15).
 
 ---
 
