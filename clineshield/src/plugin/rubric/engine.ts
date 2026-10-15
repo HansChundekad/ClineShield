@@ -37,7 +37,7 @@ function toFinding(raw: RawFinding, setting: number | 'off' | 'block'): Finding 
   const base = { id: raw.category, detail: raw.detail, fix: def.fix };
   if (def.kind === 'logOnly') return { ...base, points: 0, block: false, logOnly: true };
   if (setting === 'block') return { ...base, points: 0, block: true, logOnly: false };
-  return { ...base, points: Math.round(setting * raw.weight), block: false, logOnly: false };
+  return { ...base, points: Math.max(0, Math.round(setting * raw.weight) - (raw.minus ?? 0)), block: false, logOnly: false };
 }
 
 const groupOf = (id: string): RiskGroup | null => (id.startsWith('custom:') ? 'custom' : CATEGORIES[id as CategoryId].group);

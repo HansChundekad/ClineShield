@@ -98,6 +98,8 @@ lost code (`rewrite_share`, `lines_removed`, `functions_removed`, `exports_remov
 **Block rule:** hard rules and categories set to `block` always block. Otherwise relaxed and balanced block only when
 the score reaches the block cut-off **and** two or more groups score; strict blocks at the cut-off alone. The file's
 effective preset (per-folder `paths` preset wins) decides.
+**Recoverability:** deleting, moving or ≥ 75 % rewriting an existing file git doesn't track counts as `uncommitted_lost`;
+deleting or moving onto a tracked file with no uncommitted changes is −10 (git can restore it). Lost-code points stay.
 
 **Check kinds.** *Hard*: always block, no config can turn it off. *Critical*: if the check itself crashes → `on_error`.
 *Signal*: if it crashes → skipped and logged. *Log-only*: recorded in `reasons[]` with 0 points (description says what
@@ -116,8 +118,8 @@ it would add); promoted to points only if the eval shows value. PR column = deli
 | `files_touched` — files in one action | > 5: 15 · > 15: 30 | signal | ① |
 | `deletion_heavy` — removed ≥ 4× added and ≥ 30 lines | (20) | log-only | ① |
 | **File operations** | | | |
-| `file_deleted` · `move_overwrites` (move/rename onto an existing file) | 35 · 40 | critical | ① |
-| `uncommitted_lost` — delete, rewrite or move of a file with uncommitted changes (`git status`, cached per action) | +30 | critical | ① |
+| `file_deleted` · `move_overwrites` (move/rename onto an existing file); −10 when the file is tracked and clean | 35 · 40 | critical | ① |
+| `uncommitted_lost` — delete, rewrite (≥ 75 %) or move of a file with uncommitted changes or not tracked by git (`git diff HEAD` + `git ls-files`, once per action) | +30 | critical | ① |
 | `outside_workspace` — path (or symlink target) outside the workspace | 50 | critical | ① |
 | **Sensitive files** | | | |
 | `secrets_file` (`.env*`, keys, certs) · `ci_config` · `infra` (Dockerfile, Terraform, k8s) · `migration` | 45 · 35 · 30 · 30 | critical | ① |

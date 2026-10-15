@@ -63,6 +63,27 @@ describe('fileOpsCheck', () => {
     expect(ids(run(fileOpsCheck, mv))).toEqual(['move_overwrites']);
     expect(ids(run(fileOpsCheck, change(update('/etc/x', ['a'], ['b']), { outsideWorkspace: true })))).toEqual(['outside_workspace']);
   });
+  it('existing untracked file deleted, moved or rewritten ≥ 75% → uncommitted_lost', () => {
+    const untracked = { exists: true, gitTracked: false };
+    const del = run(fileOpsCheck, change(['*** Delete File: a.ts'], untracked));
+    expect(ids(del)).toEqual(['file_deleted', 'uncommitted_lost']);
+    expect(del[1].detail).toBe("a.ts is not tracked by git, so this can't be undone");
+    expect(ids(run(fileOpsCheck, change(['*** Update File: a.ts', '*** Move to: b.ts', '@@', '-a', '+b'], untracked)))).toEqual(['uncommitted_lost']);
+    const rw = change(update('a.ts', lines(38), ['x'], []), { ...untracked, original: file(40) });
+    rw.matched = true;
+    expect(ids(run(fileOpsCheck, rw))).toEqual(['uncommitted_lost']);
+    expect(run(fileOpsCheck, change(update('a.ts', ['a'], ['b']), untracked))).toEqual([]);
+    expect(ids(run(fileOpsCheck, change(['*** Delete File: a.ts'], { exists: false, gitTracked: false })))).toEqual(['file_deleted']);
+  });
+  it('deleting or moving onto a tracked, clean file is recoverable: -10 points', () => {
+    const clean = { gitTracked: true, gitDirty: false };
+    const [del] = run(fileOpsCheck, change(['*** Delete File: a.ts'], clean));
+    expect(del).toMatchObject({ category: 'file_deleted', minus: 10, detail: 'deletes a.ts (recoverable from git)' });
+    const [mv] = run(fileOpsCheck, change(['*** Update File: a.ts', '*** Move to: b.ts', '@@', '-a', '+b'], { ...clean, moveTargetExists: true }));
+    expect(mv).toMatchObject({ category: 'move_overwrites', minus: 10 });
+    expect(run(fileOpsCheck, change(['*** Delete File: a.ts'], { gitTracked: true, gitDirty: true }))[0].minus).toBeUndefined();
+    expect(run(fileOpsCheck, change(['*** Delete File: a.ts']))[0].minus).toBeUndefined();
+  });
   it('dirty file with a small edit is fine', () => {
     expect(run(fileOpsCheck, change(update('a.ts', ['a'], ['b']), { gitDirty: true }))).toEqual([]);
   });

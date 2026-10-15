@@ -26,6 +26,7 @@ export interface FileInfo {
   moveTargetExists?: boolean;
   outsideWorkspace: boolean;
   gitDirty?: boolean;
+  gitTracked?: boolean;
 }
 
 export interface GatherOptions {
@@ -73,6 +74,7 @@ export function buildChange(op: FileOperation, info: FileInfo, display: (p: stri
     moveTargetExists: info.moveTargetExists,
     outsideWorkspace: info.outsideWorkspace,
     gitDirty: info.gitDirty,
+    gitTracked: info.gitTracked,
     added: hunks.flatMap(h => h.added),
     removed: hunks.flatMap(h => h.removed),
     hunks,
@@ -88,14 +90,13 @@ function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   });
 }
 
-/** Workspace-relative paths with uncommitted changes to tracked files; undefined when git is unavailable, has no commits, or is slow. */
-export function gitDirtyPaths(root: string, timeoutMs = GIT_TIMEOUT_MS): Promise<Set<string> | undefined> {
-  const run = new Promise<Set<string> | undefined>(resolve => {
+/** NUL-separated output of a git command run in `root`; undefined on error, non-zero exit or timeout. */
+function gitPaths(root: string, args: string[], timeoutMs: number): Promise<Set<string> | undefined> {
+  return new Promise(resolve => {
     let out = '';
     let child: ReturnType<typeof spawn>;
     try {
-      // Paths relative to cwd (works when the workspace is a subfolder of the repo); staged + unstaged.
-      child = spawn('git', ['diff', 'HEAD', '--name-only', '--relative', '-z'], { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] });
+      child = spawn('git', args, { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] });
     } catch {
       resolve(undefined);
       return;
@@ -105,11 +106,20 @@ export function gitDirtyPaths(root: string, timeoutMs = GIT_TIMEOUT_MS): Promise
     child.on('error', () => { clearTimeout(timer); resolve(undefined); });
     child.on('close', (code: number | null) => {
       clearTimeout(timer);
-      if (code !== 0) return resolve(undefined);
-      resolve(new Set(out.split('\0').filter(Boolean)));
+      resolve(code === 0 ? new Set(out.split('\0').filter(Boolean)) : undefined);
     });
   });
-  return run;
+}
+
+/** Workspace-relative paths with uncommitted changes to tracked files; undefined when git is unavailable, has no commits, or is slow. */
+export function gitDirtyPaths(root: string, timeoutMs = GIT_TIMEOUT_MS): Promise<Set<string> | undefined> {
+  // Paths relative to cwd (works when the workspace is a subfolder of the repo); staged + unstaged.
+  return gitPaths(root, ['diff', 'HEAD', '--name-only', '--relative', '-z'], timeoutMs);
+}
+
+/** Workspace-relative paths tracked by git; undefined when git is unavailable or slow. */
+export function gitTrackedPaths(root: string, timeoutMs = GIT_TIMEOUT_MS): Promise<Set<string> | undefined> {
+  return gitPaths(root, ['ls-files', '-z'], timeoutMs);
 }
 
 export async function readCodeowners(root: string): Promise<string[]> {
@@ -149,7 +159,9 @@ async function isOutside(root: string, abs: string): Promise<boolean> {
   }
 }
 
-async function readInfo(op: FileOperation, root: string, dirty: Set<string> | undefined, display: (p: string) => string): Promise<FileInfo> {
+interface GitState { dirty?: Set<string>; tracked?: Set<string> }
+
+async function readInfo(op: FileOperation, root: string, git: GitState, display: (p: string) => string): Promise<FileInfo> {
   const abs = path.resolve(root, op.path);
   const info: FileInfo = { binary: false, outsideWorkspace: await isOutside(root, abs) };
   if (op.type === 'update' && op.moveTo) {
@@ -169,7 +181,8 @@ async function readInfo(op: FileOperation, root: string, dirty: Set<string> | un
   } catch (e) {
     info.exists = (e as NodeJS.ErrnoException).code === 'ENOENT' ? false : undefined;
   }
-  if (dirty) info.gitDirty = dirty.has(display(op.path));
+  if (git.dirty) info.gitDirty = git.dirty.has(display(op.path));
+  if (git.tracked) info.gitTracked = git.tracked.has(display(op.path));
   return info;
 }
 
@@ -183,8 +196,9 @@ export async function gatherAction(ops: FileOperation[], opts: GatherOptions): P
     return { binary: false, outsideWorkspace: rel.startsWith('..') || path.isAbsolute(rel) };
   };
   const work = (async () => {
-    const dirty = await gitDirtyPaths(root, opts.gitTimeoutMs ?? GIT_TIMEOUT_MS);
-    return Promise.all(ops.map(op => readInfo(op, root, dirty, display).catch(() => lexicalInfo(op))));
+    const gitMs = opts.gitTimeoutMs ?? GIT_TIMEOUT_MS;
+    const [dirty, tracked] = await Promise.all([gitDirtyPaths(root, gitMs), gitTrackedPaths(root, gitMs)]);
+    return Promise.all(ops.map(op => readInfo(op, root, { dirty, tracked }, display).catch(() => lexicalInfo(op))));
   })();
   const infos = await withTimeout(work, budget, ops.map(lexicalInfo));
   return {

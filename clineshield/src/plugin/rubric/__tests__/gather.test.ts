@@ -84,6 +84,18 @@ describe('gatherAction', () => {
     expect(a2.changes[0].gitDirty).toBe(true);
   });
 
+  it('gitTracked: tracked file true, new untracked file false, non-repo undefined', async () => {
+    await fs.writeFile(path.join(root, 'b.ts'), 'b\n');
+    const both = ['*** Delete File: a.ts', '*** Delete File: b.ts'];
+    expect((await gatherAction(ops(both), opts())).changes.map(c => c.gitTracked)).toEqual([undefined, undefined]);
+    execFileSync('git', ['init', '-q'], { cwd: root });
+    execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'add', 'a.ts'], { cwd: root });
+    execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'i'], { cwd: root });
+    const a = await gatherAction(ops(both), opts());
+    expect(a.changes.map(c => c.gitTracked)).toEqual([true, false]);
+    expect(a.changes.map(c => c.gitDirty)).toEqual([false, false]);
+  });
+
   it('readCodeowners turns CODEOWNERS entries into globs', async () => {
     await fs.mkdir(path.join(root, '.github'));
     await fs.writeFile(path.join(root, '.github', 'CODEOWNERS'), '# c\n/src/payments/ @team\n*.sql @dba\n\n');
@@ -99,5 +111,6 @@ describe('gatherAction', () => {
   it('respects the gather budget: a slow git yields gitDirty undefined, not a hang', async () => {
     const a = await gatherAction(ops(['*** Update File: a.ts', '@@', '-two', '+2']), { ...opts(), gitTimeoutMs: 0 });
     expect(a.changes[0].gitDirty).toBeUndefined();
+    expect(a.changes[0].gitTracked).toBeUndefined();
   });
 });

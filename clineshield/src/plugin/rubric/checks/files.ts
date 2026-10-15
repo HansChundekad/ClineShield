@@ -49,16 +49,25 @@ export const filesTouched: Check = {
   },
 };
 
+/** Points taken off deleting or overwriting a file git can restore (tracked, no uncommitted changes). */
+export const RECOVERABLE_DISCOUNT = 10;
+
 export const fileOpsCheck: Check = {
   name: 'file_ops',
   kind: 'critical',
   run(c) {
     const out: RawFinding[] = [];
-    if (c.kind === 'delete') out.push({ category: 'file_deleted', weight: 1, detail: `deletes ${c.path}` });
-    if (c.moveTargetExists) out.push({ category: 'move_overwrites', weight: 1, detail: `moves onto existing file ${c.moveTo}` });
+    const recoverable = c.gitTracked === true && c.gitDirty === false;
+    const op = (category: RawFinding['category'], detail: string) =>
+      out.push(recoverable ? { category, weight: 1, minus: RECOVERABLE_DISCOUNT, detail: `${detail} (recoverable from git)` } : { category, weight: 1, detail });
+    if (c.kind === 'delete') op('file_deleted', `deletes ${c.path}`);
+    if (c.moveTargetExists) op('move_overwrites', `moves onto existing file ${c.moveTo}`);
     const share = rewriteShare(c);
-    if (c.gitDirty && (c.kind === 'delete' || c.moveTo || (share !== undefined && share >= 0.75))) {
+    const losesFile = c.kind === 'delete' || !!c.moveTo || (share !== undefined && share >= 0.75);
+    if (losesFile && c.gitDirty) {
       out.push({ category: 'uncommitted_lost', weight: 1, detail: `${c.path} has changes not committed to git` });
+    } else if (losesFile && c.exists === true && c.gitTracked === false) {
+      out.push({ category: 'uncommitted_lost', weight: 1, detail: `${c.path} is not tracked by git, so this can't be undone` });
     }
     if (c.outsideWorkspace) out.push({ category: 'outside_workspace', weight: 1, detail: `${c.moveTo ?? c.path} is outside the project` });
     return out;

@@ -48,6 +48,8 @@ export interface FileChange {
   outsideWorkspace: boolean;
   /** File has uncommitted changes; undefined when git is unavailable. */
   gitDirty?: boolean;
+  /** File is tracked by git; undefined when git is unavailable or timed out. */
+  gitTracked?: boolean;
   /** Lines added / removed by this change (for a delete with a known original: every original line). */
   added: string[];
   removed: string[];
@@ -76,6 +78,8 @@ export interface RawFinding {
   /** Human detail, e.g. "82% of the file rewritten". Shown to Cline and logs. */
   detail: string;
   /** Optional numbers the plugin copies into metrics events. */
+  /** Points taken off after weighting (floor 0), e.g. a deleted file git can restore. */
+  minus?: number;
   counts?: { functionsDeleted?: number; exportsDeleted?: number; structuralChangePercent?: number };
 }
 

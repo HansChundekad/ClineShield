@@ -140,6 +140,34 @@ describe('blocking needs two kinds of risk (relaxed, balanced)', () => {
     expect(d.tier).toBe('ask');
   });
 
+  it('5: delete a tracked, clean file → 25, allow', () => {
+    const d = scoreAction(action([change(['*** Delete File: lib/a.ts'], { exists: true, gitTracked: true, gitDirty: false })]), cfg());
+    expect(d.files[0].score).toBe(25);
+    expect(d.files[0].findings[0].detail).toMatch(/\(recoverable from git\)$/);
+    expect(d.tier).toBe('allow');
+  });
+
+  it('6: delete a file with uncommitted changes → 65, ask', () => {
+    const d = scoreAction(action([change(['*** Delete File: lib/a.ts'], { exists: true, gitTracked: true, gitDirty: true })]), cfg());
+    expect(d.files[0].score).toBe(65);
+    expect(d.tier).toBe('ask');
+  });
+
+  it('7: delete an existing untracked file → 65, ask', () => {
+    const d = scoreAction(action([change(['*** Delete File: lib/a.ts'], { exists: true, gitTracked: false })]), cfg());
+    expect(d.files[0].score).toBe(65);
+    expect(d.tier).toBe('ask');
+  });
+
+  it('the recoverable discount floors at 0 and leaves lost-code points alone', () => {
+    const del = change(['*** Delete File: lib/a.ts'], { exists: true, gitTracked: true, gitDirty: false });
+    expect(scoreAction(action([del]), cfg({ categories: { file_deleted: 5 } })).files[0].score).toBe(0);
+    const c = productRewrite('src/models/product.ts');
+    c.gitTracked = true;
+    c.gitDirty = false;
+    expect(scoreAction(action([c]), cfg()).files[0].score).toBe(50);
+  });
+
   it('8: one group above the block cut-off → ask under balanced, block under strict', () => {
     const d = scoreAction(action([ciEdit()]), cfg({ categories: { ci_config: 80 } }));
     expect(d.files[0].score).toBe(80);

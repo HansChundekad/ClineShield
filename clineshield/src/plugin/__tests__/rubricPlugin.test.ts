@@ -6,6 +6,7 @@
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
+import { execFileSync } from 'child_process';
 import { createClineShieldPlugin, TOOL_REJECTION_SUFFIX } from '../index';
 import type { AgentToolResult, ClineShieldPlugin } from '../index';
 import { validateEvent } from './validateEvent';
@@ -66,6 +67,23 @@ describe('Risk rubric (plugin)', () => {
     const viaEditor = await call('editor', { path: 'src/models/product.ts', old_text: removed.join('\n'), new_text: PRODUCT_REWRITE.join('\n') }).before();
     expect(viaEditor).toMatchObject({ policy: { autoApprove: false } });
     expect(viaEditor).not.toHaveProperty('skip');
+  });
+
+  it('in a git repo: rewriting a clean class file asks, deleting a clean tracked file is allowed', async () => {
+    await fs.mkdir(path.join(root, 'src', 'models'), { recursive: true });
+    await fs.writeFile(path.join(root, 'src', 'models', 'product.ts'), PRODUCT_TEXT);
+    const git = (...args: string[]) => execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...args], { cwd: root });
+    git('init', '-q'); git('add', '.'); git('commit', '-qm', 'i');
+    const removed = PRODUCT_LINES.slice(KEPT_HEAD);
+    const rewrite = call('apply_patch', patch('*** Update File: src/models/product.ts', '@@', ...removed.map(l => `-${l}`), ...PRODUCT_REWRITE.map(l => `+${l}`)));
+    const r = await rewrite.before();
+    expect(r).toMatchObject({ policy: { autoApprove: false } });
+    expect(r).not.toHaveProperty('skip');
+    const del = call('apply_patch', patch('*** Delete File: lib/small.ts'));
+    expect(await del.before()).toBeUndefined();
+    await del.after();
+    const [risk] = (await events('risk-assessed')).filter(e => e.data.file === 'lib/small.ts');
+    expect(risk.data).toMatchObject({ rulesScore: 25, level: 'low' });
   });
 
   it('small edit to a big file → allowed, edit-allowed + risk-assessed low', async () => {
