@@ -123,13 +123,21 @@ describe('Risk rubric (plugin)', () => {
     expect(plugin.configWarnings).toEqual([]);
   });
 
-  it('observe mode (personal) logs what would have happened but never blocks', async () => {
+  it('observe mode: hard rules still block', async () => {
     await fs.writeFile(path.join(home, '.cline-shield.yml'), 'mode: observe\n');
-    const c = call('apply_patch', patch('*** Update File: lib/small.ts', '@@', '-l1', '+// ... rest of code unchanged'));
+    const r = await call('apply_patch', patch('*** Update File: lib/small.ts', '@@', '-l1', '+// ... rest of code unchanged')).before();
+    expect(r).toMatchObject({ skip: true });
+    expect((r as { reason: string }).reason).toMatch(/placeholder/);
+    expect((await events('edit-blocked'))[0].data.file).toBe('lib/small.ts');
+  });
+
+  it('observe mode: other asks are allowed and logged with the observe reason', async () => {
+    await fs.writeFile(path.join(home, '.cline-shield.yml'), 'mode: observe\n');
+    const c = call('apply_patch', patch('*** Update File: lib/small.ts', '@@', ...lines(38).map(l => `-${l}`), '+x'));
     expect(await c.before()).toBeUndefined();
     await c.after();
     const [risk] = await events('risk-assessed');
-    expect(risk.data.reasons).toEqual(expect.arrayContaining([expect.objectContaining({ rule: 'observe', description: 'Observe mode: would have blocked' })]));
+    expect(risk.data.reasons).toEqual(expect.arrayContaining([expect.objectContaining({ rule: 'observe', description: 'Observe mode: would have asked' })]));
   });
 
   it('editing the ClineShield config is blocked', async () => {

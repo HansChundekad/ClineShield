@@ -21,6 +21,7 @@ import { ConfigStore } from './config/store';
 import type { RubricConfig } from './config/schema';
 import { applyPatchInputText, editorInputToOperation, parseApplyPatch } from './patch';
 import type { FileOperation } from './patch';
+import { CATEGORIES } from './rubric/categories';
 import { buildChange, gatherAction, readCodeowners } from './rubric/gather';
 import { scoreAction } from './rubric/engine';
 import type { Decision, FileScore } from './rubric/engine';
@@ -42,6 +43,10 @@ const UNPARSED = (tool: string) => `(unparsed ${tool} input)`;
 
 /** The plugin's own install folder (repo root of clineshield/src/plugin). */
 const DEFAULT_PLUGIN_DIR = path.resolve(__dirname, '..', '..', '..');
+
+function hasHardFinding(decision: Decision): boolean {
+  return decision.files.some(f => f.findings.some(x => CATEGORIES[x.id as keyof typeof CATEGORIES]?.kind === 'hard'));
+}
 
 function operationsFor(toolName: string, input: unknown): FileOperation[] | undefined {
   if (toolName === 'apply_patch') {
@@ -183,7 +188,8 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     const id = ctx.toolCall?.toolCallId;
     const timestamp = new Date().toISOString();
 
-    if (config?.mode === 'observe' && decision.tier !== 'allow') {
+    // Observe mode logs asks/blocks instead of enforcing them, except hard rules, which always block.
+    if (config?.mode === 'observe' && decision.tier !== 'allow' && !hasHardFinding(decision)) {
       if (id !== undefined) decided.set(id, { decision, asked: false, reason: '', observedTier: decision.tier });
       for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-allowed', data: editData(f) });
       return undefined;
