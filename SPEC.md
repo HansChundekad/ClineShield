@@ -62,17 +62,17 @@ and the model never sees why ([cline#14697](https://github.com/cline/cline/issue
 - [x] Cross-process lock on `metrics.json` (Decision 6) — 4 processes × 25 events, all kept
 
 #### Action tiers (allow · ask · block)
-The mechanism every rule uses. Today it is driven by the 1.x size rules; the Risk rubric replaces the scoring.
+The mechanism every rule uses. Driven by the Risk rubric.
 - [x] Allow → `edit-allowed`. Ask → `policy: { autoApprove: false }` + reason via `appendContext`; outcome recorded as
   `edit-approval` (Decision 2). Block → `{ skip: true, reason }` → `edit-blocked`; the task continues
 - [x] Patch parser + `editor` adapter as pure modules (`plugin/patch/`), reusable for in-memory apply
-- [x] Interim scoring: 1.x size rules, TS/JS only, thresholds in `EDIT_SIZE_THRESHOLDS` (Decision 4)
+- [x] ~~Interim scoring: 1.x size rules, TS/JS only, thresholds in `EDIT_SIZE_THRESHOLDS` (Decision 4)~~ Replaced by the Risk rubric (①)
 - [x] < 200 ms on 20,000-line patches; unit tests at every tier boundary
 - [ ] Manual: how the CLI shows the approval prompt and the reason (headless runs deny — tested)
 
 #### Risk scoring after edits
 - [x] `afterTool` scores each successful edit with `computeRiskScore()` and writes `risk-assessed` (lands with PR #18)
-- Interim: TS/JS only, protected paths hard-coded (`DEFAULT_PROTECTED_PATHS`), sanity assumed passed. Replaced by the Risk rubric
+- `risk-assessed` now comes from the Risk rubric (①): every file type, `reasons[]` = fired categories, `level` from the file's cut-offs. Sanity checks are still assumed passed
 
 #### Dashboards follow plugin sessions
 - [x] Sidebar, change map and status bar show every session started since VS Code opened, incl. parallel ones (Decision 7)
@@ -170,13 +170,13 @@ file-relative, same field) and `risk-assessed` after a successful edit (`reasons
 cut-offs: below ask = low, ask–block = medium, ≥ block = high). Commands use the new **`command-assessed`** event
 (Decision 1), written when score > 0 or tier ≠ allow.
 
-- [ ] ① Rubric engine: categories → points → capped score → tier; one engine for before and after the action; replaces the interim 1.x size rules and `DEFAULT_PROTECTED_PATHS`; closes Decision 8
-- [ ] ① Edits measured against the real file via in-memory apply; patch-only fallback; worst file decides
-- [ ] ① Hard, File-operation, Sensitive-file, Size, Weakening-safety, Content and Code-structure categories with pattern packs for 6 languages
-- [ ] ① Check kinds enforced: a crashing critical check → `on_error`, a crashing signal → skipped and logged (test per kind)
-- [ ] ① 2 s internal deadline with the check order above; < 200 ms typical per action
-- [ ] ① Reason text as above; same text to Cline and logs; points only in logs
-- [ ] ① Unit tests per category, plus: small edit to a big file allowed, full rewrite asked (balanced) / blocked (strict), placeholder rewrite blocked, file delete with uncommitted changes, multi-file patch, non-JS files, binary, unreadable file
+- [x] ① Rubric engine: categories → points → capped score → tier; one engine for before and after the action; replaces the interim 1.x size rules and `DEFAULT_PROTECTED_PATHS`; closes Decision 8
+- [x] ① Edits measured against the real file via in-memory apply; patch-only fallback; worst file decides
+- [x] ① Hard, File-operation, Sensitive-file, Size, Weakening-safety, Content and Code-structure categories with pattern packs for 6 languages
+- [x] ① Check kinds enforced: a crashing critical check → `on_error`, a crashing signal → skipped and logged (test per kind)
+- [x] ① 2 s internal deadline with the check order above; < 200 ms typical per action
+- [x] ① Reason text as above; same text to Cline and logs; points only in logs
+- [x] ① Unit tests per category, plus: small edit to a big file allowed, full rewrite asked (balanced) / blocked (strict), placeholder rewrite blocked, file delete with uncommitted changes, multi-file patch, non-JS files, binary, unreadable file
 - [ ] ② `run_commands` input normalised (strings and `{command, args}`, all SDK union shapes); parser above; command categories; `command-assessed` event; `rm -rf node_modules` vs `rm -rf /` tests
 - [ ] ③ Dependency categories; registry lookups with cap, cache and `offline: true`; bundled top-5k lists; tests with a fake registry
 - [ ] ④ Session state store (test-run outcomes, edit history, reads); `test_and_source` +25; log-only session signals
@@ -189,16 +189,17 @@ optional and can be committed for the team. Layers: defaults → personal → pr
 project file they are ignored with a warning, so a cloned repo can't switch protection off. Hard rules can't be
 configured. Ships with PR ①.
 
-- [ ] Reads both files and merges as above; re-read when either changes (mtime check per action)
-- [ ] `mode: enforce | observe` (observe = score and log, never ask or block); `preset: relaxed | balanced | strict`
-- [ ] `on_error: ask | allow` (default `ask`); `allow` is logged at session start and shown in the extension
-- [ ] Override `cutoffs`, any category's points, `off`, or `block`; `protected_paths`; `trusted_commands` (exact match per parsed command piece, never scored); `trusted_domains`; `offline`
-- [ ] Per-folder overrides by glob, first match wins (preset, cut-offs, categories)
-- [ ] Custom rules: `match: path | content | command`, pattern, `points` or `block`, `message`
-- [ ] Validated against an allowlist: unknown key ignored, bad value → that key's default, unparseable file → skipped; all with a warning in `/clineshield` and the logs, never in Cline's context
-- [ ] Regex patterns capped at 200 chars, nested quantifiers rejected
-- [ ] `yaml` (no install scripts) added to root `package.json` dependencies; CI checks `npm install --omit=dev` from a clean clone loads the plugin
-- [ ] `.cline-shield.example.yml` documents every key; no API keys in this file (the LLM key lives in the VS Code extension)
+- [x] Reads both files and merges as above; re-read when either changes (mtime check per action)
+- [x] `mode: enforce | observe` (observe = score and log, never ask or block); `preset: relaxed | balanced | strict`
+- [x] `on_error: ask | allow` (default `ask`); `allow` is logged to stderr at first use; shown in the extension (VS Code extension feature)
+- [x] Override `cutoffs`, any category's points, `off`, or `block`; `protected_paths`; `trusted_commands` (exact match per parsed command piece, never scored); `trusted_domains`; `offline` (`trusted_commands` and `offline` are validated now and take effect with ② and ③)
+- [x] Per-folder overrides by glob, first match wins (preset, cut-offs, categories)
+- [x] Custom rules: `match: path | content | command`, pattern, `points` or `block`, `message` (`command` rules apply from ②)
+- [x] Validated against an allowlist: unknown key ignored, bad value → that key's default, unparseable file → skipped; all with a warning to stderr, kept for `/clineshield` (Terminal visibility), never in Cline's context
+- [x] Regex patterns capped at 200 chars, nested quantifiers rejected
+- [x] `js-yaml` (already a dependency of the extension; no install scripts) added to root `package.json` dependencies; CI checks `npm install --omit=dev` from a clean clone loads the plugin
+- [x] `.cline-shield.example.yml` documents every key; no API keys in this file (the LLM key lives in the VS Code extension)
+- Default `protected_paths` (when no file sets it): `src/auth/**`, `src/config/**`, `src/middleware/**`, `auth/**`, `config/**`.
 
 ```yaml
 mode: enforce          # enforce | observe            (personal file only)
@@ -265,7 +266,6 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 | # | Question | Status |
 |---|---|---|
 | 3 | Record post-edit checks that miss the time budget? (new event type) | open |
-| 8 | 1.x port gaps: file deletes not evaluated; pure additions scored like rewrites | open → closed by Risk rubric ① |
 | 9 | Rubric defaults: starting points and cut-offs set in Risk rubric (2026-10-15) | open → tune with the eval |
 
 **Decided**
@@ -274,6 +274,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 - **4** — Interim edit thresholds hard-coded in `EDIT_SIZE_THRESHOLDS`; default preset `balanced` (2026-10-15).
 - **5** — Plugin lives in `clineshield/src/plugin/`; minimal root `package.json` lists it (git install reads only the root manifest; `.ts` loads via jiti).
 - **6** — `metrics.json.lock` in `appendEvent()`: exclusive create, stale after 5 s, write without it after 1 s wait.
+- **8** — 1.x port gaps (file deletes not evaluated; pure additions scored like rewrites): closed by Risk rubric ① (deletes scored as `file_deleted`; new files never score size).
 - **7** — Dashboards show every session whose `session-start` is after extension activation, plus the extension's own id.
 - **10** — Config model: personal `~/.cline-shield.yml` first, project `.cline-shield.yml` optional (committable), project wins except loosening keys (`mode`, `on_error`, `offline`, `trusted_commands`), which are personal-only; slash commands are shortcuts only (2026-10-15).
 
