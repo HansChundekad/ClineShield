@@ -214,6 +214,32 @@ describe('metricsReader', () => {
       expect(passedEvents[0].data.tools).toEqual(['eslint']); // Type-safe access
     });
 
+    it('should read edit-approval events with type-safe data', async () => {
+      const testEvents = [
+        {
+          timestamp: '2026-10-14T10:00:00.000Z',
+          sessionId: 'session-1',
+          type: 'edit-approval',
+          data: {
+            file: 'src/a.ts',
+            structuralChangePercent: 50,
+            functionsDeleted: 2,
+            exportsDeleted: 0,
+            reason: 'ClineShield asked the user to approve this edit',
+            approved: false,
+          },
+        },
+      ];
+
+      await fs.mkdir(path.join(testWorkspaceRoot, '.cline-shield'), { recursive: true });
+      await fs.writeFile(metricsPath, JSON.stringify(testEvents, null, 2), 'utf-8');
+
+      const approvals = await readEventsByType('edit-approval', testWorkspaceRoot);
+      expect(approvals).toHaveLength(1);
+      expect(approvals[0].data.approved).toBe(false); // Type-safe access
+      expect(await readEventsByType('edit-allowed', testWorkspaceRoot)).toEqual([]);
+    });
+
     it('should return empty array if no events match type', async () => {
       const testEvents = [
         {

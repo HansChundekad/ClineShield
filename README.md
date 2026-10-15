@@ -21,6 +21,16 @@ Copy `clineshield/hooks/PreToolUse` and `clineshield/hooks/PostToolUse` into you
 
 > **Note:** ClineShield is being rebuilt as a Cline plugin (2.0). See [SPEC.md](SPEC.md) for status — in current Cline versions a blocked edit from these hook files ends the whole task.
 
+## Edit Size Policy (2.0 plugin)
+
+The 2.0 plugin replaces No-Nuke with three tiers for `apply_patch` / `editor` edits to TS/JS files:
+
+- **Small** edits run normally (`edit-allowed`).
+- **Medium** edits (2–3 functions deleted, or 40–75% of a patch over 10 lines changed) need your approval; Cline is told why. The outcome is logged as `edit-approval` with `approved: true/false`.
+- **Destructive** edits (more than 3 functions deleted, or more than 75% of a patch over 10 lines changed) are skipped. Cline gets the reason and is told to make smaller edits; the task keeps running (`edit-blocked`).
+
+**Headless runs:** when Cline runs with no way to ask you (an SDK or CI run without an approval callback), the Cline runtime denies every edit that needs approval. Medium edits are then not applied, Cline is told the edit was rejected, and the event is logged with `approved: false`.
+
 ## No-Nuke Hook (Blocks Destructive Edits)
 
 Before Cline writes to any file, this hook intercepts the edit and checks if the change is too destructive. It parses the patch Cline sends — scanning added and deleted lines — counting how many functions were deleted, exports removed and what percentage of the file changed overall. If thresholds exceed the configurations, the hook blocks the edit and tells Cline to make a smaller, more targeted change instead.

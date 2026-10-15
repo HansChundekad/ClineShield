@@ -33,6 +33,10 @@ export function validateEvent(event: unknown): string[] {
     case 'edit-allowed':
       str('file'); num('structuralChangePercent'); num('functionsDeleted'); num('exportsDeleted');
       break;
+    case 'edit-approval':
+      str('file'); num('structuralChangePercent'); num('functionsDeleted'); num('exportsDeleted'); str('reason');
+      if (typeof d.approved !== 'boolean') problems.push('data.approved is not a boolean');
+      break;
     case 'sanity-failed':
       str('file'); str('tool'); strArr('errors'); num('retryCount'); num('maxRetries');
       break;
