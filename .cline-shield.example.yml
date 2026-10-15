@@ -1,17 +1,13 @@
 # ClineShield configuration (2.0 plugin). Every key is optional; no file = balanced.
 #
-# Two files are read:
-#   ~/.cline-shield.yml   personal, applies to every project
-#   .cline-shield.yml     project, optional, can be committed for the team
-# The project file wins key by key; lists are combined.
-# Keys marked (personal only) are ignored in a project file, so a cloned repo
-# can't switch protection off for you.
+# Copy to ~/.cline-shield.yml; it applies to every repo. The plugin never reads a
+# .cline-shield.yml inside a repo, so a cloned repo can't change your settings.
 # Hard rules (self-protection, placeholder rewrites, secrets added) can't be configured.
 
-mode: enforce          # enforce | observe (score and log only)       (personal only)
+mode: enforce          # enforce | observe (log asks/blocks; hard rules still block)
 preset: balanced       # relaxed (60/90) | balanced (40/70) | strict (25/50)
-on_error: ask          # ask | allow: what happens if ClineShield fails (personal only)
-offline: false         # true = no package registry lookups           (personal only)
+on_error: ask          # ask | allow: what happens if ClineShield fails
+offline: false         # true = no package registry lookups
 
 # Override the preset's cut-offs (0-100, ask < block)
 # cutoffs: { ask: 40, block: 70 }
@@ -23,25 +19,27 @@ offline: false         # true = no package registry lookups           (personal 
 #   generated: off
 #   tests_skipped: block
 
-# Extra protected paths (globs). Without this key the defaults are
+# Protected paths (globs); setting this key replaces the defaults:
 # src/auth/**, src/config/**, src/middleware/**, auth/**, config/**.
 # CODEOWNERS paths are always protected.
 # protected_paths: ["src/payments/**"]
 
-# trusted_commands: ["npm test", "make build"]   # never scored (personal only)
+# trusted_commands: ["npm test", "make build"]   # never scored
 # trusted_domains: ["api.mycompany.com"]         # not counted as new domains
 
-# Per-folder overrides; the first matching glob wins.
+# Per-folder overrides (apply in every repo); the first matching glob wins.
 # paths:
 #   "src/auth/**": { preset: strict }
 #   "tests/**":    { preset: relaxed, categories: { tests_skipped: off } }
 
 # Custom rules: match path (glob), content (regex on added lines) or command (regex).
-# Patterns up to 200 characters; regexes with nested repeats are rejected.
+# Patterns up to 200 characters; a repeated group ((...)+, (...)*, (...){n}) is
+# rejected. Content rules test the first 500 characters of each line.
 # custom_rules:
 #   - { match: path, pattern: "billing/**", points: 40, message: "Billing code: ask first" }
 
 # No API keys here: the Gemini key for LLM explanations is set in the VS Code extension.
 #
-# 1.x hook settings (no-nuke, sanity, risk, gemini_api_key) are still read by the
-# 1.x hooks until they are retired, and ignored by the plugin.
+# 1.x hook settings (no-nuke, sanity, risk, gemini_api_key) are still read from
+# <workspace>/.cline-shield.yml by the 1.x extension until it is retired, and
+# ignored by the plugin.

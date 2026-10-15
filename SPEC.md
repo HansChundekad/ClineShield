@@ -86,8 +86,8 @@ The mechanism every rule uses. Driven by the Risk rubric.
 #### Risk rubric
 One scoring system for **every** Cline action (edits, deletes, moves, commands), in **any language**. Each category
 that fires adds points; the capped total (0–100) picks the tier against the preset's cut-offs. **Hard rules** block
-whatever the total. Edits are measured against the **real file**: in `beforeTool` the file is still unchanged, so
-the rubric reads it, applies Cline's change in memory and compares. Nothing is written until the decision is made.
+whatever the total, also in observe mode. Edits are measured against the **real file**: in `beforeTool` the file is
+still unchanged, so the rubric reads it, applies Cline's change in memory and compares. Nothing is written until the decision is made.
 Designed with the owner 2026-10-15; points are starting values, tuned by the eval (Decision 9).
 
 **Cut-offs (ask / block):** relaxed 60 / 90 · **balanced 40 / 70** (default) · strict 25 / 50. Multi-file action:
@@ -183,35 +183,32 @@ cut-offs: below ask = low, ask–block = medium, ≥ block = high). Commands use
 - [ ] Manual: real CLI session in `test-workspace/` hitting allow, ask and block
 
 #### Rubric configuration
-Zero config works (`balanced`). Personal `~/.cline-shield.yml` is the main place; a project `.cline-shield.yml` is
-optional and can be committed for the team. Layers: defaults → personal → project, key by key; lists are combined.
-**Loosening keys** (`mode`, `on_error`, `offline`, `trusted_commands`) are read **only from the personal file**; in a
-project file they are ignored with a warning, so a cloned repo can't switch protection off. Hard rules can't be
-configured. Ships with PR ①.
+Zero config works (`balanced`). The only config file is `~/.cline-shield.yml` (Decision 10); a `.cline-shield.yml`
+inside a repo is never read, so a cloned repo can't change anything. Hard rules can't be configured. Ships with PR ①.
 
-- [x] Reads both files and merges as above; re-read when either changes (mtime check per action)
-- [x] `mode: enforce | observe` (observe = score and log, never ask or block); `preset: relaxed | balanced | strict`
+- [x] Reads only `~/.cline-shield.yml` (a project file has no effect, no warning); re-read when it changes (mtime check per action)
+- [x] `mode: enforce | observe` (observe = score and log asks/blocks; hard rules still block); `preset: relaxed | balanced | strict`
 - [x] `on_error: ask | allow` (default `ask`); `allow` is logged to stderr at first use; shown in the extension (VS Code extension feature)
 - [x] Override `cutoffs`, any category's points, `off`, or `block`; `protected_paths`; `trusted_commands` (exact match per parsed command piece, never scored); `trusted_domains`; `offline` (`trusted_commands` and `offline` are validated now and take effect with ② and ③)
-- [x] Per-folder overrides by glob, first match wins (preset, cut-offs, categories)
+- [x] Per-folder overrides by glob, first match wins (preset, cut-offs, categories); apply in every repo
 - [x] Custom rules: `match: path | content | command`, pattern, `points` or `block`, `message` (`command` rules apply from ②)
 - [x] Validated against an allowlist: unknown key ignored, bad value → that key's default, unparseable file → skipped; all with a warning to stderr, kept for `/clineshield` (Terminal visibility), never in Cline's context
-- [x] Regex patterns capped at 200 chars, nested quantifiers rejected
+- [x] Regex patterns capped at 200 chars; a quantifier on a group (`(…)+`, `(?:…)*`, `(…){n}`) rejected; content rules test the first 500 chars of each line
 - [x] `js-yaml` (already a dependency of the extension; no install scripts) added to root `package.json` dependencies; CI checks `npm install --omit=dev` from a clean clone loads the plugin
 - [x] `.cline-shield.example.yml` documents every key; no API keys in this file (the LLM key lives in the VS Code extension)
-- Default `protected_paths` (when no file sets it): `src/auth/**`, `src/config/**`, `src/middleware/**`, `auth/**`, `config/**`.
+- Default `protected_paths` (when the file doesn't set it): `src/auth/**`, `src/config/**`, `src/middleware/**`, `auth/**`, `config/**`.
 
 ```yaml
-mode: enforce          # enforce | observe            (personal file only)
+mode: enforce          # enforce | observe
 preset: balanced       # relaxed | balanced | strict
-on_error: ask          # ask | allow                  (personal file only)
-offline: false         # true = no registry lookups   (personal file only)
+on_error: ask          # ask | allow
+offline: false         # true = no registry lookups
 cutoffs: { ask: 40, block: 70 }
 categories:            # points | off | block
   ci_config: 40
   generated: off
 protected_paths: ["src/payments/**"]
-trusted_commands: ["npm test", "make build"]   # (personal file only)
+trusted_commands: ["npm test", "make build"]
 trusted_domains: ["api.mycompany.com"]
 paths:
   "src/auth/**": { preset: strict }
@@ -258,6 +255,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 - LLM explanations for CLI-only users (plugin-side, key from an env var)
 - Code structure via tree-sitter (WASM `web-tree-sitter` + ~6 grammars, ~10 MB; native bindings ruled out: need a compiler on install). Only if the eval shows patterns miss real deletions
 - Promote log-only signals to points when the eval shows they help
+- Project config (`.cline-shield.yml` in a repo), tighten-only: a repo can add protection but never loosen it.
 
 ---
 
@@ -276,7 +274,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 - **6** — `metrics.json.lock` in `appendEvent()`: exclusive create, stale after 5 s, write without it after 1 s wait.
 - **8** — 1.x port gaps (file deletes not evaluated; pure additions scored like rewrites): closed by Risk rubric ① (deletes scored as `file_deleted`; new files never score size).
 - **7** — Dashboards show every session whose `session-start` is after extension activation, plus the extension's own id.
-- **10** — Config model: personal `~/.cline-shield.yml` first, project `.cline-shield.yml` optional (committable), project wins except loosening keys (`mode`, `on_error`, `offline`, `trusted_commands`), which are personal-only; slash commands are shortcuts only (2026-10-15).
+- **10** — Config: only `~/.cline-shield.yml`; project files are not read (2026-10-15).
 
 ---
 
