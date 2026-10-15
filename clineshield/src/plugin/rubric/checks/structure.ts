@@ -56,6 +56,7 @@ const ENV_REF = [
   /os\.Getenv\("([A-Z_][A-Z0-9_]*)"\)/g, /ENV\[['"]([A-Z_][A-Z0-9_]*)['"]\]/g,
   /System\.getenv\("([A-Z_][A-Z0-9_]*)"\)/g, /env::var\("([A-Z_][A-Z0-9_]*)"\)/g,
 ];
+const ENV_HINT = /env/i;
 const ENV_FILE_KEY = /^\s*(?:export\s+)?([A-Z_][A-Z0-9_]*)\s*=/;
 const isEnvFile = (p: string) => /(^|\/)\.env(\.[\w-]+)?$/.test(p);
 
@@ -63,6 +64,8 @@ function envKeys(lines: string[], envFile: boolean): Set<string> {
   const keys = new Set<string>();
   for (const l of lines) {
     if (envFile) { const m = ENV_FILE_KEY.exec(l); if (m) keys.add(m[1]); }
+    // Every ENV_REF pattern contains "env" (any case): skip the costly matchAll on other lines.
+    if (!ENV_HINT.test(l)) continue;
     for (const r of ENV_REF) for (const m of l.matchAll(r)) keys.add(m[1]);
   }
   return keys;

@@ -158,6 +158,8 @@ describe('Risk rubric (plugin)', () => {
   it('a 20,000-line file and patch score in under 200 ms', async () => {
     await fs.writeFile(path.join(root, 'lib', 'huge.ts'), lines(20000).join('\n') + '\n');
     const body = ['*** Update File: lib/huge.ts', '@@', ...lines(10000).map(l => `-${l}`), ...lines(10000, 'n').map(l => `+${l}`)];
+    // The plugin is a long-lived worker: warm it once (JIT, config, CODEOWNERS), then time a typical call.
+    await call('apply_patch', patch(...body)).before();
     const t = Date.now();
     await call('apply_patch', patch(...body)).before();
     expect(Date.now() - t).toBeLessThan(200);
