@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { readEventsBySession } from '../metrics/reader';
+import { readEvents } from '../metrics/reader';
+import { filterVisibleEvents, isSessionStartMarker } from '../metrics/sessions';
 import type { MetricsEvent } from '../types/metrics';
 
 interface SidebarStats {
@@ -35,7 +36,8 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly workspaceRoot: string,
-    private readonly sessionId: string
+    private readonly sessionId: string,
+    private readonly activationTime: number
   ) {
     this.watcher = vscode.workspace.createFileSystemWatcher(
       '**/.cline-shield/metrics.json'
@@ -82,13 +84,17 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
   }
 
   private async calculateStats(): Promise<SidebarStats> {
-    const events = await readEventsBySession(this.sessionId, this.workspaceRoot);
+    const events = filterVisibleEvents(
+      await readEvents(this.workspaceRoot),
+      this.activationTime,
+      this.sessionId
+    );
 
     const blockedEdits = events.filter(e => e.type === 'edit-blocked').length;
 
-    // Exclude the synthetic 'session-start' marker written on activation
+    // Exclude the synthetic 'session-start' markers (extension + each plugin session)
     const allowedEdits = events.filter(
-      e => e.type === 'edit-allowed' && (e.data as { file?: string }).file !== 'session-start'
+      e => e.type === 'edit-allowed' && !isSessionStartMarker(e)
     ).length;
 
     const passedEdits = events.filter(e => e.type === 'sanity-passed').length;
@@ -112,9 +118,10 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
     }
 
     // Most recent edit: only edit-allowed / edit-blocked events, so that
-    // risk-assessed and sanity events don't overwrite the panel.
+    // risk-assessed and sanity events don't overwrite the panel. Session-start
+    // markers are skipped so a newly started parallel session doesn't either.
     const editEvents = events.filter(
-      e => e.type === 'edit-allowed' || e.type === 'edit-blocked'
+      e => (e.type === 'edit-allowed' || e.type === 'edit-blocked') && !isSessionStartMarker(e)
     );
     const lastEdit = editEvents[editEvents.length - 1] ?? null;
 
