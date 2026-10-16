@@ -1,6 +1,7 @@
+import { shellEditCheck } from '../shell';
 import { fileOpsCheck, filesTouched, locationCheck, rewriteShare, sensitiveCheck, sizeCheck } from '../files';
 import { OPTS, action, change, ids, update } from '../../__tests__/fixtures';
-import type { Check } from '../../types';
+import type { Check, FileChange } from '../../types';
 
 const run = (check: Check, c: ReturnType<typeof change>, opts = OPTS) => check.run(c, action([c]), opts);
 const lines = (n: number, p = 'l') => Array.from({ length: n }, (_, i) => `${p}${i}`);
@@ -116,5 +117,30 @@ describe('locationCheck', () => {
   it('manifest and generated', () => {
     expect(ids(run(locationCheck, change(update('package.json', ['a'], ['b']))))).toEqual(['manifest']);
     expect(ids(run(locationCheck, change(update('dist/a.js', ['a'], ['b']))))).toEqual(['generated']);
+  });
+});
+
+describe('shell edits (run_commands)', () => {
+  const nameOnly = (extra: Partial<FileChange>, info: Partial<Parameters<typeof change>[1]> = {}) =>
+    ({ ...change(['*** Update File: lib/a.ts'], { exists: true, original: 'a\n', ...info }), ...extra });
+
+  it('name-only overwrite of an existing tracked file → move_overwrites (−10 when clean)', () => {
+    const clean = fileOpsCheck.run(nameOnly({ overwrite: true }, { gitTracked: true, gitDirty: false }), action([]), OPTS);
+    expect(clean).toMatchObject([{ category: 'move_overwrites', minus: 10, detail: 'replaces lib/a.ts (recoverable from git)' }]);
+    const dirty = fileOpsCheck.run(nameOnly({ overwrite: true }, { gitTracked: true, gitDirty: true }), action([]), OPTS);
+    expect(ids(dirty)).toEqual(['move_overwrites', 'uncommitted_lost']);
+  });
+
+  it('overwriting an untracked, new or non-git file is not a file op (logs, build output)', () => {
+    expect(fileOpsCheck.run(nameOnly({ overwrite: true }, { gitTracked: false, gitDirty: false }), action([]), OPTS)).toEqual([]);
+    expect(fileOpsCheck.run(nameOnly({ overwrite: true }, { exists: false }), action([]), OPTS)).toEqual([]);
+    expect(fileOpsCheck.run(nameOnly({ overwrite: true }), action([]), OPTS)).toEqual([]);
+  });
+
+  it('shell_edit fires on every shell-edited file and names the command', () => {
+    expect(shellEditCheck.run(nameOnly({ shellEdit: 'sed -i' }), action([]), OPTS)).toEqual([
+      { category: 'shell_edit', weight: 1, detail: 'changed by a shell command (sed -i)' },
+    ]);
+    expect(shellEditCheck.run(nameOnly({}), action([]), OPTS)).toEqual([]);
   });
 });

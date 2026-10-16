@@ -38,7 +38,7 @@ export interface GatherOptions {
   gitTimeoutMs?: number;
 }
 
-function displayPath(root: string, p: string): string {
+export function displayPath(root: string, p: string): string {
   const rel = path.relative(root, path.resolve(root, p));
   if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) return path.resolve(root, p);
   return rel.split(path.sep).join('/');
@@ -83,7 +83,7 @@ export function buildChange(op: FileOperation, info: FileInfo, display: (p: stri
   };
 }
 
-function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+export function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   return new Promise(resolve => {
     const t = setTimeout(() => resolve(fallback), ms);
     p.then(v => { clearTimeout(t); resolve(v); }, () => { clearTimeout(t); resolve(fallback); });
@@ -91,7 +91,7 @@ function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
 }
 
 /** NUL-separated output of a git command run in `root`; undefined on error, non-zero exit or timeout. */
-function gitPaths(root: string, args: string[], timeoutMs: number): Promise<Set<string> | undefined> {
+export function gitPaths(root: string, args: string[], timeoutMs: number): Promise<Set<string> | undefined> {
   return new Promise(resolve => {
     let out = '';
     let child: ReturnType<typeof spawn>;
@@ -138,7 +138,7 @@ export async function readCodeowners(root: string): Promise<string[]> {
   return [];
 }
 
-async function isOutside(root: string, abs: string): Promise<boolean> {
+export async function isOutside(root: string, abs: string): Promise<boolean> {
   const inside = (p: string, r: string) => {
     const rel = path.relative(r, p);
     return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));

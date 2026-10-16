@@ -62,8 +62,11 @@ export const fileOpsCheck: Check = {
       out.push(recoverable ? { category, weight: 1, minus: RECOVERABLE_DISCOUNT, detail: `${detail} (recoverable from git)` } : { category, weight: 1, detail });
     if (c.kind === 'delete') op('file_deleted', `deletes ${c.path}`);
     if (c.moveTargetExists) op('move_overwrites', `moves onto existing file ${c.moveTo}`);
+    // Name-only shell overwrite: only a tracked file counts (untracked ones are mostly logs and build output).
+    const overwrites = !!c.overwrite && c.exists === true && c.gitTracked === true;
+    if (overwrites) op('move_overwrites', `replaces ${c.path}`);
     const share = rewriteShare(c);
-    const losesFile = c.kind === 'delete' || !!c.moveTo || (share !== undefined && share >= 0.75);
+    const losesFile = c.kind === 'delete' || !!c.moveTo || overwrites || (share !== undefined && share >= 0.75);
     if (losesFile && c.gitDirty) {
       out.push({ category: 'uncommitted_lost', weight: 1, detail: `${c.path} has changes not committed to git` });
     } else if (losesFile && c.exists === true && c.gitTracked === false) {

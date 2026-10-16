@@ -31,6 +31,7 @@ interface BaseEvent {
     | 'sanity-failed'     // Sanity Check: PostToolUse found errors
     | 'sanity-passed'     // Sanity Check: PostToolUse all checks green
     | 'risk-assessed'     // Rules Engine: PostToolUse scored edit
+    | 'command-assessed'  // Risk rubric: one run_commands request scored (Decision 1)
     | 'llm-analysis';     // LLM Analyzer: Extension added reasoning
   
   // ============================================================================
@@ -121,6 +122,26 @@ interface BaseEvent {
     };
   }
   
+  /**
+   * Written by: plugin for one run_commands request (Open decision #1,
+   * decided 2026-10-15). Only when score > 0 or tier != allow. Asked
+   * requests are written in afterTool with `approved`.
+   */
+  export interface CommandAssessedEvent extends BaseEvent {
+    type: 'command-assessed';
+    data: {
+      command: string;        // Required - commands joined, secrets masked, max 500 chars
+      tier: 'allow' | 'ask' | 'block';  // Required
+      score: number;          // Required - 0-100, the deciding item's score
+      reasons: Array<{        // Required - every finding; file findings name the file
+        rule: string;
+        points: number;
+        description: string;
+      }>;
+      approved?: boolean;     // Asked requests only: false when denied (incl. headless)
+    };
+  }
+
   // ============================================================================
   // LLM ANALYZER EVENT
   // ============================================================================
@@ -148,6 +169,7 @@ interface BaseEvent {
     | SanityFailedEvent
     | SanityPassedEvent
     | RiskAssessedEvent
+    | CommandAssessedEvent
     | LLMAnalysisEvent;
   
   export type MetricsLog = MetricsEvent[];
@@ -162,6 +184,10 @@ interface BaseEvent {
   
   export function isEditApprovalEvent(event: MetricsEvent): event is EditApprovalEvent {
     return event.type === 'edit-approval';
+  }
+
+  export function isCommandAssessedEvent(event: MetricsEvent): event is CommandAssessedEvent {
+    return event.type === 'command-assessed';
   }
 
   export function isRiskAssessedEvent(event: MetricsEvent): event is RiskAssessedEvent {

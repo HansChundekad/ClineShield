@@ -10,6 +10,9 @@
  * ~/.cline-shield.yml config (config/store.ts) and maps the tier to
  * allow · ask · block. afterTool records the user's decision on asked
  * actions and one risk-assessed event per file of every successful edit.
+ * run_commands goes through rubric/commands (parse → command findings + the
+ * files commands change) into the same engine, logged as one
+ * command-assessed event per request.
  */
 
 import { randomUUID } from 'crypto';
@@ -23,7 +26,8 @@ import { applyPatchInputText, editorInputToOperation, parseApplyPatch } from './
 import type { FileOperation } from './patch';
 import { CATEGORIES } from './rubric/categories';
 import { buildChange, gatherAction, readCodeowners } from './rubric/gather';
-import { scoreAction } from './rubric/engine';
+import { COMMAND_ITEM, RANK, scoreAction } from './rubric/engine';
+import { UNPARSED_COMMANDS, assessCommands } from './rubric/commands';
 import type { Decision, FileScore } from './rubric/engine';
 import { askMessage, blockMessage, REPEAT_BLOCK_NOTE } from './rubric/messages';
 import type {
@@ -39,6 +43,7 @@ import type {
 export type { AgentToolResult } from './types';
 
 const EDIT_TOOLS = new Set(['apply_patch', 'editor']);
+const COMMAND_TOOL = 'run_commands';
 const UNPARSED = (tool: string) => `(unparsed ${tool} input)`;
 
 /** The plugin's own install folder (repo root of clineshield/src/plugin). */
@@ -46,6 +51,11 @@ const DEFAULT_PLUGIN_DIR = path.resolve(__dirname, '..', '..', '..');
 
 function hasHardFinding(decision: Decision): boolean {
   return decision.files.some(f => f.findings.some(x => CATEGORIES[x.id as keyof typeof CATEGORIES]?.kind === 'hard'));
+}
+
+/** The item that decides: highest tier, then highest score (same order as the engine). */
+function worstItem(decision: Decision): FileScore | undefined {
+  return decision.files.reduce<FileScore | undefined>((w, f) => (!w || RANK[f.tier] > RANK[w.tier] || (RANK[f.tier] === RANK[w.tier] && f.score > w.score) ? f : w), undefined);
 }
 
 function operationsFor(toolName: string, input: unknown): FileOperation[] | undefined {
@@ -127,7 +137,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
   const configWarnings: string[] = [];
   const pending = new Set<Promise<void>>();
   /** Decisions by toolCallId: ask entries await afterTool; all feed risk-assessed. */
-  const decided = new Map<string, { decision: Decision; asked: boolean; reason: string; observedTier?: 'ask' | 'block' }>();
+  const decided = new Map<string, { decision: Decision; asked: boolean; reason: string; observedTier?: 'ask' | 'block'; command?: string }>();
   const blockCounts = new Map<string, number>();
 
   function record(event: MetricsEvent): void {
@@ -152,6 +162,26 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     return config;
   }
 
+  /** One command-assessed event (Decision 1): every item's findings; file findings name the file. */
+  function recordCommand(decision: Decision, command: string, extra: { tier?: Decision['tier']; observedTier?: 'ask' | 'block'; approved?: boolean } = {}): void {
+    const tier = extra.tier ?? decision.tier;
+    const score = worstItem(decision)?.score ?? 0;
+    if (score === 0 && tier === 'allow') return;
+    const name = (f: FileScore, text: string) => (f.file === COMMAND_ITEM ? text : `${f.file}: ${text}`);
+    const reasons = [
+      ...decision.files.flatMap(f => [
+        ...f.findings.map(x => ({ rule: x.id, points: x.points, description: name(f, x.detail) })),
+        ...f.skipped.map(s => ({ rule: `skipped:${s.split(':')[0]}`, points: 0, description: name(f, s) })),
+      ]),
+      ...decision.errors.map(e => ({ rule: 'error', points: 0, description: e })),
+      ...(extra.observedTier ? [{ rule: 'observe', points: 0, description: `Observe mode: would have ${extra.observedTier === 'ask' ? 'asked' : 'blocked'}` }] : []),
+    ];
+    record({
+      timestamp: new Date().toISOString(), sessionId: sid(), type: 'command-assessed',
+      data: { command, tier, score, reasons, ...(extra.approved === undefined ? {} : { approved: extra.approved }) },
+    });
+  }
+
   function errorDecision(file: string): Decision {
     return {
       tier: 'ask', errored: true, errors: [file],
@@ -171,8 +201,65 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     return { decision: scoreAction(action, config), config };
   }
 
+  async function decideCommands(input: unknown): Promise<{ decision: Decision; config: RubricConfig; command: string } | undefined> {
+    const config = await loadConfig();
+    codeowners ??= readCodeowners(workspaceRoot!);
+    const r = await assessCommands(input, {
+      workspaceRoot: workspaceRoot!, homeDir, pluginDir, codeownersGlobs: await codeowners, trustedCommands: config.trustedCommands,
+    });
+    if (!r.action) {
+      console.error(`[ClineShield] ${r.error}`);
+      if (config.onError !== 'ask') return undefined;
+      const decision = errorDecision(COMMAND_ITEM);
+      decision.errors = [r.error ?? 'could not check the command'];
+      return { decision, config, command: r.command };
+    }
+    return { decision: scoreAction(r.action, config), config, command: r.command };
+  }
+
+  async function beforeCommands(ctx: AgentBeforeToolContext): Promise<AgentBeforeToolResult | undefined> {
+    store ??= new ConfigStore({ homeDir });
+    let result: { decision: Decision; config: RubricConfig; command: string } | undefined;
+    try {
+      result = await decideCommands(ctx.input);
+    } catch (error) {
+      console.error('[ClineShield] command rubric failed:', error);
+      const config = await loadConfig().catch(() => undefined);
+      if (config?.onError === 'allow') return undefined;
+      const decision = errorDecision(COMMAND_ITEM);
+      decision.errors = [`rubric crashed: ${(error as Error)?.message ?? error}`];
+      result = { decision, config: config!, command: UNPARSED_COMMANDS };
+    }
+    if (!result) return undefined;
+    const { decision, config, command } = result;
+    const id = ctx.toolCall?.toolCallId;
+
+    if (config?.mode === 'observe' && decision.tier !== 'allow' && !hasHardFinding(decision)) {
+      recordCommand(decision, command, { tier: 'allow', observedTier: decision.tier });
+      return undefined;
+    }
+    if (decision.tier === 'block') {
+      let reason = blockMessage(decision);
+      const key = `${ctx.snapshot?.conversationId ?? ''}:${worstItem(decision)?.file ?? ''}`;
+      const n = (blockCounts.get(key) ?? 0) + 1;
+      blockCounts.set(key, n);
+      if (n >= 3) reason += ` ${REPEAT_BLOCK_NOTE}`;
+      recordCommand(decision, command);
+      return { skip: true, reason };
+    }
+    if (decision.tier === 'ask') {
+      const reason = askMessage(decision);
+      if (id !== undefined) decided.set(id, { decision, asked: true, reason, command });
+      else recordCommand(decision, command);
+      return { policy: { autoApprove: false }, appendContext: reason };
+    }
+    recordCommand(decision, command);
+    return undefined;
+  }
+
   async function beforeTool(ctx: AgentBeforeToolContext): Promise<AgentBeforeToolResult | undefined> {
     const toolName = ctx.toolCall?.toolName ?? ctx.tool?.name;
+    if (toolName === COMMAND_TOOL && workspaceRoot) return beforeCommands(ctx);
     if (!EDIT_TOOLS.has(toolName) || !workspaceRoot) return undefined;
     store ??= new ConfigStore({ homeDir });
     let result: { decision: Decision; config: RubricConfig } | undefined;
@@ -228,6 +315,14 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
 
   async function afterTool(ctx: AgentAfterToolContext): Promise<AgentAfterToolResult | undefined> {
     const toolName = ctx.toolCall?.toolName ?? ctx.tool?.name;
+    if (toolName === COMMAND_TOOL && workspaceRoot) {
+      // Asked commands: one command-assessed with the user's answer. Shell-edited files get no edit or risk events.
+      const id = ctx.toolCall?.toolCallId;
+      const entry = id === undefined ? undefined : decided.get(id);
+      if (id !== undefined) decided.delete(id);
+      if (entry?.command !== undefined) recordCommand(entry.decision, entry.command, { approved: !isApprovalDenied(ctx.result) });
+      return undefined;
+    }
     if (!EDIT_TOOLS.has(toolName) || !workspaceRoot) return undefined;
     const id = ctx.toolCall?.toolCallId;
     const entry = id === undefined ? undefined : decided.get(id);

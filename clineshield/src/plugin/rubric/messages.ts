@@ -5,6 +5,7 @@
  * model can't learn to slip under them (SPEC.md "Reasons").
  */
 
+import { COMMAND_ITEM } from './engine';
 import type { Decision, Finding } from './engine';
 
 export const REPEAT_BLOCK_NOTE = 'Stop and ask the user how to proceed.';
@@ -16,7 +17,7 @@ function top(d: Decision): Array<Finding & { file: string }> {
     .slice(0, 3);
 }
 
-const why = (items: Array<Finding & { file: string }>) => items.map(x => `${x.file}: ${x.detail}`).join('; ');
+const why = (items: Array<Finding & { file: string }>) => items.map(x => (x.file === COMMAND_ITEM ? x.detail : `${x.file}: ${x.detail}`)).join('; ');
 
 export function blockMessage(d: Decision): string {
   const t = top(d);

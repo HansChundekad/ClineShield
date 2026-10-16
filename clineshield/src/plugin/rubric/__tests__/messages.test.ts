@@ -26,4 +26,11 @@ describe('messages', () => {
   it('errored with no findings', () => {
     expect(askMessage({ tier: 'ask', files: [], errored: true, errors: ['x'] })).toMatch(/could not check this action/);
   });
+  it('command findings read without a file prefix; the fix comes from the top category', () => {
+    const d = scoreAction(action([], { command: { findings: [{ category: 'rm_outside', weight: 1, detail: 'deletes / recursively, outside the project' }], pieces: [], skipped: [], errors: [] } }), cfg);
+    const m = blockMessage(d);
+    expect(m).toMatch(/Why: deletes \/ recursively, outside the project\./);
+    expect(m).not.toMatch(/\(command\)/);
+    expect(m).toMatch(/Fix: Only delete inside the project folder/);
+  });
 });
