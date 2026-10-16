@@ -93,8 +93,13 @@ Designed with the owner 2026-10-15; points are starting values, tuned by the eva
 **Cut-offs (ask / block):** relaxed 60 / 90 · **balanced 40 / 70** (default) · strict 25 / 50. Multi-file action:
 each file scored, worst file decides, `files_touched` adds to it, a hard rule on any file blocks the whole action.
 **Risk groups:** per file, each group counts only its biggest finding (the rest are listed with 0 points). Groups:
-lost code (`rewrite_share`, `lines_removed`, `functions_removed`, `exports_removed`) · scope · file ops · unrecoverable
-(`uncommitted_lost`) · location (sensitive files, `manifest`, `generated`) · weakening safety · content · custom rules.
+lost code (`rewrite_share`, `lines_removed`, `functions_removed`, `exports_removed`) · scope · file ops (incl. `rm_recursive`,
+`shell_edit`, `unknown_target`) · unrecoverable (`uncommitted_lost`, `discards_work`, `history_rewrite`) · location (sensitive
+files, `manifest`, `generated`) · weakening safety · content · privilege (`sudo`, `chmod_broad`) · external (`pipe_to_shell`,
+`publish`, `destructive_sql`, `secret_exfil`) · custom rules.
+**Commands:** all commands in one `run_commands` request are one action. Command findings form one item, `(command)`; each
+file a command changes is an item like an edited file; worst item decides, a hard rule anywhere blocks the request.
+`trusted_commands` pieces are skipped; `match: command` custom rules test each piece.
 **Block rule:** hard rules and categories set to `block` always block. Otherwise relaxed and balanced block only when
 the score reaches the block cut-off **and** two or more groups score; strict blocks at the cut-off alone. The file's
 effective preset (per-folder `paths` preset wins) decides.
@@ -111,7 +116,7 @@ it would add); promoted to points only if the eval shows value. PR column = deli
 | `self_protection` — edit/command touching `.cline-shield.yml`, `~/.cline-shield.yml`, `.cline-shield/`, the plugin install dir | block | hard | ① |
 | `placeholder` — "rest of code unchanged" / "existing code here" style lines in an edit to an existing file; `TODO: implement` or a stub body (`pass`, `...`, `throw new Error("not implemented")`, `todo!()`, `panic("TODO")`) added in a hunk that removed ≥ 3 real lines. New files never fire | block | hard | ① |
 | `secret_added` — API key / token / private-key patterns in added lines | block | hard | ① |
-| `rm_outside` — recursive delete outside the workspace or on `/`, `~` | block | hard | ② |
+| `rm_outside` — recursive delete of `/`, `~`, `$HOME` or anything resolving outside the workspace; `/tmp`, `/private/tmp`, `$TMPDIR` exempt | block | hard | ② |
 | **Size** (patch-only fallback for huge/unreadable files) | | | |
 | `rewrite_share` — share of original file removed or rewritten (file ≥ 20 lines) | ≥ 40 %: 25 · ≥ 75 %: 50 | signal | ① |
 | `lines_removed` | > 100: 15 · > 300: 30 | signal | ① |
@@ -139,14 +144,16 @@ it would add); promoted to points only if the eval shows value. PR column = deli
 | `functions_removed` (functions, classes, methods) | 10 each, max 40 | signal | ① |
 | `exports_removed` (removed or renamed) | 20 each, max 40 | signal | ① |
 | `signature_changed` · `env_key_renamed` | (15) · (20) | log-only | ① |
-| **Commands** (parsed: `&&` `;` `\|` `\|\|`, `sudo`, `VAR=x cmd`, one level of `bash -c`; quotes, heredocs, comments masked) | | | |
-| `rm_recursive` in workspace (`node_modules`, `dist`, build dirs = 0) | 20 | critical | ② |
+| **Commands** (`run_commands`, all 9 input shapes, see Appendix. Parsed: split on `&&` `;` `\|` `\|\|` `&` newlines; `sudo` (scores `sudo`), `VAR=x`, `env`, `nohup`, `time` stripped; one level of `bash`/`sh`/`zsh -c` unwrapped; `cd dir &&` tracked so relative paths resolve; quotes, heredocs, comments masked. A `{command, args}` entry is argv, no shell) | | | |
+| `rm_recursive` in workspace (`node_modules`, `dist`, `build`, `out`, `.next`, `target`, `coverage`, `__pycache__` = 0, and not scored as file deletes) | 20 | critical | ② |
 | `discards_work` (`reset --hard`, `clean -fd`, `checkout -- .`, `restore .`) | 50 dirty tree · 10 clean | critical | ② |
 | `history_rewrite` (`push --force` but not `--force-with-lease`, `branch -D`) | 50 | critical | ② |
 | `pipe_to_shell` · `sudo` · `destructive_sql` (`DROP`, `TRUNCATE`, `DELETE` without `WHERE`) · `publish` (`npm publish`, `docker push`, `terraform apply`, `kubectl apply`) | 45 · 40 · 50 · 60 | critical | ② |
 | `chmod_broad` (`777`, `-R`) | 30 | signal | ② |
-| `secret_exfil` — reads a secrets file and makes a network call in the same action | 70 | critical | ② |
-| File-touching commands (`rm`, `mv`, `cp`, `sed -i`, `>`, `truncate`) run their targets through the path categories above | — | — | ② |
+| `secret_exfil` — reads a secrets file and makes a network call (`curl`, `wget`, `nc`, `scp`) in the same request | 70 | critical | ② |
+| `shell_edit` — any command that changes a file (forms below); fix: use the editor tool so the change can be reviewed | 15 | signal | ② |
+| `unknown_target` — a file-changing command whose target contains `$VAR`, `$(…)` or backticks | 40 | critical | ② |
+| File-changing commands. **Full content known** (`cat > f <<EOF`, `tee f <<EOF`, `echo`/`printf` of literal text `> f`): a full-file replace scored against the real file with every edit check; `>> f` with known text: added lines (content checks apply). **Name only** (`sed -i`, `perl -i`, `rm`, `rmdir`, `unlink`, `mv`, `cp`, `truncate`, `dd of=`, `>` from an unknown source): path and file-op checks. Temp dirs and `/dev/*` skipped. No `edit-*` / `risk-assessed` events for shell edits | — | — | ② |
 | **Dependencies** (npm + PyPI; manifest edits **and** `npm install x` / `pip install x`) | | | |
 | `dep_added` · `dep_unpinned` (`*`, `latest`, no version) · `dep_downgrade` | 10 · 15 · 20 | signal | ③ |
 | `dep_missing` — not in the registry (hallucinated) | 80 | signal | ③ |
@@ -164,7 +171,8 @@ smaller pieces to get around this." After 3 blocks on the same file in one task:
 proceed." Ask adds: "If the user says no, don't retry; ask what they want." Points, totals and cut-offs go to the logs
 and `/clineshield why`.
 
-**Failure and time.** Unreadable tool input or a rubric-wide crash → `on_error` (default `ask`). Headless runs: ask =
+**Failure and time.** Unreadable tool input (incl. `run_commands` input matching no shape, unbalanced quotes, a parser
+crash) or a rubric-wide crash → `on_error` (default `ask`). Headless runs: ask =
 deny with a logged reason, never a hang. Internal deadline 2 s (Cline's 3 s timeout fails **open**); order: hard and
 critical path/pattern checks (no I/O) → file read + in-memory apply → `git status` (300 ms cap) → registry (800 ms cap).
 Deadline hit before critical checks finish → `on_error`; later → remaining signals logged "skipped: time".
@@ -174,9 +182,11 @@ doesn't match: patch-only measures (no ask for a non-matching patch, the tool wi
 checked. CRLF normalised. Parallel tool calls scored independently.
 
 **Logging.** Edits keep `edit-allowed` / `edit-approval` / `edit-blocked` (`structuralChangePercent` becomes
-file-relative, same field) and `risk-assessed` after a successful edit (`reasons[]` = fired categories, `level` from
-cut-offs: below ask = low, ask–block = medium, ≥ block = high). Commands use the new **`command-assessed`** event
-(Decision 1), written when score > 0 or tier ≠ allow.
+file-relative, same field) and `risk-assessed` after a successful edit (`reasons[]` = fired categories). `level` follows
+the decision: allow = low, ask = medium, block = high. Commands use the new **`command-assessed`** event (Decision 1), one
+per `run_commands` request, written when score > 0 or tier ≠ allow: `command` (pieces joined, capped at 500 chars,
+secrets masked with the `secret_added` patterns), `tier`, `score`, `reasons` (`{rule, points, description}`; file findings
+name the file, e.g. "app.ts: 82% of the file rewritten"), `approved` (asked commands only, written in `afterTool`).
 
 - [x] ① Rubric engine: categories → points → capped score → tier; one engine for before and after the action; replaces the interim 1.x size rules and `DEFAULT_PROTECTED_PATHS`; closes Decision 8
 - [x] ① Edits measured against the real file via in-memory apply; patch-only fallback; worst file decides
@@ -185,7 +195,13 @@ cut-offs: below ask = low, ask–block = medium, ≥ block = high). Commands use
 - [x] ① 2 s internal deadline with the check order above; < 200 ms typical per action
 - [x] ① Reason text as above; same text to Cline and logs; points only in logs
 - [x] ① Unit tests per category, plus: small edit to a big file allowed, full rewrite asked (balanced) / blocked (strict), placeholder rewrite blocked, file delete with uncommitted changes, multi-file patch, non-JS files, binary, unreadable file
-- [ ] ② `run_commands` input normalised (strings and `{command, args}`, all SDK union shapes); parser above; command categories; `command-assessed` event; `rm -rf node_modules` vs `rm -rf /` tests
+- [ ] ② `run_commands` input normalised: all 9 SDK shapes, `{command, args}` as argv; no shape → `on_error`
+- [ ] ② Parser as above (no I/O); unbalanced quotes → `on_error`; quoted, heredoc and commented text never matches
+- [ ] ② Command categories incl. `rm_outside` temp exemption, `shell_edit`, `unknown_target`; one request = one action
+- [ ] ② Shell edits: full-content forms scored with every edit check against the real file; name-only forms with path and file-op checks
+- [ ] ② `trusted_commands` and `match: command` custom rules take effect
+- [ ] ② `command-assessed` event added to `metrics.ts`; `level` follows the decision (also for `risk-assessed`)
+- [ ] ② Tests: `rm -rf node_modules` allowed vs `rm -rf /` blocked, `/tmp` exemption, each shell-edit form, chains, pipes, `sudo`, `VAR=x`, `bash -c`, every input shape; < 200 ms typical per request
 - [ ] ③ Dependency categories; registry lookups with cap, cache and `offline: true`; bundled top-5k lists; tests with a fake registry
 - [ ] ④ Session state store (test-run outcomes, edit history, reads); `test_and_source` +25; log-only session signals
 - [ ] Manual: real CLI session in `test-workspace/` hitting allow, ask and block
@@ -281,7 +297,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 | 9 | Rubric defaults: starting points and cut-offs set in Risk rubric (2026-10-15) | open → tune with the eval |
 
 **Decided**
-- **1** — Commands get a new `command-assessed` event (`command, tier, score, reasons, approved?`) added to `metrics.ts`; the extension learns it (2026-10-15).
+- **1** — Commands get a new `command-assessed` event (`command, tier, score, reasons, approved?`) added to `metrics.ts`, one per `run_commands` request; the extension learns it (2026-10-15).
 - **2** — Ask-tier outcome: new `edit-approval` event (`file, structuralChangePercent, functionsDeleted, exportsDeleted, reason, approved`), written in `afterTool`; `approved: false` on the runtime's denial error (incl. headless).
 - **4** — Interim edit thresholds hard-coded in `EDIT_SIZE_THRESHOLDS`; default preset `balanced` (2026-10-15).
 - **5** — Plugin lives in `clineshield/src/plugin/`; minimal root `package.json` lists it (git install reads only the root manifest; `.ts` loads via jiti).
@@ -305,6 +321,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 | One worker process per session, so plugin and extension write from different processes | `plugin-registry.ts` `startWorkerCopy` |
 | Git install clones the repo, `npm install --omit=dev` at root, loads root `package.json` `cline.plugins`; no subdirectory syntax, only `@ref` | `core/src/services/plugin-install.ts` |
 | `.ts` entries load via jiti, so relative TS imports work without a build | `plugin-sandbox.ts`, `plugin-module-import.ts` |
+| `run_commands` input is one of 9 shapes: `{commands: string[]}`, `{commands: (string \| {command, args?})[]}`, `{commands: string \| {command, args?}}`, `{command, args?}[]`, `{command, args?}`, `{command: string}`, `{cmd: string}`, `string[]`, `string`. A `{command, args}` entry runs without a shell | `core/src/extensions/tools/schemas.ts` L127–172 (`main` ee7f4f5) |
 | Plugins can add slash commands (`"commands"`, `api.registerCommand`) | [plugin reference](https://github.com/cline/cline/blob/main/.agents/skills/cline-sdk/references/plugins/REFERENCE.md) |
 | CLI auto-approve all (`toolAutoApprove`) returns `approved: true` before looking at the request's policy, so a hook's `autoApprove: false` is overridden | `apps/cli/src/runtime/interactive/approvals.ts` `requestToolApproval` |
 | Plugins load from `<workspace>/.cline/plugins/` or `~/.cline/plugins/`; template: `sdk/examples/plugins/gitignore-read-files-guard.ts` | [docs](https://docs.cline.bot/customization/plugins) |
