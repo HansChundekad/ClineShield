@@ -16,7 +16,9 @@ import type { RubricConfig } from '../config/schema';
 import type { ActionContext, Check, CategoryId, FileChange, RawFinding, Tier } from './types';
 
 export const DEADLINE_MS = 2000;
-const RANK: Record<Tier, number> = { allow: 0, ask: 1, block: 2 };
+/** Display name of the command-level item of a run_commands action. */
+export const COMMAND_ITEM = '(command)';
+export const RANK: Record<Tier, number> = { allow: 0, ask: 1, block: 2 };
 
 export interface Finding { id: string; points: number; block: boolean; logOnly: boolean; detail: string; fix: string }
 export interface FileScore {
@@ -27,8 +29,9 @@ export interface FileScore {
 export interface Decision { tier: Tier; files: FileScore[]; errored: boolean; errors: string[] }
 export interface ScoreOptions { checks?: Check[]; now?: () => number; deadlineMs?: number }
 
-export function levelFor(score: number, cutoffs: Cutoffs): 'low' | 'medium' | 'high' {
-  return score >= cutoffs.block ? 'high' : score >= cutoffs.ask ? 'medium' : 'low';
+/** Level follows the decision (SPEC.md "Logging"). */
+export function levelFor(tier: Tier): 'low' | 'medium' | 'high' {
+  return tier === 'block' ? 'high' : tier === 'ask' ? 'medium' : 'low';
 }
 
 function toFinding(raw: RawFinding, setting: number | 'off' | 'block'): Finding | undefined {
@@ -83,7 +86,7 @@ function finalize(f: FileScore, raw: Finding[], preset: Preset, isTest: boolean)
   const groups = new Set(scored.filter(x => x.points > 0).map(x => groupOf(x.id))).size;
   const overBlock = f.score >= f.cutoffs.block && (preset === 'strict' || groups >= 2);
   f.tier = blocked || overBlock ? 'block' : f.score >= f.cutoffs.ask ? 'ask' : 'allow';
-  f.level = blocked ? 'high' : levelFor(f.score, f.cutoffs);
+  f.level = levelFor(f.tier);
 }
 
 export function scoreAction(action: ActionContext, config: RubricConfig, options: ScoreOptions = {}): Decision {
@@ -131,7 +134,7 @@ export function scoreAction(action: ActionContext, config: RubricConfig, options
     return f;
   });
 
-  if (files.length > 0) {
+  if (files.length > 0 && action.changes.length > 0) {
     const worstIdx = files.reduce((w, f, i) => (RANK[f.tier] > RANK[files[w].tier] || (RANK[f.tier] === RANK[files[w].tier] && f.score > files[w].score) ? i : w), 0);
     const worst = files[worstIdx];
     const policy = resolveFilePolicy(config, worst.file);
@@ -142,6 +145,23 @@ export function scoreAction(action: ActionContext, config: RubricConfig, options
       }
     }
     finalize(worst, raw[worstIdx], presets[worstIdx], action.changes[worstIdx].isTest);
+  }
+
+  if (action.command) {
+    const cmd = action.command;
+    const policy = resolveFilePolicy(config, COMMAND_ITEM);
+    const findings = cmd.findings.map(r => toFinding(r, policy.points[r.category])).filter((x): x is Finding => !!x);
+    config.customRules.forEach((rule, i) => {
+      if (rule.match !== 'command' || !cmd.pieces.some(p => rule.regex!.test(p.slice(0, MAX_LINE_SCAN)))) return;
+      findings.push({ id: `custom:${i}`, points: rule.points === 'block' ? 0 : rule.points, block: rule.points === 'block', logOnly: false, detail: rule.message, fix: rule.message });
+    });
+    const f: FileScore = {
+      file: COMMAND_ITEM, score: 0, tier: 'allow', level: 'low', cutoffs: policy.cutoffs, findings, skipped: [...cmd.skipped],
+      structuralChangePercent: 0, functionsDeleted: 0, exportsDeleted: 0,
+    };
+    finalize(f, findings, policy.preset, false);
+    files.push(f);
+    if (cmd.errors.length > 0) { errored = true; errors.push(...cmd.errors); }
   }
 
   let tier = files.reduce<Tier>((t, f) => (RANK[f.tier] > RANK[t] ? f.tier : t), 'allow');

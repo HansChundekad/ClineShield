@@ -48,6 +48,15 @@ export function validateEvent(event: unknown): string[] {
       if (!['low', 'medium', 'high'].includes(d.level as string)) problems.push('data.level is not low|medium|high');
       if (!Array.isArray(d.reasons)) problems.push('data.reasons is not an array');
       break;
+    case 'command-assessed':
+      str('command'); num('score');
+      if (typeof d.command === 'string' && d.command.length > 500) problems.push('data.command is longer than 500 chars');
+      if (!['allow', 'ask', 'block'].includes(d.tier as string)) problems.push('data.tier is not allow|ask|block');
+      if (!Array.isArray(d.reasons) || !(d.reasons as unknown[]).every(r => typeof r === 'object' && r !== null &&
+        typeof (r as Record<string, unknown>).rule === 'string' && typeof (r as Record<string, unknown>).points === 'number' &&
+        typeof (r as Record<string, unknown>).description === 'string')) problems.push('data.reasons is not {rule, points, description}[]');
+      if (d.approved !== undefined && typeof d.approved !== 'boolean') problems.push('data.approved is not a boolean');
+      break;
     case 'llm-analysis':
       str('file'); str('relatedRiskEventTimestamp'); str('reasoning');
       break;

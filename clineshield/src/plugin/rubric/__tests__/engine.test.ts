@@ -1,4 +1,4 @@
-import { DEADLINE_MS, levelFor, scoreAction } from '../engine';
+import { COMMAND_ITEM, DEADLINE_MS, levelFor, scoreAction } from '../engine';
 import { validateConfig, withDefaults } from '../../config/schema';
 import { KEPT_HEAD, OPTS, PRODUCT_LINES, PRODUCT_REWRITE, PRODUCT_TEXT, action, change, update } from './fixtures';
 import type { Check } from '../types';
@@ -172,7 +172,7 @@ describe('blocking needs two kinds of risk (relaxed, balanced)', () => {
     const d = scoreAction(action([ciEdit()]), cfg({ categories: { ci_config: 80 } }));
     expect(d.files[0].score).toBe(80);
     expect(d.tier).toBe('ask');
-    expect(d.files[0].level).toBe('high');
+    expect(d.files[0].level).toBe('medium'); // level follows the decision;
     expect(scoreAction(action([ciEdit()]), cfg({ preset: 'strict', categories: { ci_config: 80 } })).tier).toBe('block');
   });
 
@@ -320,10 +320,70 @@ describe('scoreAction', () => {
   });
 });
 
-describe('levelFor', () => {
-  it('maps score to level by cut-offs', () => {
-    const c = { ask: 40, block: 70 };
-    expect([levelFor(10, c), levelFor(40, c), levelFor(70, c)]).toEqual(['low', 'medium', 'high']);
+describe('level follows the decision', () => {
+  it('maps tier to level: allow = low, ask = medium, block = high', () => {
+    expect([levelFor('allow'), levelFor('ask'), levelFor('block')]).toEqual(['low', 'medium', 'high']);
+  });
+  it('a file at the block cut-off that only asks (one group) is medium, not high', () => {
+    const d = scoreAction(action([known('lib/a.ts', 40, 40)]), cfg({ categories: { rewrite_share: 80 } }));
+    expect(d.files[0]).toMatchObject({ score: 80, tier: 'ask', level: 'medium' });
+  });
+  it('a hard block is high whatever the score', () => {
+    const c = change(update('lib/a.ts', ['a'], ['// ... rest of code unchanged']));
+    expect(scoreAction(action([c]), cfg()).files[0]).toMatchObject({ tier: 'block', level: 'high' });
+  });
+});
+
+describe('command item (run_commands)', () => {
+  const command = (findings: Array<{ category: string; weight?: number; detail?: string }>, pieces: string[] = [], extra = {}) => ({
+    findings: findings.map(f => ({ category: f.category, weight: f.weight ?? 1, detail: f.detail ?? f.category })) as never,
+    pieces, skipped: [], errors: [], ...extra,
+  });
+
+  it('command findings are scored as one extra item named (command); no files needed', () => {
+    const d = scoreAction(action([], { command: command([{ category: 'sudo' }]) }), cfg());
+    expect(d.files).toHaveLength(1);
+    expect(d.files[0]).toMatchObject({ file: COMMAND_ITEM, score: 40, tier: 'ask', level: 'medium' });
+  });
+
+  it('a hard command finding blocks the whole action', () => {
+    const d = scoreAction(action([known('lib/a.ts', 1, 40)], { command: command([{ category: 'rm_outside' }]) }), cfg());
+    expect(d.tier).toBe('block');
+    expect(d.files.map(f => f.file)).toEqual(['lib/a.ts', COMMAND_ITEM]);
+  });
+
+  it('groups count once in the command item; two groups at the cut-off block under balanced', () => {
+    const one = scoreAction(action([], { command: command([{ category: 'pipe_to_shell' }, { category: 'publish' }]) }), cfg());
+    expect(one.files[0]).toMatchObject({ score: 60, tier: 'ask' });
+    const two = scoreAction(action([], { command: command([{ category: 'pipe_to_shell' }, { category: 'sudo' }]) }), cfg());
+    expect(two.files[0]).toMatchObject({ score: 85, tier: 'block' });
+  });
+
+  it('config points apply (off, numbers) and the worst item decides', () => {
+    const d = scoreAction(action([known('lib/a.ts', 40, 40)], { command: command([{ category: 'unknown_target' }]) }), cfg({ categories: { unknown_target: 'off' } }));
+    expect(d.files[1].findings).toEqual([]);
+    expect(d.tier).toBe('ask'); // from the rewrite
+  });
+
+  it('custom command rules test each piece', () => {
+    const rules = { custom_rules: [{ match: 'command', pattern: '^make deploy', points: 50, message: 'Deploys: ask first' }] };
+    const d = scoreAction(action([], { command: command([], ['npm test', 'make deploy prod']) }), cfg(rules));
+    expect(d.files[0].findings).toMatchObject([{ id: 'custom:0', points: 50, detail: 'Deploys: ask first' }]);
+    expect(d.tier).toBe('ask');
+    const blockRule = { custom_rules: [{ match: 'command', pattern: 'terraform', points: 'block', message: 'No terraform' }] };
+    expect(scoreAction(action([], { command: command([], ['terraform plan']) }), cfg(blockRule)).tier).toBe('block');
+    expect(scoreAction(action([], { command: command([], ['npm test']) }), cfg(rules)).files[0].findings).toEqual([]);
+  });
+
+  it('command detector errors and skips are carried into the decision', () => {
+    const d = scoreAction(action([], { command: command([], [], { errors: ['parse crashed'], skipped: ['chmod: crashed'] }) }), cfg());
+    expect(d).toMatchObject({ tier: 'ask', errored: true, errors: ['parse crashed'] });
+    expect(d.files[0].skipped).toEqual(['chmod: crashed']);
+  });
+
+  it('file-level custom command rules never fire on files', () => {
+    const rules = { custom_rules: [{ match: 'command', pattern: 'lib', points: 50, message: 'x' }] };
+    expect(scoreAction(action([known('lib/a.ts', 1, 40)]), cfg(rules)).files[0].findings).toEqual([]);
   });
 });
 

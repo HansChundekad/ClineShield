@@ -14,7 +14,9 @@ import type { CategoryId, CheckKind } from './types';
  * relaxed/balanced block on points only when two groups score. Hard and
  * log-only categories have none. Custom rules form the 'custom' group.
  */
-export type RiskGroup = 'lost_code' | 'scope' | 'file_ops' | 'unrecoverable' | 'location' | 'weakening' | 'content' | 'custom';
+export type RiskGroup =
+  | 'lost_code' | 'scope' | 'file_ops' | 'unrecoverable' | 'location' | 'weakening' | 'content'
+  | 'privilege' | 'external' | 'custom';
 
 export interface CategoryDef {
   max: number;
@@ -77,4 +79,16 @@ export const CATEGORIES: Record<CategoryId, CategoryDef> = {
   exports_removed: def(40, 'signal', 'lost_code', 'Keep exported names; other code may depend on them.'),
   signature_changed: def(15, 'logOnly', null, 'Keep public signatures unless the task requires a change.'),
   env_key_renamed: def(20, 'logOnly', null, 'Keep environment variable and config key names unless the task requires a rename.'),
+  rm_outside: def(0, 'hard', null, 'Only delete inside the project folder (temp folders are fine); ask the user to do anything else by hand.'),
+  rm_recursive: def(20, 'critical', 'file_ops', 'Delete only the specific files or folders the task requires.'),
+  discards_work: def(50, 'critical', 'unrecoverable', 'Ask the user to commit or stash their changes before discarding anything.'),
+  history_rewrite: def(50, 'critical', 'unrecoverable', 'Use --force-with-lease, or ask the user before rewriting shared history or deleting branches.'),
+  pipe_to_shell: def(45, 'critical', 'external', 'Download the script to a file and show it to the user before running it.'),
+  sudo: def(40, 'critical', 'privilege', 'Run without sudo, or ask the user to run the privileged step themselves.'),
+  destructive_sql: def(50, 'critical', 'external', 'Back up first and add a WHERE clause, or ask the user to run destructive SQL themselves.'),
+  publish: def(60, 'critical', 'external', 'Leave publishing and deploying to the user.'),
+  chmod_broad: def(30, 'signal', 'privilege', 'Grant only the permissions needed, on specific files.'),
+  secret_exfil: def(70, 'critical', 'external', 'Never send secrets files over the network.'),
+  shell_edit: def(15, 'signal', 'file_ops', 'Use the editor tool to change files so the change can be reviewed.'),
+  unknown_target: def(40, 'critical', 'file_ops', 'Write the file path out literally instead of using variables or command substitution.'),
 };

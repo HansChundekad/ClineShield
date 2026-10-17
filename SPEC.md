@@ -72,7 +72,7 @@ The mechanism every rule uses. Driven by the Risk rubric.
 
 #### Risk scoring after edits
 - [x] `afterTool` scores each successful edit with `computeRiskScore()` and writes `risk-assessed` (lands with PR #18)
-- `risk-assessed` now comes from the Risk rubric (①): every file type, `reasons[]` = fired categories, `level` from the file's cut-offs. Sanity checks are still assumed passed
+- `risk-assessed` now comes from the Risk rubric (①): every file type, `reasons[]` = fired categories, `level` follows the decision (②). Sanity checks are still assumed passed
 
 #### Dashboards follow plugin sessions
 - [x] Sidebar, change map and status bar show every session started since VS Code opened, incl. parallel ones (Decision 7)
@@ -116,7 +116,7 @@ it would add); promoted to points only if the eval shows value. PR column = deli
 | `self_protection` — edit/command touching `.cline-shield.yml`, `~/.cline-shield.yml`, `.cline-shield/`, the plugin install dir | block | hard | ① |
 | `placeholder` — "rest of code unchanged" / "existing code here" style lines in an edit to an existing file; `TODO: implement` or a stub body (`pass`, `...`, `throw new Error("not implemented")`, `todo!()`, `panic("TODO")`) added in a hunk that removed ≥ 3 real lines. New files never fire | block | hard | ① |
 | `secret_added` — API key / token / private-key patterns in added lines | block | hard | ① |
-| `rm_outside` — recursive delete of `/`, `~`, `$HOME` or anything resolving outside the workspace; `/tmp`, `/private/tmp`, `$TMPDIR` exempt | block | hard | ② |
+| `rm_outside` — recursive delete of `/`, `~`, `$HOME`, the project itself (`rm -rf .`, `*` at the root), a folder containing the project or home, or anything resolving outside the workspace; `/tmp`, `/private/tmp`, `$TMPDIR` exempt | block | hard | ② |
 | **Size** (patch-only fallback for huge/unreadable files) | | | |
 | `rewrite_share` — share of original file removed or rewritten (file ≥ 20 lines) | ≥ 40 %: 25 · ≥ 75 %: 50 | signal | ① |
 | `lines_removed` | > 100: 15 · > 300: 30 | signal | ① |
@@ -144,16 +144,16 @@ it would add); promoted to points only if the eval shows value. PR column = deli
 | `functions_removed` (functions, classes, methods) | 10 each, max 40 | signal | ① |
 | `exports_removed` (removed or renamed) | 20 each, max 40 | signal | ① |
 | `signature_changed` · `env_key_renamed` | (15) · (20) | log-only | ① |
-| **Commands** (`run_commands`, all 9 input shapes, see Appendix. Parsed: split on `&&` `;` `\|` `\|\|` `&` newlines; `sudo` (scores `sudo`), `VAR=x`, `env`, `nohup`, `time` stripped; one level of `bash`/`sh`/`zsh -c` unwrapped; `cd dir &&` tracked so relative paths resolve; quotes, heredocs, comments masked. A `{command, args}` entry is argv, no shell) | | | |
-| `rm_recursive` in workspace (`node_modules`, `dist`, `build`, `out`, `.next`, `target`, `coverage`, `__pycache__` = 0, and not scored as file deletes) | 20 | critical | ② |
-| `discards_work` (`reset --hard`, `clean -fd`, `checkout -- .`, `restore .`) | 50 dirty tree · 10 clean | critical | ② |
+| **Commands** (`run_commands`, all 9 input shapes, see Appendix. Parsed: split on `&&` `;` `\|` `\|\|` `&` newlines; `sudo` (scores `sudo`), `VAR=x`, `env`, `nohup`, `time` stripped; one level of `bash`/`sh`/`zsh -c` and `$(…)` / backtick / `<(…)` bodies unwrapped; `cd dir &&` tracked so relative paths resolve; quotes, heredocs, comments masked. A `{command, args}` entry is argv, no shell) | | | |
+| `rm_recursive` in workspace (`node_modules`, `dist`, `build`, `out`, `.next`, `.nuxt`, `target`, `coverage`, `__pycache__`, `.pytest_cache`, `.mypy_cache`, `.turbo`, `.cache`, `.parcel-cache` = 0, and not scored as file deletes); `find -delete` / `-exec rm` | 20 | critical | ② |
+| `discards_work` (`reset --hard`, `clean -f`, `checkout -- <paths>` / `.`, `restore <paths>` without `--staged`); one `git status` (300 ms cap), unknown = dirty | 50 dirty tree · 10 clean | critical | ② |
 | `history_rewrite` (`push --force` but not `--force-with-lease`, `branch -D`) | 50 | critical | ② |
-| `pipe_to_shell` · `sudo` · `destructive_sql` (`DROP`, `TRUNCATE`, `DELETE` without `WHERE`) · `publish` (`npm publish`, `docker push`, `terraform apply`, `kubectl apply`) | 45 · 40 · 50 · 60 | critical | ② |
-| `chmod_broad` (`777`, `-R`) | 30 | signal | ② |
+| `pipe_to_shell` · `sudo` · `destructive_sql` (`DROP`, `TRUNCATE`, `DELETE` without `WHERE` given to `psql`/`mysql`/`sqlite3`…; `dropdb`, `prisma migrate reset`, `rails db:drop`) · `publish` (`npm`/`yarn`/`pnpm publish`, `docker push`, `terraform apply`/`destroy`, `kubectl apply`/`delete`, `cargo publish`, `twine upload`, `gem push`) | 45 · 40 · 50 · 60 | critical | ② |
+| `chmod_broad` (`777`, `666`, `o+w`, `-R`) | 30 | signal | ② |
 | `secret_exfil` — reads a secrets file and makes a network call (`curl`, `wget`, `nc`, `scp`) in the same request | 70 | critical | ② |
 | `shell_edit` — any command that changes a file (forms below); fix: use the editor tool so the change can be reviewed | 15 | signal | ② |
-| `unknown_target` — a file-changing command whose target contains `$VAR`, `$(…)` or backticks | 40 | critical | ② |
-| File-changing commands. **Full content known** (`cat > f <<EOF`, `tee f <<EOF`, `echo`/`printf` of literal text `> f`): a full-file replace scored against the real file with every edit check; `>> f` with known text: added lines (content checks apply). **Name only** (`sed -i`, `perl -i`, `rm`, `rmdir`, `unlink`, `mv`, `cp`, `truncate`, `dd of=`, `>` from an unknown source): path and file-op checks. Temp dirs and `/dev/*` skipped. No `edit-*` / `risk-assessed` events for shell edits | — | — | ② |
+| `unknown_target` — a file-changing command whose target contains `$VAR`, `$(…)` or backticks, follows `cd $VAR`, or comes from `xargs` | 40 | critical | ② |
+| File-changing commands. **Full content known** (`cat > f <<EOF`, `tee f <<EOF`, `echo`/`printf` of literal text `> f`): a full-file replace scored against the real file with every edit check; `>> f` with known text: added lines (content checks apply). **Name only** (`sed -i`, `perl -i`, `rm`, `rmdir`, `unlink`, `mv`, `cp`, `truncate`, `dd of=`, `>` from an unknown source): path and file-op checks; an overwrite (`cp`, `>`, `truncate`, `dd`) counts as `move_overwrites` only on a git-tracked file (untracked ones are mostly logs and build output). Folders show as `dir/`. Temp dirs and `/dev/null`-style sinks skipped. No `edit-*` / `risk-assessed` events for shell edits | — | — | ② |
 | **Dependencies** (npm + PyPI; manifest edits **and** `npm install x` / `pip install x`) | | | |
 | `dep_added` · `dep_unpinned` (`*`, `latest`, no version) · `dep_downgrade` | 10 · 15 · 20 | signal | ③ |
 | `dep_missing` — not in the registry (hallucinated) | 80 | signal | ③ |
@@ -195,13 +195,13 @@ name the file, e.g. "app.ts: 82% of the file rewritten"), `approved` (asked comm
 - [x] ① 2 s internal deadline with the check order above; < 200 ms typical per action
 - [x] ① Reason text as above; same text to Cline and logs; points only in logs
 - [x] ① Unit tests per category, plus: small edit to a big file allowed, full rewrite asked (balanced) / blocked (strict), placeholder rewrite blocked, file delete with uncommitted changes, multi-file patch, non-JS files, binary, unreadable file
-- [ ] ② `run_commands` input normalised: all 9 SDK shapes, `{command, args}` as argv; no shape → `on_error`
-- [ ] ② Parser as above (no I/O); unbalanced quotes → `on_error`; quoted, heredoc and commented text never matches
-- [ ] ② Command categories incl. `rm_outside` temp exemption, `shell_edit`, `unknown_target`; one request = one action
-- [ ] ② Shell edits: full-content forms scored with every edit check against the real file; name-only forms with path and file-op checks
-- [ ] ② `trusted_commands` and `match: command` custom rules take effect
-- [ ] ② `command-assessed` event added to `metrics.ts`; `level` follows the decision (also for `risk-assessed`)
-- [ ] ② Tests: `rm -rf node_modules` allowed vs `rm -rf /` blocked, `/tmp` exemption, each shell-edit form, chains, pipes, `sudo`, `VAR=x`, `bash -c`, every input shape; < 200 ms typical per request
+- [x] ② `run_commands` input normalised: all 9 SDK shapes, `{command, args}` as argv; no shape → `on_error`
+- [x] ② Parser as above (no I/O); unbalanced quotes → `on_error`; quoted, heredoc and commented text never matches
+- [x] ② Command categories incl. `rm_outside` temp exemption, `shell_edit`, `unknown_target`; one request = one action
+- [x] ② Shell edits: full-content forms scored with every edit check against the real file; name-only forms with path and file-op checks
+- [x] ② `trusted_commands` and `match: command` custom rules take effect
+- [x] ② `command-assessed` event added to `metrics.ts`; `level` follows the decision (also for `risk-assessed`)
+- [x] ② Tests: `rm -rf node_modules` allowed vs `rm -rf /` blocked, `/tmp` exemption, each shell-edit form, chains, pipes, `sudo`, `VAR=x`, `bash -c`, every input shape; < 200 ms typical per request (measured: median 10–15 ms, worst 23 ms on a git temp workspace)
 - [ ] ③ Dependency categories; registry lookups with cap, cache and `offline: true`; bundled top-5k lists; tests with a fake registry
 - [ ] ④ Session state store (test-run outcomes, edit history, reads); `test_and_source` +25; log-only session signals
 - [ ] Manual: real CLI session in `test-workspace/` hitting allow, ask and block
@@ -213,7 +213,7 @@ inside a repo is never read, so a cloned repo can't change anything. Hard rules 
 - [x] Reads only `~/.cline-shield.yml` (a project file has no effect, no warning); re-read when it changes (mtime check per action)
 - [x] `mode: enforce | observe` (observe = score and log asks/blocks; hard rules still block); `preset: relaxed | balanced | strict`
 - [x] `on_error: ask | allow` (default `ask`); `allow` is logged to stderr at first use; shown in the extension (VS Code extension feature)
-- [x] Override `cutoffs`, any category's points, `off`, or `block`; `protected_paths`; `trusted_commands` (exact match per parsed command piece, never scored); `trusted_domains`; `offline` (`trusted_commands` and `offline` are validated now and take effect with ② and ③)
+- [x] Override `cutoffs`, any category's points, `off`, or `block`; `protected_paths`; `trusted_commands` (exact match per parsed command piece, never scored); `trusted_domains`; `offline` (`offline` is validated now and takes effect with ③)
 - [x] Per-folder overrides by glob, first match wins (preset, cut-offs, categories); apply in every repo
 - [x] Custom rules: `match: path | content | command`, pattern, `points` or `block`, `message` (`command` rules apply from ②)
 - [x] Validated against an allowlist: unknown key ignored, bad value → that key's default, unparseable file → skipped; all with a warning to stderr, kept for `/clineshield` (Terminal visibility), never in Cline's context
@@ -321,7 +321,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 | One worker process per session, so plugin and extension write from different processes | `plugin-registry.ts` `startWorkerCopy` |
 | Git install clones the repo, `npm install --omit=dev` at root, loads root `package.json` `cline.plugins`; no subdirectory syntax, only `@ref` | `core/src/services/plugin-install.ts` |
 | `.ts` entries load via jiti, so relative TS imports work without a build | `plugin-sandbox.ts`, `plugin-module-import.ts` |
-| `run_commands` input is one of 9 shapes: `{commands: string[]}`, `{commands: (string \| {command, args?})[]}`, `{commands: string \| {command, args?}}`, `{command, args?}[]`, `{command, args?}`, `{command: string}`, `{cmd: string}`, `string[]`, `string`. A `{command, args}` entry runs without a shell | `core/src/extensions/tools/schemas.ts` L127–172 (`main` ee7f4f5) |
+| `run_commands` input is one of 9 shapes: `{commands: string[]}`, `{commands: (string \| {command, args?})[]}`, `{commands: string \| {command, args?}}`, `{command, args?}[]`, `{command, args?}`, `{command: string}`, `{cmd: string}`, `string[]`, `string`. A `{command, args}` entry runs without a shell; `{command}` without `args` is a shell string | `core/src/extensions/tools/schemas.ts` L127–172, `helpers.ts` L140–165 (`main` ee7f4f5) |
 | Plugins can add slash commands (`"commands"`, `api.registerCommand`) | [plugin reference](https://github.com/cline/cline/blob/main/.agents/skills/cline-sdk/references/plugins/REFERENCE.md) |
 | CLI auto-approve all (`toolAutoApprove`) returns `approved: true` before looking at the request's policy, so a hook's `autoApprove: false` is overridden | `apps/cli/src/runtime/interactive/approvals.ts` `requestToolApproval` |
 | Plugins load from `<workspace>/.cline/plugins/` or `~/.cline/plugins/`; template: `sdk/examples/plugins/gitignore-read-files-guard.ts` | [docs](https://docs.cline.bot/customization/plugins) |

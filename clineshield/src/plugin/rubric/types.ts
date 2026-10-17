@@ -24,7 +24,9 @@ export type CategoryId =
   | 'expected_changed' | 'test_and_source'
   | 'security_weakened' | 'auth_removed' | 'validation_removed' | 'sql_string_built'
   | 'new_domain' | 'empty_catch' | 'commented_out_block'
-  | 'functions_removed' | 'exports_removed' | 'signature_changed' | 'env_key_renamed';
+  | 'functions_removed' | 'exports_removed' | 'signature_changed' | 'env_key_renamed'
+  | 'rm_outside' | 'rm_recursive' | 'discards_work' | 'history_rewrite' | 'pipe_to_shell' | 'sudo'
+  | 'destructive_sql' | 'publish' | 'chmod_broad' | 'secret_exfil' | 'shell_edit' | 'unknown_target';
 
 /** One file of an action, as the checks see it. */
 export interface FileChange {
@@ -58,6 +60,10 @@ export interface FileChange {
   /** Context lines in the patch (for the patch-only size fallback). */
   contextLines: number;
   isTest: boolean;
+  /** Set when a shell command changes the file: the command form, e.g. "sed -i". */
+  shellEdit?: string;
+  /** Name-only shell overwrite (`cp`, `>` from an unknown source, `truncate`, `dd of=`): new content unknown. */
+  overwrite?: boolean;
 }
 
 export interface ActionContext {
@@ -68,6 +74,19 @@ export interface ActionContext {
   changes: FileChange[];
   /** CODEOWNERS path patterns as globs. */
   codeownersGlobs: string[];
+  /** run_commands only: command-level findings, scored as one extra item (COMMAND_ITEM). */
+  command?: CommandAssessment;
+}
+
+/** Command-level part of a run_commands action (rubric/commands). */
+export interface CommandAssessment {
+  findings: RawFinding[];
+  /** Text of each parsed piece not skipped by trusted_commands (custom `match: command` rules test these). */
+  pieces: string[];
+  /** Signal detectors that crashed. */
+  skipped: string[];
+  /** Critical detectors that crashed (→ on_error). */
+  errors: string[];
 }
 
 /** What a check reports; the engine turns weight into points. */
