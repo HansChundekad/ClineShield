@@ -95,7 +95,7 @@ each file scored, worst file decides, `files_touched` adds to it, a hard rule on
 **Risk groups:** per file, each group counts only its biggest finding (the rest are listed with 0 points). Groups:
 lost code (`rewrite_share`, `lines_removed`, `functions_removed`, `exports_removed`) · scope · file ops (incl. `rm_recursive`,
 `shell_edit`, `unknown_target`) · unrecoverable (`uncommitted_lost`, `discards_work`, `history_rewrite`) · location (sensitive
-files, `manifest`, `generated`) · weakening safety · content · privilege (`sudo`, `chmod_broad`) · external (`pipe_to_shell`,
+files, `generated`) · dependency (every `dep_*`, `manifest`; a manifest edit and an install command score alike) · weakening safety · content · privilege (`sudo`, `chmod_broad`) · external (`pipe_to_shell`,
 `publish`, `destructive_sql`, `secret_exfil`) · custom rules.
 **Commands:** all commands in one `run_commands` request are one action. Command findings form one item, `(command)`; each
 file a command changes is an item like an edited file; worst item decides, a hard rule anywhere blocks the request.
@@ -155,11 +155,12 @@ it would add); promoted to points only if the eval shows value. PR column = deli
 | `unknown_target` — a file-changing command whose target contains `$VAR`, `$(…)` or backticks, follows `cd $VAR`, or comes from `xargs` | 40 | critical | ② |
 | File-changing commands. **Full content known** (`cat > f <<EOF`, `tee f <<EOF`, `echo`/`printf` of literal text `> f`): a full-file replace scored against the real file with every edit check; `>> f` with known text: added lines (content checks apply). **Name only** (`sed -i`, `perl -i`, `rm`, `rmdir`, `unlink`, `mv`, `cp`, `truncate`, `dd of=`, `>` from an unknown source): path and file-op checks; an overwrite (`cp`, `>`, `truncate`, `dd`) counts as `move_overwrites` only on a git-tracked file (untracked ones are mostly logs and build output). Folders show as `dir/`. Temp dirs and `/dev/null`-style sinks skipped. No `edit-*` / `risk-assessed` events for shell edits | — | — | ② |
 | **Dependencies** (npm + PyPI; manifest edits **and** `npm install x` / `pip install x`) | | | |
-| `dep_added` · `dep_unpinned` (`*`, `latest`, no version) · `dep_downgrade` | 10 · 15 · 20 | signal | ③ |
-| `dep_missing` — not in the registry (hallucinated) | 80 | signal | ③ |
-| `dep_low_downloads` (< 1,000/week, npm only) · `dep_typosquat` (edit distance ≤ 2 from bundled top-5k list) · `dep_install_scripts` | 40 · 50 · 30 | signal | ③ |
-| `dep_new_registry` (`.npmrc`, `--registry`, `--index-url`) | 45 | critical | ③ |
-| `dep_unverified` — registry slow/offline (800 ms cap, cached per session); scoped/private-registry packages skipped | 10 | signal | ③ |
+| `dep_missing` — definite 404 from the public registry (hallucinated); only packages not already in the manifest | 80 | signal | ③ |
+| `dep_typosquat` — one edit (a neighbour swap counts as one) from the bundled top-5k list, name ≥ 5 chars, not on the list; no network. Measured: flags 2–3 % of legitimate packages ranked 5,001–8,000 (≤ 2 edits flagged about 6 %) | 50 | signal | ③ |
+| `dep_install_scripts` (npm only, latest version) | 30 | signal | ③ |
+| `dep_new_registry` (`.npmrc`, `.yarnrc[.yml]`, `bunfig.toml`, `pip.conf`, `uv.toml`, `pyproject.toml` sources, requirements `--index-url`, `--registry`, `--index-url`, `-i`, `npm`/`pip config set`, inline registry env vars; public registries excluded; logs show the host only) | 45 | critical | ③ |
+| `dep_unverified` — registry slow or failing (800 ms cap, at most 20 lookups per action, cached per session) | 10 | signal | ③ |
+| Manifests: `package.json`, `requirements*.txt`, `pyproject.toml` (PEP 621, dependency groups, Poetry). Commands: `npm`/`pnpm`/`yarn`/`bun` add or install, `pip install`, `python -m pip install`, `uv pip install`, `uv add`, `poetry add`, `pdm add`, `pipx install`. **Privacy:** a new package's name goes to public npm/PyPI unless it is scoped, `offline: true`, or a non-public default registry is configured (project, command folder or user `.npmrc`/`.yarnrc`/`bunfig.toml`/`pip.conf`/`uv.toml`, `pyproject.toml` sources, `requirements*.txt` indexes, `NPM_CONFIG_REGISTRY`, `PIP_INDEX_URL` and similar, re-read per action, or the command or file's own index). An unparseable manifest sends nothing | — | — | ③ |
 | **Session** (in-memory per session) | | | |
 | `edit_loop` (same file ≥ 5× in 10 min) · `unread_file` · `manual_edit_overwritten` · `session_churn` (> 1,000 changed lines) · `stable_file` (no commits 6+ months) | (15) · (10) · (35) · (15) · (10) | log-only | ④ |
 | **Discount** | | | |
@@ -175,7 +176,7 @@ and `/clineshield why`.
 crash) or a rubric-wide crash → `on_error` (default `ask`). Headless runs: ask =
 deny with a logged reason, never a hang. Internal deadline 2 s (Cline's 3 s timeout fails **open**); order: hard and
 critical path/pattern checks (no I/O) → file read + in-memory apply → `git status` (300 ms cap) → registry (800 ms cap).
-Deadline hit before critical checks finish → `on_error`; later → remaining signals logged "skipped: time".
+Deadline hit before critical checks finish → `on_error`; later → remaining signals logged "skipped: time". The registry cap shrinks to fit: `min(800, 2000 − elapsed − 150)` ms; if the registry config can't be read in time, nothing is sent and the skip is logged.
 
 **Edge cases.** Binary (null byte in first 8 KB): path and file-op checks only. File > 2 MB or unreadable, or patch
 doesn't match: patch-only measures (no ask for a non-matching patch, the tool will fail anyway). Renames: both paths
@@ -202,7 +203,7 @@ name the file, e.g. "app.ts: 82% of the file rewritten"), `approved` (asked comm
 - [x] ② `trusted_commands` and `match: command` custom rules take effect
 - [x] ② `command-assessed` event added to `metrics.ts`; `level` follows the decision (also for `risk-assessed`)
 - [x] ② Tests: `rm -rf node_modules` allowed vs `rm -rf /` blocked, `/tmp` exemption, each shell-edit form, chains, pipes, `sudo`, `VAR=x`, `bash -c`, every input shape; < 200 ms typical per request (measured: median 10–15 ms, worst 23 ms on a git temp workspace)
-- [ ] ③ Dependency categories; registry lookups with cap, cache and `offline: true`; bundled top-5k lists; tests with a fake registry
+- [x] ③ Dependency categories; registry lookups with cap, cache and `offline: true`; bundled top-5k lists (`clineshield/scripts/refresh-top-packages.js`, run by hand); tests with a fake registry
 - [ ] ④ Session state store (test-run outcomes, edit history, reads); `test_and_source` +25; log-only session signals
 - [ ] Manual: real CLI session in `test-workspace/` hitting allow, ask and block
 
@@ -213,7 +214,7 @@ inside a repo is never read, so a cloned repo can't change anything. Hard rules 
 - [x] Reads only `~/.cline-shield.yml` (a project file has no effect, no warning); re-read when it changes (mtime check per action)
 - [x] `mode: enforce | observe` (observe = score and log asks/blocks; hard rules still block); `preset: relaxed | balanced | strict`
 - [x] `on_error: ask | allow` (default `ask`); `allow` is logged to stderr at first use; shown in the extension (VS Code extension feature)
-- [x] Override `cutoffs`, any category's points, `off`, or `block`; `protected_paths`; `trusted_commands` (exact match per parsed command piece, never scored); `trusted_domains`; `offline` (`offline` is validated now and takes effect with ③)
+- [x] Override `cutoffs`, any category's points, `off`, or `block`; `protected_paths`; `trusted_commands` (exact match per parsed command piece, never scored); `trusted_domains`; `offline` (no registry calls and no `dep_unverified`; lookalike and new-registry checks still run)
 - [x] Per-folder overrides by glob, first match wins (preset, cut-offs, categories); apply in every repo
 - [x] Custom rules: `match: path | content | command`, pattern, `points` or `block`, `message` (`command` rules apply from ②)
 - [x] Validated against an allowlist: unknown key ignored, bad value → that key's default, unparseable file → skipped; all with a warning to stderr, kept for `/clineshield` (Terminal visibility), never in Cline's context
@@ -280,6 +281,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 - [ ] One-line install, architecture diagram, rubric + config guide, eval results, CI badge, "what's next"
 
 ### Later
+- Dependency categories deferred from ③: `dep_added` (10), `dep_unpinned` (15), `dep_downgrade` (20), `dep_low_downloads` (40, < 1,000/week, npm only).
 - `/clineshield init` and `/clineshield preset <name>` (edit the config file; check how the CLI passes command arguments first)
 - LLM providers beyond Gemini: VS Code model API (needs Copilot), OpenAI-compatible endpoints (OpenRouter, local Ollama)
 - LLM explanations for CLI-only users (plugin-side, key from an env var)

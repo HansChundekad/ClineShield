@@ -114,7 +114,7 @@ export function scoreAction(action: ActionContext, config: RubricConfig, options
   const presets: Preset[] = [];
   const files: FileScore[] = action.changes.map((c, i) => {
     const policy = resolveFilePolicy(config, c.path);
-    const skipped: string[] = [];
+    const skipped: string[] = [...(c.dependency?.skipped ?? [])];
     const raws = checks.filter(k => !k.perAction).flatMap(k => runCheck(k, c, skipped));
     const findings = raws.map(r => toFinding(r, policy.points[r.category])).filter((x): x is Finding => !!x);
     config.customRules.forEach((rule, i) => {

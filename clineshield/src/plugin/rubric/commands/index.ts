@@ -71,7 +71,7 @@ export async function assessCommands(input: unknown, o: CommandsOptions): Promis
     command,
     action: {
       workspaceRoot: o.workspaceRoot, homeDir: o.homeDir, pluginDir: o.pluginDir, codeownersGlobs: o.codeownersGlobs, changes,
-      command: { findings: [...a.findings, ...findings], pieces: a.pieces, skipped: a.skipped, errors: a.errors },
+      command: { findings: [...a.findings, ...findings], pieces: a.pieces, skipped: a.skipped, errors: a.errors, installs: a.installs },
     },
   };
 }

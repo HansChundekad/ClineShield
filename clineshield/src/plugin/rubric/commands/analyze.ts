@@ -8,8 +8,9 @@
  */
 
 import * as path from 'path';
+import { REGISTRY_ENV, isPublicRegistry, parseInstall, registryHost } from '../deps/extract';
 import { isSecretsFile } from '../paths';
-import type { RawFinding } from '../types';
+import type { PackageInstall, RawFinding } from '../types';
 import { simplify } from './parse';
 import type { Piece, Simple, Word } from './parse';
 
@@ -49,6 +50,8 @@ export interface Analysis {
   errors: string[];
   /** discards_work hits; weight needs `git status` (dirty 50, clean 10). */
   discards: Array<{ detail: string; untracked: boolean }>;
+  /** Package installs, for the registry and lookalike checks (rubric/deps). */
+  installs: PackageInstall[];
 }
 
 /** Folders that are rebuilt, not lost: rm_recursive = 0 and not scored as file deletes. */
@@ -56,6 +59,7 @@ export const DISPOSABLE_DIRS = new Set([
   'node_modules', 'dist', 'build', 'out', '.next', '.nuxt', 'target', 'coverage', '__pycache__',
   '.pytest_cache', '.mypy_cache', '.turbo', '.cache', '.parcel-cache',
 ]);
+const INLINE_REGISTRY_ENV = new Set([...REGISTRY_ENV.npm, ...REGISTRY_ENV.pypi]);
 const SINKS = /^\/dev\/(null|zero|stdout|stderr|tty|fd\/\d+)$/;
 const SHELLS = new Set(['sh', 'bash', 'zsh', 'dash', 'ksh', 'fish', 'python', 'python3', 'node', 'perl', 'ruby']);
 const DOWNLOADERS = /\b(curl|wget)\b/;
@@ -94,7 +98,7 @@ function gitSub(args: Word[]): { sub: string; rest: Word[] } | undefined {
 const unescape = (t: string) => t.replace(/\\(n|t|\\)/g, (_m, c: string) => (c === 'n' ? '\n' : c === 't' ? '\t' : '\\'));
 
 class Analyzer {
-  readonly out: Analysis = { findings: [], targets: [], pieces: [], skipped: [], errors: [], discards: [] };
+  readonly out: Analysis = { findings: [], targets: [], pieces: [], skipped: [], errors: [], discards: [], installs: [] };
   private readsSecret: string | undefined;
   private network: string | undefined;
 
@@ -317,6 +321,18 @@ class Analyzer {
     }
   }
 
+  private installs(p: Piece, s: Simple): void {
+    const install = parseInstall(s);
+    if (!install) return;
+    const inline = p.words.flatMap(w => {
+      const m = /^([A-Za-z_]+)=(.*)$/.exec(w.text);
+      return m && INLINE_REGISTRY_ENV.has(m[1]) && !isPublicRegistry(m[2]) ? [m[2]] : [];
+    });
+    install.registries.push(...inline);
+    for (const url of install.registries) this.find('dep_new_registry', `${s.name} installs from ${registryHost(url)}`);
+    if (install.refs.length > 0) this.out.installs.push({ refs: install.refs, cwd: p.cwd, ownRegistry: install.registries.length > 0 });
+  }
+
   private categories(p: Piece, s: Simple): void {
     if (s.sudo) this.find('sudo', `runs ${s.name || 'a command'} as root (sudo)`);
     if (SHELLS.has(s.name)) {
@@ -359,6 +375,7 @@ class Analyzer {
       };
       step('file_targets', 'critical', () => { this.fileCommands(p, s); this.redirects(p, s); });
       step('command_categories', 'critical', () => this.categories(p, s));
+      step('dep_new_registry', 'critical', () => this.installs(p, s));
     }
     if (this.readsSecret && this.network) this.find('secret_exfil', `reads ${this.readsSecret} and sends data with ${this.network}`);
     return this.out;
