@@ -54,7 +54,7 @@ and the model never sees why ([cline#14697](https://github.com/cline/cline/issue
 #### Plugin package & install
 - [x] `AgentPlugin` in `clineshield/src/plugin/`; root `package.json` `cline.plugins` points at it (Decision 5)
 - [x] `setup()` synchronous and fast; every hook error caught and logged, never crashes the run
-- [ ] Manual: `cline plugin install` from git works on a clean folder; `cline doctor` lists it
+- [x] Manual (2026-11-08, CLI 3.0.73, `e7a0edd`): `cline plugin install` from git works on a clean folder; a session loads it and writes `session-start`. `cline doctor` has no plugin section, so it can't confirm an install
 
 #### Session identity & metrics writer
 - [x] Session id from `ctx.session.sessionId` (fallback UUID); writes the `session-start` marker
@@ -69,6 +69,7 @@ The mechanism every rule uses. Driven by the Risk rubric.
 - [x] ~~Interim scoring: 1.x size rules, TS/JS only, thresholds in `EDIT_SIZE_THRESHOLDS` (Decision 4)~~ Replaced by the Risk rubric (①)
 - [x] < 200 ms on 20,000-line patches; unit tests at every tier boundary
 - [x] Manual (2026-10-15): with Cline's auto-approve all on, the CLI approves an ask without prompting (`approved: true`, no prompt); with it off, one-shot runs show `Approve "editor" <input> [y/N]` without ClineShield's reason. Blocks always apply. Fixed by "Ask through the conversation"
+- Known limit (2026-11-08, CLI 3.0.73): in a one-shot run, 3 blocks in a row ended the run (`finishReason: aborted`, exit 0) at the default `--retries 3`; the same prompt with `--retries 10` completed. Blocks appear to count as consecutive mistakes. One run each; interactive mode not tested. Look at a fix after "Ask through the conversation"
 
 #### Risk scoring after edits
 - [x] `afterTool` scores each successful edit with `computeRiskScore()` and writes `risk-assessed` (lands with PR #18)
@@ -76,7 +77,8 @@ The mechanism every rule uses. Driven by the Risk rubric.
 
 #### Dashboards follow plugin sessions
 - [x] Sidebar, change map and status bar show every session started since VS Code opened, incl. parallel ones (Decision 7)
-- [ ] Manual: one real CLI session in `test-workspace/` with the sidebar open
+- [x] Manual (2026-11-08, CLI 3.0.73, `e7a0edd`, owner confirmed by eye): one real CLI session with the sidebar open, in a standalone git repo. The sidebar showed the allowed and blocked edits and the most recent edit, and the change map showed the file
+- [ ] A folder nested in a git repo shows its sessions: found 2026-11-08 in `test-workspace/`, where the sidebar showed nothing new. The plugin wrote to the git root's `.cline-shield/metrics.json` (`ctx.workspaceInfo.rootPath`) while the extension reads the opened folder's
 
 #### CI
 - [x] GitHub Actions runs `npm ci && npm test` on every push and PR (`.github/workflows/ci.yml`)
@@ -205,6 +207,7 @@ name the file, e.g. "app.ts: 82% of the file rewritten"), `approved` (asked comm
 - [ ] ③ Dependency categories; registry lookups with cap, cache and `offline: true`; bundled top-5k lists; tests with a fake registry
 - [ ] ④ Session state store (test-run outcomes, edit history, reads); `test_and_source` +25; log-only session signals
 - [ ] Manual: real CLI session in `test-workspace/` hitting allow, ask and block
+  - Allow and block recorded 2026-11-08 (CLI 3.0.73, `e7a0edd`, one-shot runs in a disposable git repo, not `test-workspace/`; ask not tested). Allow: small edit (`edit-allowed`, `risk-assessed` 0), `rm -rf node_modules` (no event). Block: placeholder and added-token edits (`edit-blocked`), `rm -rf` outside the workspace (`command-assessed`, `rm_outside`); nothing changed, Cline saw the reason, no points or cut-offs reached it. Commands matched the spec: chain and `bash -c` (`chmod_broad` 30, allow), pipe into `rm -rf` outside (block), `cat > new <<EOF` (`shell_edit` 15, allow), `cat > existing <<EOF` with a placeholder (block)
 
 #### Rubric configuration
 Zero config works (`balanced`). The only config file is `~/.cline-shield.yml` (Decision 10); a `.cline-shield.yml`
