@@ -30,8 +30,11 @@ export function blockMessage(d: Decision): string {
 
 export function askMessage(d: Decision): string {
   const t = top(d);
-  if (t.length === 0) {
-    return 'ClineShield could not check this action and asked the user to approve it. If the user says no, ask them what they want.';
-  }
-  return `ClineShield asked the user to approve this action. Why: ${why(t)}. If the user says no, don't retry the same action; ask them what they want.`;
+  const whyText = t.length === 0 ? 'ClineShield could not check this action.' : `${why(t)}.`;
+  return (
+    `ClineShield needs the user's approval, so nothing was changed. Why: ${whyText} ` +
+    'Ask the user in a plain chat message (not the ask_question tool) and end your turn. ' +
+    'Retry the identical action once only if they reply yes. ' +
+    "If the user says no, don't retry the same action; ask them what they want."
+  );
 }

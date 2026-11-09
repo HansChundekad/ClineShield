@@ -11,10 +11,19 @@
  *     sdk/packages/shared/src/extensions/contribution-registry.ts
  */
 
+export interface AgentMessage {
+  id?: string;
+  role: string;
+  content: unknown;
+  metadata?: Record<string, unknown>;
+}
+
 export interface AgentRuntimeStateSnapshot {
   agentId: string;
+  parentAgentId?: string | null;
   conversationId?: string;
   runId?: string;
+  messages?: readonly AgentMessage[];
 }
 
 export interface AgentToolCallPart {
