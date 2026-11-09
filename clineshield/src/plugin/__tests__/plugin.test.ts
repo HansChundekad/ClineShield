@@ -145,7 +145,7 @@ describe('ClineShield plugin', () => {
       const p = createClineShieldPlugin({ homeDir: root });
       p.setup?.({}, { workspaceInfo: { rootPath: root } });
       const before = await p.hooks?.beforeTool?.({ snapshot, tool: { name: 'editor' }, toolCall, input: toolCall.input });
-      expect(before).toMatchObject({ policy: { autoApprove: false } });
+      expect(before).toMatchObject({ skip: true, reason: expect.stringContaining("needs the user's approval") });
       await p.flush();
     });
 

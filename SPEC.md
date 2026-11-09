@@ -63,7 +63,7 @@ and the model never sees why ([cline#14697](https://github.com/cline/cline/issue
 
 #### Action tiers (allow · ask · block)
 The mechanism every rule uses. Driven by the Risk rubric.
-- [x] Allow → `edit-allowed`. Ask → `policy: { autoApprove: false }` + reason via `appendContext`; outcome recorded as
+- [x] Allow → `edit-allowed`. Ask → `{ skip: true, reason }` telling Cline to ask the user in chat (see "Ask through the conversation"); outcome recorded as
   `edit-approval` (Decision 2). Block → `{ skip: true, reason }` → `edit-blocked`; the task continues
 - [x] Patch parser + `editor` adapter as pure modules (`plugin/patch/`), reusable for in-memory apply
 - [x] ~~Interim scoring: 1.x size rules, TS/JS only, thresholds in `EDIT_SIZE_THRESHOLDS` (Decision 4)~~ Replaced by the Risk rubric (①)
@@ -243,7 +243,8 @@ custom_rules:
 
 #### Ask through the conversation (after Risk rubric ②)
 Cline's interactive auto-approve all approves a plugin's `autoApprove: false` without asking, so the ask tier silently allows (`--yolo` one-shot runs still show the `[y/N]` prompt — tested 2026-10-15).
-- [ ] Ask = skip with a reason telling Cline to ask the user in chat; after the user agrees, the identical action is allowed once
+Approval is read from the conversation history (`rubric/approval.ts`), never from a retry alone: the same tool and input were refused with the same reason, the user's next typed reply is a plain yes, and that yes is unused. Only the user's own agent can be approved; subagents and teammates stay refused. `ask_question` answers don't count. One-shot runs end refused; the user replies through `cline --id <session>`.
+- [x] Ask = skip with a reason telling Cline to ask the user in chat; after the user agrees, the identical action is allowed once
 - [ ] Works the same with auto-approve on or off, interactive and one-shot; headless with no user → stays refused
 - [ ] Report upstream: a plugin's `autoApprove: false` should override auto-approve all
 
@@ -298,7 +299,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 
 **Decided**
 - **1** — Commands get a new `command-assessed` event (`command, tier, score, reasons, approved?`) added to `metrics.ts`, one per `run_commands` request; the extension learns it (2026-10-15).
-- **2** — Ask-tier outcome: new `edit-approval` event (`file, structuralChangePercent, functionsDeleted, exportsDeleted, reason, approved`), written in `afterTool`; `approved: false` on the runtime's denial error (incl. headless).
+- **2** — Ask-tier outcome: new `edit-approval` event (`file, structuralChangePercent, functionsDeleted, exportsDeleted, reason, approved`). `approved: false` is written in `beforeTool` when the action is refused pending the user (incl. headless); `approved: true` in `afterTool` when it runs after their yes, so an approved action logs both. `command-assessed` `approved` works the same way.
 - **4** — Interim edit thresholds hard-coded in `EDIT_SIZE_THRESHOLDS`; default preset `balanced` (2026-10-15).
 - **5** — Plugin lives in `clineshield/src/plugin/`; minimal root `package.json` lists it (git install reads only the root manifest; `.ts` loads via jiti).
 - **6** — `metrics.json.lock` in `appendEvent()`: exclusive create, stale after 5 s, write without it after 1 s wait.
@@ -324,4 +325,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 | `run_commands` input is one of 9 shapes: `{commands: string[]}`, `{commands: (string \| {command, args?})[]}`, `{commands: string \| {command, args?}}`, `{command, args?}[]`, `{command, args?}`, `{command: string}`, `{cmd: string}`, `string[]`, `string`. A `{command, args}` entry runs without a shell; `{command}` without `args` is a shell string | `core/src/extensions/tools/schemas.ts` L127–172, `helpers.ts` L140–165 (`main` ee7f4f5) |
 | Plugins can add slash commands (`"commands"`, `api.registerCommand`) | [plugin reference](https://github.com/cline/cline/blob/main/.agents/skills/cline-sdk/references/plugins/REFERENCE.md) |
 | CLI auto-approve all (`toolAutoApprove`) returns `approved: true` before looking at the request's policy, so a hook's `autoApprove: false` is overridden | `apps/cli/src/runtime/interactive/approvals.ts` `requestToolApproval` |
+| `beforeTool` gets `snapshot.messages` (full history with roles). Typed user turns and steers are stored as `<user_input mode="…">text</user_input>`, optionally with a `<mode_notice>`; other user-role messages (`<hook_context>`, reminders, loop and recovery notices, compaction summaries) are not user speech. A skip is stored as a tool result `{ output: { error: reason }, isError: true }` (`main` 94eecbb) | `agents/src/agent-runtime.ts`, `core/src/runtime/host/local-runtime-host.ts`, `shared/src/prompt/format.ts` |
+| Subagents and teammates run plugin hooks, and their task arrives as a user-role message written by another model. Subagents have `parentAgentId`; teammates have neither it nor `agentRole` | `core/src/extensions/tools/team/{delegated-agent,multi-agent,team-tools}.ts` |
+| `ask_question` returns the model-written `options[0]` when there is no TTY | `apps/cli/src/utils/approval.ts` |
 | Plugins load from `<workspace>/.cline/plugins/` or `~/.cline/plugins/`; template: `sdk/examples/plugins/gitignore-read-files-guard.ts` | [docs](https://docs.cline.bot/customization/plugins) |

@@ -42,7 +42,7 @@ describe('run_commands (plugin)', () => {
   };
   const git = (...args: string[]) => execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...args], { cwd: root });
   const isBlock = (r: unknown) => (r as { skip?: boolean } | undefined)?.skip === true;
-  const isAsk = (r: unknown) => (r as { policy?: { autoApprove?: boolean } } | undefined)?.policy?.autoApprove === false;
+  const isAsk = (r: unknown) => /needs the user.s approval/.test((r as { skip?: boolean; reason?: string } | undefined)?.reason ?? "");
   const setConfig = (yaml: string) => fs.writeFile(path.join(home, '.cline-shield.yml'), yaml);
 
   beforeEach(async () => {
@@ -94,19 +94,13 @@ describe('run_commands (plugin)', () => {
     expect(ev.data.reasons).toEqual(expect.arrayContaining([expect.objectContaining({ rule: 'observe' })]));
   });
 
-  it('asked command: command-assessed written in afterTool with approved', async () => {
+  it('asked command: refused, with command-assessed approved:false', async () => {
     const c = call({ commands: ['sudo apt-get install jq'] });
     const r = await c.before();
     expect(isAsk(r)).toBe(true);
-    expect((r as { appendContext: string }).appendContext).toMatch(/runs apt-get as root/);
-    expect(await events('command-assessed')).toEqual([]);
-    await c.after({ output: { error: `denied. ${TOOL_REJECTION_SUFFIX}` }, isError: true });
+    expect((r as { reason: string }).reason).toMatch(/runs apt-get as root/);
     const [ev] = await events('command-assessed');
     expect(ev.data).toMatchObject({ tier: 'ask', score: 40, approved: false, reasons: [{ rule: 'sudo', points: 40, description: 'runs apt-get as root (sudo)' }] });
-    const ok = call('sudo make install');
-    await ok.before();
-    await ok.after();
-    expect((await events('command-assessed'))[1].data).toMatchObject({ approved: true });
   });
 
   it('cat > file <<EOF rewrite with a placeholder → hard block; reasons name the file', async () => {
@@ -199,7 +193,7 @@ describe('run_commands (plugin)', () => {
     }
     const evs = await events('command-assessed');
     expect(evs.map(e => e.data.command)).toEqual(['(unparsed run_commands input)', 'echo "unterminated']);
-    expect(evs[0].data).toMatchObject({ tier: 'ask', approved: true });
+    expect(evs[0].data).toMatchObject({ tier: 'ask', approved: false });
     await setConfig('on_error: allow\n');
     expect(await before({ nope: 1 })).toBeUndefined();
   });

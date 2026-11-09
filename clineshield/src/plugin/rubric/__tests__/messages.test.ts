@@ -19,7 +19,7 @@ describe('messages', () => {
   it('ask message', () => {
     const d = scoreAction(action([change(['*** Delete File: lib/a.ts'], { gitDirty: true })]), cfg);
     const m = askMessage(d);
-    expect(m).toMatch(/^ClineShield asked the user to approve this action\. Why: lib\/a\.ts: deletes lib\/a\.ts/);
+    expect(m).toMatch(/^ClineShield needs the user's approval, so nothing was changed\. Why: lib\/a\.ts: deletes lib\/a\.ts/);
     expect(m).toMatch(/If the user says no, don't retry the same action/);
   });
 
