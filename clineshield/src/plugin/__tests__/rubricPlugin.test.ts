@@ -62,11 +62,9 @@ describe('Risk rubric (plugin)', () => {
     await fs.writeFile(path.join(root, 'src', 'models', 'product.ts'), PRODUCT_TEXT);
     const removed = PRODUCT_LINES.slice(KEPT_HEAD);
     const viaPatch = await call('apply_patch', patch('*** Update File: src/models/product.ts', '@@', ...removed.map(l => `-${l}`), ...PRODUCT_REWRITE.map(l => `+${l}`))).before();
-    expect(viaPatch).toMatchObject({ policy: { autoApprove: false } });
-    expect(viaPatch).not.toHaveProperty('skip');
+    expect(viaPatch).toMatchObject({ skip: true, reason: expect.stringContaining("needs the user's approval") });
     const viaEditor = await call('editor', { path: 'src/models/product.ts', old_text: removed.join('\n'), new_text: PRODUCT_REWRITE.join('\n') }).before();
-    expect(viaEditor).toMatchObject({ policy: { autoApprove: false } });
-    expect(viaEditor).not.toHaveProperty('skip');
+    expect(viaEditor).toMatchObject({ skip: true, reason: expect.stringContaining("needs the user's approval") });
   });
 
   it('in a git repo: rewriting a clean class file asks, deleting a clean tracked file is allowed', async () => {
@@ -77,8 +75,7 @@ describe('Risk rubric (plugin)', () => {
     const removed = PRODUCT_LINES.slice(KEPT_HEAD);
     const rewrite = call('apply_patch', patch('*** Update File: src/models/product.ts', '@@', ...removed.map(l => `-${l}`), ...PRODUCT_REWRITE.map(l => `+${l}`)));
     const r = await rewrite.before();
-    expect(r).toMatchObject({ policy: { autoApprove: false } });
-    expect(r).not.toHaveProperty('skip');
+    expect(r).toMatchObject({ skip: true, reason: expect.stringContaining("needs the user's approval") });
     const del = call('apply_patch', patch('*** Delete File: lib/small.ts'));
     expect(await del.before()).toBeUndefined();
     await del.after();
@@ -97,9 +94,8 @@ describe('Risk rubric (plugin)', () => {
   it('full rewrite of an ordinary file → asked; approval recorded', async () => {
     const c = call('apply_patch', patch('*** Update File: lib/small.ts', '@@', ...lines(38).map(l => `-${l}`), '+x'));
     const r = await c.before();
-    expect(r).toMatchObject({ policy: { autoApprove: false } });
-    expect((r as { appendContext: string }).appendContext).toMatch(/asked the user to approve/);
-    await c.after({ output: { error: `denied. ${TOOL_REJECTION_SUFFIX}` }, isError: true });
+    expect(r).toMatchObject({ skip: true, reason: expect.stringContaining("needs the user's approval") });
+    expect((r as { reason: string }).reason).toMatch(/needs the user.s approval/);
     const [ev] = await events('edit-approval');
     expect(ev.data).toMatchObject({ file: 'lib/small.ts', approved: false, structuralChangePercent: 95 });
   });
@@ -123,7 +119,7 @@ describe('Risk rubric (plugin)', () => {
     const r = await call('apply_patch', patch('*** Update File: .github/workflows/ci.yml', '@@', '-a', '+b')).before();
     expect(r).toBeUndefined(); // 35 → allow, but recorded
     await fs.writeFile(path.join(root, '.env'), 'A=1\n');
-    expect(await call('apply_patch', patch('*** Update File: .env', '@@', '-A=1', '+A=2')).before()).toMatchObject({ policy: { autoApprove: false } });
+    expect(await call('apply_patch', patch('*** Update File: .env', '@@', '-A=1', '+A=2')).before()).toMatchObject({ skip: true, reason: expect.stringContaining("needs the user's approval") });
   });
 
   it('third block on the same file adds the stop-and-ask note', async () => {
@@ -133,8 +129,8 @@ describe('Risk rubric (plugin)', () => {
   });
 
   it('unparseable edit input → ask (on_error default); allow when the personal config says so', async () => {
-    expect(await call('editor', { path: 'lib/a.ts' }).before()).toMatchObject({ policy: { autoApprove: false } });
-    expect(await call('apply_patch', { input: 'garbage' }).before()).toMatchObject({ policy: { autoApprove: false } });
+    expect(await call('editor', { path: 'lib/a.ts' }).before()).toMatchObject({ skip: true, reason: expect.stringContaining("needs the user's approval") });
+    expect(await call('apply_patch', { input: 'garbage' }).before()).toMatchObject({ skip: true, reason: expect.stringContaining("needs the user's approval") });
     await fs.writeFile(path.join(home, '.cline-shield.yml'), 'on_error: allow\n');
     expect(await call('editor', { path: 'lib/a.ts' }).before()).toBeUndefined();
   });
@@ -143,7 +139,7 @@ describe('Risk rubric (plugin)', () => {
     await fs.writeFile(path.join(root, '.cline-shield.yml'),
       'mode: observe\npreset: relaxed\ncutoffs: { ask: 99, block: 100 }\ncategories: { rewrite_share: off, protected_path: off }\nprotected_paths: []\n');
     const rewrite = await call('apply_patch', patch('*** Update File: lib/small.ts', '@@', ...lines(38).map(l => `-${l}`), '+x')).before();
-    expect(rewrite).toMatchObject({ policy: { autoApprove: false } });
+    expect(rewrite).toMatchObject({ skip: true, reason: expect.stringContaining("needs the user's approval") });
     await fs.mkdir(path.join(root, 'src', 'auth'), { recursive: true });
     await fs.writeFile(path.join(root, 'src', 'auth', 'a.ts'), 'a\n');
     const c = call('apply_patch', patch('*** Update File: src/auth/a.ts', '@@', '-a', '+b'));
@@ -194,8 +190,8 @@ describe('Risk rubric (plugin)', () => {
   it('a rubric crash asks the user (on_error: ask) and allows with on_error: allow', async () => {
     jest.spyOn(gather, 'gatherAction').mockRejectedValue(new Error('disk on fire'));
     const c = call('apply_patch', patch('*** Update File: lib/big.ts', '@@', '-l1', '+L1'));
-    expect(await c.before()).toMatchObject({ policy: { autoApprove: false } });
-    await c.after();
+    expect(await c.before()).toMatchObject({ skip: true, reason: expect.stringContaining("needs the user's approval") });
+    await c.after({ output: { error: 'refused' }, isError: true });
     expect((await events('risk-assessed'))).toEqual([]);
     expect((await events('edit-approval'))[0].data.file).toBe('(unparsed apply_patch input)');
     await fs.writeFile(path.join(home, '.cline-shield.yml'), 'on_error: allow\n');

@@ -8,8 +8,10 @@
  * edits: beforeTool parses apply_patch / editor input, gathers the files
  * (rubric/gather.ts), scores the action (rubric/engine.ts) under the
  * ~/.cline-shield.yml config (config/store.ts) and maps the tier to
- * allow · ask · block. afterTool records the user's decision on asked
- * actions and one risk-assessed event per file of every successful edit.
+ * allow · ask · block. Ask refuses the action and tells Cline to ask the
+ * user in chat; a real plain yes allows the identical action once
+ * (rubric/approval.ts). afterTool records approved retries and one
+ * risk-assessed event per file of every successful edit.
  * run_commands goes through rubric/commands (parse → command findings + the
  * files commands change) into the same engine, logged as one
  * command-assessed event per request.
@@ -29,6 +31,7 @@ import { buildChange, gatherAction, readCodeowners } from './rubric/gather';
 import { createDependencyAssessor } from './rubric/deps/enrich';
 import { COMMAND_ITEM, RANK, scoreAction } from './rubric/engine';
 import { UNPARSED_COMMANDS, assessCommands } from './rubric/commands';
+import { isApproved } from './rubric/approval';
 import type { Decision, FileScore } from './rubric/engine';
 import { askMessage, blockMessage, REPEAT_BLOCK_NOTE } from './rubric/messages';
 import type {
@@ -136,6 +139,8 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
   let codeowners: Promise<string[]> | undefined;
   let warnedAllow = false;
   const assessDependencies = createDependencyAssessor();
+  /** The user's own agent: teammates only exist after this agent's first tool call. */
+  let primaryAgentId: string | undefined;
   const configWarnings: string[] = [];
   const pending = new Set<Promise<void>>();
   /** Decisions by toolCallId: ask entries await afterTool; all feed risk-assessed. */
@@ -255,15 +260,23 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     }
     if (decision.tier === 'ask') {
       const reason = askMessage(decision);
-      if (id !== undefined) decided.set(id, { decision, asked: true, reason, command });
-      else recordCommand(decision, command);
-      return { policy: { autoApprove: false }, appendContext: reason };
+      if (userApproved(ctx, reason)) {
+        decided.set(id!, { decision, asked: true, reason, command });
+        return { policy: { autoApprove: true } };
+      }
+      recordCommand(decision, command, { approved: false });
+      return { skip: true, reason };
     }
     recordCommand(decision, command);
     return undefined;
   }
 
+  function userApproved(ctx: AgentBeforeToolContext, reason: string): boolean {
+    return isApproved({ snapshot: ctx.snapshot, primaryAgentId, toolCallId: ctx.toolCall?.toolCallId, reason });
+  }
+
   async function beforeTool(ctx: AgentBeforeToolContext): Promise<AgentBeforeToolResult | undefined> {
+    primaryAgentId ??= ctx.snapshot?.agentId;
     const toolName = ctx.toolCall?.toolName ?? ctx.tool?.name;
     if (toolName === COMMAND_TOOL && workspaceRoot) return beforeCommands(ctx);
     if (!EDIT_TOOLS.has(toolName) || !workspaceRoot) return undefined;
@@ -298,10 +311,17 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
       return { skip: true, reason };
     }
 
-    if (id !== undefined) decided.set(id, { decision, asked: decision.tier === 'ask', reason: decision.tier === 'ask' ? askMessage(decision) : '' });
     if (decision.tier === 'ask') {
-      return { policy: { autoApprove: false }, appendContext: askMessage(decision) };
+      const reason = askMessage(decision);
+      if (userApproved(ctx, reason)) {
+        decided.set(id!, { decision, asked: true, reason });
+        return { policy: { autoApprove: true } };
+      }
+      for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-approval', data: { ...editData(f), reason, approved: false } });
+      return { skip: true, reason };
     }
+
+    if (id !== undefined) decided.set(id, { decision, asked: false, reason: '' });
     for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-allowed', data: editData(f) });
     return undefined;
   }

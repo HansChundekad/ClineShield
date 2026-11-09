@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { loadConfig } from './config/configLoader';
 import { appendEvent } from './metrics/writer';
 import { readEvents } from './metrics/reader';
+import { resolveMetricsRoot } from './metrics/metricsRoot';
 import { selectVisibleSessionIds } from './metrics/sessions';
 import { MetricsSidebarProvider } from './sidebar/MetricsSidebarProvider';
 import { ChangeMapProvider } from './changeMap/ChangeMapProvider';
@@ -51,7 +52,7 @@ function formatTooltip(clineSessions: number, events: number): string {
  * Extension activation function
  * Called when the extension is activated (on VS Code startup)
  */
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
   console.log('ClineShield extension is now active');
 
   // Load YAML config first so env vars are set before hooks run
@@ -59,6 +60,9 @@ export function activate(context: vscode.ExtensionContext): void {
   if (workspaceRoot) {
     loadConfig(workspaceRoot);
   }
+
+  // The plugin logs to the git root, which can be above the opened folder.
+  const metricsRoot = workspaceRoot ? await resolveMetricsRoot(workspaceRoot) : undefined;
 
   // Generate fresh session ID on each activation (no persistence).
   // Dashboards follow every session whose session-start is at or after this time.
@@ -84,7 +88,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(statusBarItem);
 
   // Write initial session-start event to metrics.json
-  if (workspaceRoot) {
+  if (metricsRoot) {
     void appendEvent(
       {
         timestamp: new Date(activationTime).toISOString(),
@@ -97,7 +101,7 @@ export function activate(context: vscode.ExtensionContext): void {
           exportsDeleted: 0,
         },
       },
-      workspaceRoot
+      metricsRoot
     ).then(() => {
       console.log('Session-start event written to metrics.json');
     }).catch((error) => {
@@ -137,7 +141,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Create file watcher for metrics.json
   const metricsWatcher = vscode.workspace.createFileSystemWatcher(
-    '**/.cline-shield/metrics.json'
+    metricsRoot
+      ? new vscode.RelativePattern(vscode.Uri.file(metricsRoot), '.cline-shield/metrics.json')
+      : '**/.cline-shield/metrics.json'
   );
 
   // Atomic writes (write-temp + rename) fire onDidCreate on macOS, not onDidChange.
@@ -153,13 +159,12 @@ export function activate(context: vscode.ExtensionContext): void {
       }
 
       // Read events for current session
-      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-      if (!workspaceRoot) {
-        console.log('[CS:watcher] no workspaceRoot — skipping');
+      if (!metricsRoot) {
+        console.log('[CS:watcher] no metricsRoot — skipping');
         return;
       }
 
-      const allEvents = await readEvents(workspaceRoot);
+      const allEvents = await readEvents(metricsRoot);
       const visibleIds = selectVisibleSessionIds(allEvents, activationTime, currentSessionId);
       const events = allEvents.filter(e => !!e && visibleIds.has(e.sessionId));
 
@@ -176,7 +181,7 @@ export function activate(context: vscode.ExtensionContext): void {
           // Keyed by session too: parallel sessions can write in the same millisecond.
           processedRiskTimestamps.add(`${event.sessionId}|${event.timestamp}|${event.data.file}`);
           console.log(`[CS:llm] enqueuing Gemini call — level:${event.data.level} score:${event.data.rulesScore} file:${event.data.file}`);
-          enqueueGeminiCall(() => void processRiskEvent(event, currentSessionId!, workspaceRoot));
+          enqueueGeminiCall(() => void processRiskEvent(event, currentSessionId!, metricsRoot));
         }
       }
     } catch (error) {
@@ -191,8 +196,8 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(metricsWatcher);
 
   // Register metrics sidebar
-  if (workspaceRoot) {
-    const sidebarProvider = new MetricsSidebarProvider(context.extensionUri, workspaceRoot, currentSessionId, activationTime);
+  if (metricsRoot) {
+    const sidebarProvider = new MetricsSidebarProvider(context.extensionUri, metricsRoot, currentSessionId, activationTime);
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider(MetricsSidebarProvider.viewType, sidebarProvider)
     );
@@ -200,8 +205,8 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   // Register change map tree view
-  if (workspaceRoot) {
-    const changeMapProvider = new ChangeMapProvider(workspaceRoot, currentSessionId, activationTime);
+  if (metricsRoot) {
+    const changeMapProvider = new ChangeMapProvider(metricsRoot, currentSessionId, activationTime);
     context.subscriptions.push(
       vscode.window.registerTreeDataProvider(ChangeMapProvider.viewType, changeMapProvider)
     );
@@ -210,7 +215,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Register command: ClineShield: Generate Test Metrics
   const generateTestMetricsCommand = vscode.commands.registerCommand('clineshield.generateTestMetrics', async () => {
-    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const root = metricsRoot;
     if (!root || !currentSessionId) {
       vscode.window.showWarningMessage('ClineShield: No workspace open.');
       return;

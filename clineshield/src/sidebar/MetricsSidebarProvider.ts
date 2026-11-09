@@ -40,7 +40,7 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
     private readonly activationTime: number
   ) {
     this.watcher = vscode.workspace.createFileSystemWatcher(
-      '**/.cline-shield/metrics.json'
+      new vscode.RelativePattern(vscode.Uri.file(workspaceRoot), '.cline-shield/metrics.json')
     );
 
     this.watcher.onDidChange(() => this.refresh());

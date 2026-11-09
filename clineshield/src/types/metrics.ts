@@ -73,7 +73,7 @@ interface BaseEvent {
       functionsDeleted: number;        // Required
       exportsDeleted: number;          // Required
       reason: string;                  // Required - why approval was needed (shown to Cline)
-      approved: boolean;               // Required - false when denied (incl. headless runs)
+      approved: boolean;               // Required - false when refused pending the user (incl. headless runs); true when run after their yes
     };
   }
 
