@@ -78,7 +78,7 @@ The mechanism every rule uses. Driven by the Risk rubric.
 #### Dashboards follow plugin sessions
 - [x] Sidebar, change map and status bar show every session started since VS Code opened, incl. parallel ones (Decision 7)
 - [x] Manual (2026-11-08, CLI 3.0.73, `e7a0edd`, owner confirmed by eye): one real CLI session with the sidebar open, in a standalone git repo. The sidebar showed the allowed and blocked edits and the most recent edit, and the change map showed the file
-- [ ] A folder nested in a git repo shows its sessions: found 2026-11-08 in `test-workspace/`, where the sidebar showed nothing new. The plugin wrote to the git root's `.cline-shield/metrics.json` (`ctx.workspaceInfo.rootPath`) while the extension reads the opened folder's
+- [x] A folder nested in a git repo shows its sessions: the extension reads and watches the git root's `.cline-shield/metrics.json`, the same `git rev-parse --show-toplevel` lookup Cline uses (unit tests in `metricsRoot.test.ts`). Manual (2026-11-08, owner confirmed by eye): with `packages/app` open in a throwaway repo, the sidebar and change map showed the allowed and blocked edits from a real CLI session
 
 #### CI
 - [x] GitHub Actions runs `npm ci && npm test` on every push and PR (`.github/workflows/ci.yml`)
@@ -268,6 +268,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 
 #### VS Code extension (optional dashboard)
 - [ ] Shows `edit-approval` outcomes and rubric categories
+- [ ] Change map marks files with a blocked attempt: today the level comes only from `risk-assessed`, written after a successful edit, so a file with a blocked edit can still show low
 - [ ] No longer sets env vars for hooks; works when no plugin has run yet
 - [ ] Opt-in LLM explanation: off by default, own Gemini key in SecretStorage ("Set/Clear Gemini API Key"),
   secrets stripped before sending, `gemini_api_key` in YAML ignored with a warning, plugin writes the diff sidecar
