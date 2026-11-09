@@ -28,6 +28,7 @@ import { applyPatchInputText, editorInputToOperation, parseApplyPatch } from './
 import type { FileOperation } from './patch';
 import { CATEGORIES } from './rubric/categories';
 import { buildChange, gatherAction, readCodeowners } from './rubric/gather';
+import { createDependencyAssessor } from './rubric/deps/enrich';
 import { COMMAND_ITEM, RANK, scoreAction } from './rubric/engine';
 import { UNPARSED_COMMANDS, assessCommands } from './rubric/commands';
 import { isApproved } from './rubric/approval';
@@ -137,6 +138,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
   let store: ConfigStore | undefined;
   let codeowners: Promise<string[]> | undefined;
   let warnedAllow = false;
+  const assessDependencies = createDependencyAssessor();
   /** The user's own agent: teammates only exist after this agent's first tool call. */
   let primaryAgentId: string | undefined;
   const configWarnings: string[] = [];
@@ -195,6 +197,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
   }
 
   async function decide(toolName: string, input: unknown): Promise<{ decision: Decision; config: RubricConfig } | undefined> {
+    const startedAt = Date.now();
     const config = await loadConfig();
     const ops = operationsFor(toolName, input);
     if (!ops) {
@@ -203,10 +206,12 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     }
     codeowners ??= readCodeowners(workspaceRoot!);
     const action = await gatherAction(ops, { workspaceRoot: workspaceRoot!, homeDir, pluginDir, codeownersGlobs: await codeowners });
+    await assessDependencies(action, config, startedAt);
     return { decision: scoreAction(action, config), config };
   }
 
   async function decideCommands(input: unknown): Promise<{ decision: Decision; config: RubricConfig; command: string } | undefined> {
+    const startedAt = Date.now();
     const config = await loadConfig();
     codeowners ??= readCodeowners(workspaceRoot!);
     const r = await assessCommands(input, {
@@ -219,6 +224,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
       decision.errors = [r.error ?? 'could not check the command'];
       return { decision, config, command: r.command };
     }
+    await assessDependencies(r.action, config, startedAt);
     return { decision: scoreAction(r.action, config), config, command: r.command };
   }
 

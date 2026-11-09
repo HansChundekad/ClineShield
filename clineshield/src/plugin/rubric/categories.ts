@@ -16,7 +16,7 @@ import type { CategoryId, CheckKind } from './types';
  */
 export type RiskGroup =
   | 'lost_code' | 'scope' | 'file_ops' | 'unrecoverable' | 'location' | 'weakening' | 'content'
-  | 'privilege' | 'external' | 'custom';
+  | 'privilege' | 'external' | 'dependency' | 'custom';
 
 export interface CategoryDef {
   max: number;
@@ -60,7 +60,7 @@ export const CATEGORIES: Record<CategoryId, CategoryDef> = {
   protected_path: def(30, 'critical', 'location', 'This path is protected; keep the change minimal and explain why it is needed.'),
   gitignore_changed: def(15, 'critical', 'location', 'Change .gitignore only when the task asks for it.'),
   gitignore_unignores_secrets: def(60, 'critical', 'location', 'Keep secrets files ignored by git.'),
-  manifest: def(15, 'signal', 'location', 'Change dependencies only when the task needs it.'),
+  manifest: def(15, 'signal', 'dependency', 'Change dependencies only when the task needs it.'),
   generated: def(20, 'signal', 'location', 'Edit the source that generates this file instead.'),
   tests_deleted: def(40, 'signal', 'weakening', 'Keep existing tests; fix the code so they pass.'),
   tests_skipped: def(30, 'signal', 'weakening', 'Do not skip tests; fix the code so they pass.'),
@@ -91,4 +91,9 @@ export const CATEGORIES: Record<CategoryId, CategoryDef> = {
   secret_exfil: def(70, 'critical', 'external', 'Never send secrets files over the network.'),
   shell_edit: def(15, 'signal', 'file_ops', 'Use the editor tool to change files so the change can be reviewed.'),
   unknown_target: def(40, 'critical', 'file_ops', 'Write the file path out literally instead of using variables or command substitution.'),
+  dep_missing: def(80, 'signal', 'dependency', 'Check the package name; if it is a private package, ask the user to confirm it.'),
+  dep_typosquat: def(50, 'signal', 'dependency', 'Check the spelling and use the intended package, or ask the user to confirm this one.'),
+  dep_install_scripts: def(30, 'signal', 'dependency', 'Use a package without install scripts, or ask the user to review them first.'),
+  dep_new_registry: def(45, 'critical', 'dependency', "Install from the project's existing registry, or ask the user before adding a new one."),
+  dep_unverified: def(10, 'signal', 'dependency', 'Confirm the package name and source before relying on it.'),
 };

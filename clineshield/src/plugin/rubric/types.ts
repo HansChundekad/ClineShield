@@ -26,7 +26,8 @@ export type CategoryId =
   | 'new_domain' | 'empty_catch' | 'commented_out_block'
   | 'functions_removed' | 'exports_removed' | 'signature_changed' | 'env_key_renamed'
   | 'rm_outside' | 'rm_recursive' | 'discards_work' | 'history_rewrite' | 'pipe_to_shell' | 'sudo'
-  | 'destructive_sql' | 'publish' | 'chmod_broad' | 'secret_exfil' | 'shell_edit' | 'unknown_target';
+  | 'destructive_sql' | 'publish' | 'chmod_broad' | 'secret_exfil' | 'shell_edit' | 'unknown_target'
+  | 'dep_missing' | 'dep_typosquat' | 'dep_install_scripts' | 'dep_new_registry' | 'dep_unverified';
 
 /** One file of an action, as the checks see it. */
 export interface FileChange {
@@ -64,6 +65,8 @@ export interface FileChange {
   shellEdit?: string;
   /** Name-only shell overwrite (`cp`, `>` from an unknown source, `truncate`, `dd of=`): new content unknown. */
   overwrite?: boolean;
+  /** Dependency findings computed before scoring (rubric/deps), including registry results. */
+  dependency?: { findings: RawFinding[]; skipped: string[] };
 }
 
 export interface ActionContext {
@@ -87,6 +90,17 @@ export interface CommandAssessment {
   skipped: string[];
   /** Critical detectors that crashed (→ on_error). */
   errors: string[];
+  /** Package installs in untrusted pieces (rubric/deps). */
+  installs?: PackageInstall[];
+}
+
+/** Packages one command installs. */
+export interface PackageInstall {
+  refs: Array<{ ecosystem: 'npm' | 'pypi'; name: string }>;
+  /** Folder the command runs in; undefined when only known at run time. */
+  cwd?: string;
+  /** The command names its own non-public registry: nothing goes to the public one. */
+  ownRegistry: boolean;
 }
 
 /** What a check reports; the engine turns weight into points. */
