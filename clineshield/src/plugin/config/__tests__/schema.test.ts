@@ -26,7 +26,7 @@ describe('validateConfig', () => {
   it('warns that gemini_api_key is ignored, without echoing the key', () => {
     const { config, warnings } = v({ gemini_api_key: 'AIzaSECRET' });
     expect(config).toEqual({});
-    expect(warnings).toEqual(['gemini_api_key is ignored — set the key in VS Code with "ClineShield: Set Gemini API Key"']);
+    expect(warnings).toEqual(['gemini_api_key in the YAML is ignored. Set the key in VS Code with "ClineShield: Set Gemini API Key"']);
     expect(warnings.join('\n')).not.toContain('AIzaSECRET');
   });
 

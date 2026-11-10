@@ -131,7 +131,7 @@ export function validateConfig(raw: unknown): { config: PartialConfig; warnings:
   if (!isObj(raw)) return { config, warnings: ['config is not a YAML mapping; ignored'] };
 
   for (const [key, val] of Object.entries(raw)) {
-    if (key === 'gemini_api_key') warn('gemini_api_key is ignored — set the key in VS Code with "ClineShield: Set Gemini API Key"');
+    if (key === 'gemini_api_key') warn('gemini_api_key in the YAML is ignored. Set the key in VS Code with "ClineShield: Set Gemini API Key"');
     if (LEGACY_KEYS.has(key)) continue;
     switch (key) {
       case 'mode': if (val === 'enforce' || val === 'observe') config.mode = val; else warn('mode must be enforce or observe; ignored'); break;

@@ -41,11 +41,15 @@
     "commands": [
       {
         "command": "clineshield.reloadConfig",
-        "title": "ClineShield: Reload Configuration"
+        "title": "ClineShield: Reload Config"
       },
       {
-        "command": "clineshield.deactivate",
-        "title": "ClineShield: Deactivate (Coming in Phase 3)"
+        "command": "clineshield.setGeminiKey",
+        "title": "ClineShield: Set Gemini API Key"
+      },
+      {
+        "command": "clineshield.clearGeminiKey",
+        "title": "ClineShield: Clear Gemini API Key"
       },
       {
         "command": "clineshield.generateTestMetrics",

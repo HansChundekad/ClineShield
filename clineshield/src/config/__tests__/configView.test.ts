@@ -24,7 +24,7 @@ describe('readConfigSummary', () => {
   it('warns about gemini_api_key without showing it', async () => {
     await write('gemini_api_key: AIzaFAKEFAKE\n');
     const s = await read();
-    expect(s.warnings.some(w => w.includes('gemini_api_key is ignored'))).toBe(true);
+    expect(s.warnings.some(w => w.includes('gemini_api_key in the YAML is ignored'))).toBe(true);
     expect(s.warnings.join('\n')).not.toContain('AIzaFAKEFAKE');
   });
 

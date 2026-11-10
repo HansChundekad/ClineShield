@@ -1,247 +1,368 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      font-family: var(--vscode-font-family);
-      font-size: var(--vscode-font-size);
-      color: var(--vscode-foreground);
-      background: var(--vscode-sideBar-background);
-      padding: 12px;
-      margin: 0;
-    }
-    h2 {
-      font-size: 13px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin: 0 0 8px 0;
-      color: var(--vscode-sideBarSectionHeader-foreground);
-    }
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 4px 0;
-      border-bottom: 1px solid var(--vscode-widget-border, transparent);
-    }
-    .stat-label { opacity: 0.8; }
-    .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
-    .blocked { color: var(--vscode-errorForeground); }
-    .passed { color: var(--vscode-testing-iconPassed, #4caf50); }
-    .failed { color: var(--vscode-testing-iconFailed, #f44336); }
-    .section { margin-bottom: 16px; }
-    .recent {
-      background: var(--vscode-editor-background);
-      border-radius: 4px;
-      padding: 8px;
-      font-size: 12px;
-    }
-    .recent-file { font-weight: 600; margin-bottom: 4px; }
-    .recent-type { opacity: 0.8; }
-    .recent-time { opacity: 0.6; font-size: 11px; }
-    .recent-risk { margin-top: 6px; font-size: 11px; }
-    .recent-risk-none { opacity: 0.5; font-style: italic; }
-    .risk-score { font-weight: 600; margin-right: 5px; }
-    .risk-reasons { margin-top: 5px; padding-left: 2px; }
-    .risk-reason { opacity: 0.7; padding: 1px 0; }
-    .risk-reason-points { font-variant-numeric: tabular-nums; margin-right: 4px; opacity: 0.9; }
-    .empty { opacity: 0.5; font-style: italic; }
-    .badge {
-      display: inline-block;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    .badge-red { background: var(--vscode-errorForeground); color: var(--vscode-editor-background); }
-    .badge-green { background: var(--vscode-testing-iconPassed, #4caf50); color: var(--vscode-editor-background); }
-    .badge-yellow { background: var(--vscode-editorWarning-foreground, #ff9800); color: var(--vscode-editor-background); }
-    .llm-section {
-      margin-top: 8px;
-      padding-top: 6px;
-      border-top: 1px solid var(--vscode-widget-border, transparent);
-    }
-    .llm-label {
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      opacity: 0.6;
-      margin-bottom: 3px;
-    }
-    .llm-text {
-      font-size: 11px;
-      opacity: 0.85;
-      line-height: 1.5;
-    }
-    .llm-loading {
-      font-size: 11px;
-      opacity: 0.5;
-      font-style: italic;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}} 'nonce-{{nonce}}'; script-src 'nonce-{{nonce}}';">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClineShield</title>
+<style nonce="{{nonce}}">
+  :root { --cs-accent: #4ec9b0; }
+  body.vscode-light, body.vscode-high-contrast-light { --cs-accent: #0f7b6c; }
+
+  body {
+    margin: 0; padding: 8px 0 12px;
+    font-family: var(--vscode-font-family); font-size: var(--vscode-font-size, 13px); line-height: 1.4;
+    color: var(--vscode-foreground); background: var(--vscode-sideBar-background);
+  }
+  * { box-sizing: border-box; }
+  ::selection { background: var(--vscode-editor-selectionBackground); }
+  .sprite { position: absolute; }
+  svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+
+  .sec { padding: 0 12px; }
+  .sec + .sec { margin-top: 14px; }
+  .sec-h { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 6px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--vscode-sideBarSectionHeader-foreground, var(--vscode-foreground)); }
+  .sec-h .count { display: inline-block; font-weight: 600; color: var(--vscode-descriptionForeground); letter-spacing: 0; }
+
+  .mono { font-family: var(--vscode-editor-font-family); font-size: 12px; }
+  .muted { color: var(--vscode-descriptionForeground); }
+  .num { font-variant-numeric: tabular-nums; }
+  .t-block { color: var(--vscode-errorForeground); }
+  .t-ask { color: var(--vscode-editorWarning-foreground); }
+  .t-allow { color: var(--vscode-testing-iconPassed, #73c991); }
+
+  /* Waiting on you */
+  .wait { padding: 8px 10px; margin: 0 -10px 6px; border-radius: 4px; }
+  .wait.ask { background: color-mix(in srgb, var(--vscode-editorWarning-foreground) 9%, transparent); }
+  .wait.block { background: color-mix(in srgb, var(--vscode-errorForeground) 9%, transparent); }
+  .wait-top { display: flex; gap: 8px; align-items: flex-start; }
+  .wait-top .what { flex: 1; min-width: 0; }
+  .wait-title { font-weight: 600; }
+  .wait-ico { position: relative; display: inline-flex; margin-top: 1px; }
+  .target { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .verdict { margin-top: 3px; font-size: 12px; }
+  .cats { list-style: none; margin: 6px 0 0 24px; padding: 0; font-size: 12px; }
+  .cats li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 1px 0; }
+  .cats .pts { font-variant-numeric: tabular-nums; color: var(--vscode-descriptionForeground); }
+  .cats .total { border-top: 1px solid var(--vscode-widget-border, var(--vscode-panel-border)); margin-top: 3px; padding-top: 3px; font-weight: 600; }
+  .cats .total .pts { color: inherit; }
+  .acts { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 6px 0 0 24px; font-size: 12px; }
+  .reason { margin: 6px 0 0 24px; font-size: 12px; }
+
+  .link { background: none; border: 0; padding: 0; font: inherit; color: var(--vscode-textLink-foreground); cursor: pointer; }
+  .link:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .link:focus-visible, .row:focus-visible, .icon-btn:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 1px; }
+  .icon-btn { background: none; border: 0; padding: 2px; margin: -2px -2px 0 0; color: var(--vscode-descriptionForeground); cursor: pointer; border-radius: 3px; display: inline-flex; }
+  .icon-btn:hover { color: var(--vscode-foreground); background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground)); }
+
+  .clear { display: flex; gap: 8px; align-items: center; padding: 2px 0; }
+
+  /* Totals */
+  .totals { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; row-gap: 2px; margin: 0; font-size: 12px; color: var(--vscode-descriptionForeground); }
+  .totals dt { color: var(--vscode-foreground); }
+  .totals dd { margin: 0; display: flex; flex-wrap: wrap; column-gap: 6px; }
+  .totals dd span { white-space: nowrap; }
+  .totals b { color: var(--vscode-foreground); font-weight: 600; }
+
+  /* Recent activity */
+  .list { margin: 0 -12px; }
+  .row { display: grid; grid-template-columns: 50px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 3px 12px; cursor: pointer; }
+  .row:hover { background: var(--vscode-list-hoverBackground); }
+  .row .meta { font-size: 11px; color: var(--vscode-descriptionForeground); text-align: right; white-space: nowrap; }
+  .tier { display: inline-flex; align-items: center; justify-content: center; gap: 2px; padding: 1px 5px; border-radius: 3px;
+    font-size: 10px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    background: color-mix(in srgb, currentColor 16%, transparent); }
+  .tier svg { width: 10px; height: 10px; stroke-width: 2; }
+  .detail { padding: 2px 12px 8px 70px; font-size: 12px; }
+  .detail .cats, .detail .acts, .detail .reason { margin-left: 0; }
+
+  .explain { margin-top: 6px; padding: 6px 8px; border-radius: 3px; font-size: 12px;
+    background: var(--vscode-textBlockQuote-background); border: 1px solid var(--vscode-contrastBorder, transparent); }
+  .explain .src { font-size: 11px; color: var(--vscode-descriptionForeground); margin-bottom: 2px; }
+  .explain.err { background: none; border-color: var(--vscode-errorForeground); }
+  .explain.err .src { color: var(--vscode-errorForeground); }
+  .skel { height: 8px; border-radius: 2px; background: currentColor; opacity: .18; margin: 5px 0; animation: pulse 1.2s ease-in-out infinite; }
+  .skel:nth-child(3) { width: 80%; }
+  .skel:nth-child(4) { width: 55%; }
+  @keyframes pulse { 50% { opacity: .08; } }
+
+  /* Empty states */
+  .hero { padding: 14px 12px 4px; }
+  .hero-ico { color: var(--cs-accent); margin-bottom: 8px; }
+  .hero-ico svg { width: 28px; height: 28px; stroke-width: 1.3; }
+  .hero h3 { margin: 0 0 2px; font-size: 13px; font-weight: 600; }
+  .hero p { margin: 0 0 10px; font-size: 12px; color: var(--vscode-descriptionForeground); }
+  .cmd { display: flex; align-items: center; gap: 6px; padding: 5px 6px 5px 8px; border-radius: 4px;
+    background: var(--vscode-textBlockQuote-background); border: 1px solid var(--vscode-contrastBorder, transparent); }
+  .cmd code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--vscode-editor-font-family); font-size: 11px; }
+  .legend { display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center; font-size: 12px; margin-top: 4px; }
+
+  /* Settings */
+  .foot { margin-top: 16px; padding: 8px 12px 0; border-top: 1px solid var(--vscode-widget-border, var(--vscode-panel-border)); font-size: 12px; color: var(--vscode-descriptionForeground); }
+  .foot p { margin: 0; }
+  .foot p + p, .foot .warn + p { margin-top: 4px; }
+  .kv { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 1px 8px; margin: 0 0 6px; }
+  .kv dt { color: var(--vscode-descriptionForeground); }
+  .kv dd { margin: 0; color: var(--vscode-descriptionForeground); }
+  .kv .opts { display: block; font-size: 11px; }
+  .kv .pick { padding: 0 5px; border-radius: 3px; font-weight: 600; color: var(--vscode-foreground);
+    background: color-mix(in srgb, var(--cs-accent) 22%, transparent); }
+  .kv .file { color: var(--vscode-foreground); }
+  .warn span { min-width: 0; overflow-wrap: anywhere; }
+  .warn { display: flex; gap: 6px; align-items: flex-start; margin: 4px 0 0; color: var(--vscode-editorWarning-foreground); }
+  .warn span { color: var(--vscode-foreground); }
+  .links { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; }
+
+  /* High contrast: outlines instead of tints */
+  body.vscode-high-contrast .tier, body.vscode-high-contrast .wait,
+  body.vscode-high-contrast-light .tier, body.vscode-high-contrast-light .wait { background: none; outline: 1px solid currentColor; outline-offset: -1px; }
+  body.vscode-high-contrast .wait.ask, body.vscode-high-contrast-light .wait.ask { outline-color: var(--vscode-editorWarning-foreground); }
+  body.vscode-high-contrast .wait.block, body.vscode-high-contrast-light .wait.block { outline-color: var(--vscode-errorForeground); }
+  body.vscode-high-contrast .kv .pick, body.vscode-high-contrast-light .kv .pick { background: none; outline: 1px solid var(--cs-accent); outline-offset: -1px; color: var(--cs-accent); }
+  body.vscode-high-contrast .kv dd, body.vscode-high-contrast-light .kv dd { color: var(--vscode-foreground); }
+
+  /* Motion: an item arriving in Waiting, and the All clear tick drawing in */
+  .wait.enter { animation: arrive 700ms cubic-bezier(.16,1,.3,1) both; }
+  @keyframes arrive { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+  .wait.enter .wait-ico::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid currentColor;
+    animation: ripple 1.4s cubic-bezier(.16,1,.3,1) 250ms 2 both; }
+  @keyframes ripple { from { transform: scale(1); opacity: .7; } to { transform: scale(2.1); opacity: 0; } }
+  .clear.enter svg path { stroke-dasharray: 12; stroke-dashoffset: 12; animation: draw 500ms cubic-bezier(.16,1,.3,1) 150ms forwards; }
+  .clear.enter svg circle { stroke-dasharray: 40; stroke-dashoffset: 40; animation: draw 600ms cubic-bezier(.16,1,.3,1) forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .count.bump { animation: bump 400ms cubic-bezier(.16,1,.3,1); }
+  @keyframes bump { 40% { transform: scale(1.35); } }
+  @media (prefers-reduced-motion: reduce) {
+    .wait.enter, .wait.enter .wait-ico::after, .count.bump, .skel { animation: none; }
+    .clear.enter svg path, .clear.enter svg circle { animation: none; stroke-dashoffset: 0; }
+  }
+</style>
 </head>
 <body>
-  <div class="section">
-    <h2>Session Stats</h2>
-    <div class="stat-row">
-      <span class="stat-label">Edits Blocked</span>
-      <span class="stat-value blocked" id="blocked">0</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">Edits Allowed</span>
-      <span class="stat-value passed" id="allowed">0</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">Sanity Passed</span>
-      <span class="stat-value passed" id="passed">0</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">Sanity Failed</span>
-      <span class="stat-value failed" id="failed">0</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">Avg Retries</span>
-      <span class="stat-value" id="retries">0</span>
-    </div>
-  </div>
+<svg class="sprite" width="0" height="0" aria-hidden="true">
+  <symbol id="i-block" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.25"/><path d="M3.6 3.6l8.8 8.8"/></symbol>
+  <symbol id="i-ask" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.25"/><path d="M6.3 6.2a1.8 1.8 0 1 1 2.5 1.7c-.5.2-.8.6-.8 1.1v.4"/><path d="M8 11.4v.1"/></symbol>
+  <symbol id="i-check" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.25"/><path d="M5.2 8.2l1.9 1.9 3.7-4"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.2l6.2 11H1.8z"/><path d="M8 6.5v3"/><path d="M8 11.4v.1"/></symbol>
+  <symbol id="i-tick" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 4.5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 1.8l5.2 2v4.1c0 3.1-2.2 5.3-5.2 6.3-3-1-5.2-3.2-5.2-6.3V3.8z"/></symbol>
+  <symbol id="i-shield-check" viewBox="0 0 16 16"><path d="M8 1.8l5.2 2v4.1c0 3.1-2.2 5.3-5.2 6.3-3-1-5.2-3.2-5.2-6.3V3.8z"/><path d="M5.6 8.1l1.7 1.7 3.2-3.4"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 16 16"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-.5A1.5 1.5 0 0 0 9 1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></symbol>
+</svg>
+<main id="app" aria-live="polite"></main>
 
-  <div class="section">
-    <h2>Most Recent Edit</h2>
-    <div id="recent" class="recent">
-      <p class="empty">No events yet</p>
-    </div>
-  </div>
+<script nonce="{{nonce}}">
+(function () {
+  'use strict';
+  const vscode = acquireVsCodeApi();
+  const app = document.getElementById('app');
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const INSTALL = 'cline plugin install https://github.com/HansChundekad/ClineShield';
 
-  <script>
-    const vscode = acquireVsCodeApi();
-    let pendingLlmTimeout = null;
+  let state = null;
+  const expanded = new Set();
+  let seenWaiting = null;      // null until the first render: nothing animates on load
+  let prevWaitCount = 0;
 
-    window.addEventListener('message', (event) => {
-      const msg = event.data;
-      if (msg.type !== 'update') return;
+  // ── DOM helpers: every piece of log text goes in as a text node ──
+  function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v === undefined || v === null || v === false) continue;
+      if (k === 'class') el.className = v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : String(v));
+    }
+    for (const kid of kids.flat()) {
+      if (kid === undefined || kid === null || kid === false) continue;
+      el.append(typeof kid === 'string' || typeof kid === 'number' ? document.createTextNode(String(kid)) : kid);
+    }
+    return el;
+  }
+  function icon(id, cls) {
+    const s = document.createElementNS(SVGNS, 'svg');
+    if (cls) s.setAttribute('class', cls);
+    s.setAttribute('aria-hidden', 'true');
+    const u = document.createElementNS(SVGNS, 'use');
+    u.setAttribute('href', '#' + id);
+    s.append(u);
+    return s;
+  }
+  const send = (type, id) => vscode.postMessage(id === undefined ? { type } : { type, id });
+  const link = (label, onclick) => h('button', { class: 'link', type: 'button', onclick }, label);
 
-      const s = msg.stats;
-      document.getElementById('blocked').textContent = s.blockedEdits;
-      document.getElementById('allowed').textContent = s.allowedEdits;
-      document.getElementById('passed').textContent = s.passedEdits;
-      document.getElementById('failed').textContent = s.failedEdits;
-      document.getElementById('retries').textContent = s.avgRetries;
+  function ago(ts) {
+    const s = Math.max(0, Math.round((Date.now() - Date.parse(ts)) / 1000));
+    if (!Number.isFinite(s) || s < 45) return 'now';
+    if (s < 3600) return Math.round(s / 60) + 'm';
+    if (s < 86400) return Math.round(s / 3600) + 'h';
+    return Math.round(s / 86400) + 'd';
+  }
+  const TIER = { allow: 'Allow', ask: 'Ask', block: 'Block' };
+  const canExplain = i => i.tier !== 'allow' || (i.score || 0) > 0;
 
-      // Cancel any pending loading timeout from a previous render
-      clearTimeout(pendingLlmTimeout);
-      pendingLlmTimeout = null;
+  function tierChip(item) {
+    return h('span', { class: 'tier t-' + item.tier, title: item.approved ? 'Asked, then approved' : undefined },
+      TIER[item.tier], item.approved ? icon('i-tick') : null);
+  }
 
-      const recentEl = document.getElementById('recent');
-      if (s.mostRecent) {
-        const time = formatRelativeTime(s.mostRecent.timestamp);
-        recentEl.innerHTML =
-          '<div class="recent-file">' + escapeHtml(s.mostRecent.file) + '</div>' +
-          '<div class="recent-type">' + getBadgeHtml(s.mostRecent.eventType) + '</div>' +
-          '<div class="recent-time">' + escapeHtml(time) + '</div>' +
-          '<div class="recent-risk">' + getRiskHtml(s.mostRecent.eventType, s.mostRecent.riskScore, s.mostRecent.riskLevel, s.mostRecent.riskReasons, s.mostRecent.structuralChangePercent, s.mostRecent.functionsDeleted) + '</div>' +
-          getLlmHtml(s.mostRecent.llmReasoning, s.mostRecent.llmPending, s.mostRecent.riskEventTimestamp);
+  function categories(item) {
+    if (!item.reasons || item.reasons.length === 0) {
+      return h('p', { class: 'reason muted' }, item.reasonText || 'No categories were recorded for this action.');
+    }
+    const shown = item.reasons.filter(r => r.points > 0 || !String(r.rule).startsWith('skipped'));
+    const sum = shown.reduce((n, r) => n + (r.points || 0), 0);
+    const cut = item.cutoffs ? (item.tier === 'block' ? ' · blocks at ' + item.cutoffs.block : item.tier === 'ask' ? ' · asks at ' + item.cutoffs.ask : '') : '';
+    const capped = item.score !== null && sum > item.score ? ' (capped)' : '';
+    return h('ul', { class: 'cats' },
+      shown.map(r => h('li', {}, h('span', {}, r.description), h('span', { class: 'pts' }, (r.points >= 0 ? '+' : '') + r.points))),
+      item.score === null ? null : h('li', { class: 'total' }, h('span', {}, 'Total' + capped + cut), h('span', { class: 'pts' }, item.score)));
+  }
 
-        // Schedule auto-hide of the loading indicator if Gemini doesn't respond in time
-        if (s.mostRecent.llmPending && s.mostRecent.riskEventTimestamp) {
-          const elapsed = Date.now() - new Date(s.mostRecent.riskEventTimestamp).getTime();
-          const remaining = 10000 - elapsed;
-          if (remaining > 0) {
-            pendingLlmTimeout = setTimeout(() => {
-              const el = document.getElementById('llm-analysis-pending');
-              if (el) { el.remove(); }
-            }, remaining);
-          }
-        }
-      } else {
-        recentEl.innerHTML = '<p class="empty">No events yet</p>';
-      }
+  function explanation(item) {
+    const ex = state.explanations[item.id];
+    if (!ex) return null;
+    if (ex.state === 'loading') {
+      return h('div', { class: 'explain', 'aria-busy': 'true' }, h('div', { class: 'src' }, 'Gemini · explaining…'), h('div', { class: 'skel' }), h('div', { class: 'skel' }), h('div', { class: 'skel' }));
+    }
+    if (ex.state === 'error') {
+      return h('div', { class: 'explain err' }, h('div', { class: 'src' }, ex.text), link('Try again', () => send('explain', item.id)));
+    }
+    return h('div', { class: 'explain' }, h('div', { class: 'src' }, 'Gemini'), ex.text);
+  }
+
+  function explainLink(item) {
+    const ex = state.explanations[item.id];
+    if (!canExplain(item) || (ex && ex.state !== 'error')) return null;
+    return link('Explain', () => send('explain', item.id));
+  }
+
+  // ── Sections ──
+  function waitingSection(isNew) {
+    const items = state.dashboard.waiting;
+    const count = h('span', { class: 'count' + (items.length > prevWaitCount && seenWaiting ? ' bump' : '') }, items.length || '');
+    const sec = h('section', { class: 'sec', 'aria-label': 'Waiting on you' }, h('h2', { class: 'sec-h' }, 'Waiting on you', count));
+    if (items.length === 0) {
+      sec.append(h('div', { class: 'clear' + (prevWaitCount > 0 && seenWaiting ? ' enter' : '') }, icon('i-check', 't-allow'), h('span', {}, 'All clear')));
+      return sec;
+    }
+    for (const item of items) {
+      const verb = item.tier === 'block' ? 'Blocked' : 'Asked about';
+      const verdict = item.score === null ? null
+        : 'Score ' + item.score + (item.cutoffs ? (item.tier === 'block' ? ' · blocks at ' + item.cutoffs.block : ' · asks at ' + item.cutoffs.ask) : '');
+      sec.append(h('div', { class: 'wait ' + item.tier + (isNew(item.id) ? ' enter' : '') },
+        h('div', { class: 'wait-top' },
+          h('span', { class: 'wait-ico t-' + item.tier }, icon(item.tier === 'block' ? 'i-block' : 'i-ask')),
+          h('div', { class: 'what' },
+            h('div', { class: 'wait-title' }, verb + ' ' + (item.kind === 'edit' ? 'an edit' : 'a command')),
+            h('span', { class: 'target mono', title: item.target }, item.target),
+            verdict ? h('div', { class: 'verdict muted num' }, verdict) : null),
+          h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Dismiss', title: 'Dismiss', onclick: () => send('dismiss', item.id) }, icon('i-x'))),
+        categories(item),
+        explanation(item),
+        h('div', { class: 'acts' }, explainLink(item), item.tier === 'ask' ? h('span', { class: 'muted' }, 'Answer Cline in chat to continue') : null)));
+    }
+    return sec;
+  }
+
+  function totalsSection() {
+    const t = state.dashboard.totals;
+    const n = (v, label) => h('span', {}, h('b', {}, v), ' ' + label);
+    return h('section', { class: 'sec', 'aria-label': 'Totals' }, h('dl', { class: 'totals num' },
+      h('dt', {}, 'Edits'), h('dd', {}, n(t.edits.allowed, 'allowed'), n(t.edits.asked, 'asked' + (t.edits.approved ? ' (' + t.edits.approved + ' approved)' : '')), n(t.edits.blocked, 'blocked')),
+      h('dt', {}, 'Commands'), h('dd', {}, n(t.commands.asked, 'asked' + (t.commands.approved ? ' (' + t.commands.approved + ' approved)' : '')), n(t.commands.blocked, 'blocked'))));
+  }
+
+  function recentSection() {
+    const sec = h('section', { class: 'sec' }, h('h2', { class: 'sec-h' }, 'Recent activity'));
+    const list = h('div', { class: 'list' });
+    for (const item of state.dashboard.recent) {
+      const open = expanded.has(item.id);
+      const toggle = () => { open ? expanded.delete(item.id) : expanded.add(item.id); render(); };
+      list.append(h('div', {
+        class: 'row', tabindex: '0', role: 'button', 'aria-expanded': open ? 'true' : 'false', onclick: toggle,
+        onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } },
+      },
+      tierChip(item),
+      h('span', { class: 'target mono', title: item.target }, item.target),
+      h('span', { class: 'meta num' }, (item.score === null ? '' : item.score + ' · ') + ago(item.timestamp))));
+      if (open) list.append(h('div', { class: 'detail' }, categories(item), explanation(item), h('div', { class: 'acts' }, explainLink(item))));
+    }
+    sec.append(list);
+    return sec;
+  }
+
+  function emptySection() {
+    if (!state.pluginInstalled) {
+      return h('div', { class: 'hero' },
+        h('div', { class: 'hero-ico' }, icon('i-shield')),
+        h('h3', {}, 'Install the ClineShield plugin'),
+        h('p', {}, 'Cline needs it to check edits and commands.'),
+        h('div', { class: 'cmd' }, h('code', { title: INSTALL }, INSTALL),
+          h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Copy install command', title: 'Copy', onclick: () => send('copyInstall') }, icon('i-copy'))));
+    }
+    return h('div', { class: 'hero' },
+      h('div', { class: 'hero-ico' }, icon('i-shield-check')),
+      h('h3', {}, 'Watching this repo'),
+      h('p', {}, "Cline's edits and commands show up here as it works."),
+      h('div', { class: 'legend' },
+        h('span', { class: 'tier t-allow' }, 'Allow'), h('span', { class: 'muted' }, 'runs right away'),
+        h('span', { class: 'tier t-ask' }, 'Ask'), h('span', { class: 'muted' }, 'waits for your yes in chat'),
+        h('span', { class: 'tier t-block' }, 'Block'), h('span', { class: 'muted' }, 'stopped before it ran')));
+  }
+
+  function options(all, current) {
+    const out = [];
+    all.forEach((o, i) => {
+      if (i) out.push(' · ');
+      out.push(o === current ? h('span', { class: 'pick' }, o) : o);
     });
+    return out;
+  }
 
-    function formatRelativeTime(timestamp) {
-      const now = Date.now();
-      const then = new Date(timestamp).getTime();
-      const diffMs = now - then;
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMins / 60);
-      if (diffMins < 1) return 'Just now';
-      if (diffMins < 60) return `${diffMins} min${diffMins === 1 ? '' : 's'} ago`;
-      if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-      return `${Math.floor(diffHours / 24)} days ago`;
-    }
+  function settingsSection() {
+    const c = state.config;
+    const foot = h('footer', { class: 'foot', 'aria-label': 'Settings' }, h('h2', { class: 'sec-h' }, 'Settings'),
+      h('dl', { class: 'kv' },
+        h('dt', {}, 'Preset'), h('dd', {}, options(['relaxed', 'balanced', 'strict'], c.preset), h('span', { class: 'opts' }, 'how readily it asks and blocks')),
+        h('dt', {}, 'Mode'), h('dd', {}, options(['enforce', 'observe'], c.mode),
+          h('span', { class: 'opts' }, c.mode === 'observe' ? 'only logs; hard rules still block' : 'asks and blocks apply')),
+        h('dt', {}, 'Config'), h('dd', {}, c.fileFound ? h('span', { class: 'file mono' }, '~/.cline-shield.yml') : 'none, using defaults')));
+    if (c.onErrorAllow) foot.append(h('p', { class: 'warn' }, icon('i-warn'), h('span', {}, 'on_error: allow. If ClineShield fails, actions run unchecked')));
+    for (const w of c.warnings) foot.append(h('p', { class: 'warn' }, icon('i-warn'), h('span', {}, w)));
+    foot.append(h('p', {}, state.hasKey
+      ? ['Explanations on · ', link('Clear key', () => send('clearKey'))]
+      : ['Explanations off · ', link('Set Gemini key', () => send('setKey'))]));
+    foot.append(h('div', { class: 'links' },
+      c.fileFound ? link('Open config', () => send('openConfig')) : link('Create config', () => send('createConfig')),
+      link('What do these mean?', () => send('help'))));
+    return foot;
+  }
 
-    function getBadgeHtml(eventType) {
-      let badgeClass = 'badge';
-      if (eventType === 'edit-blocked' || eventType === 'sanity-failed') {
-        badgeClass += ' badge-red';
-      } else if (eventType === 'sanity-passed' || eventType === 'edit-allowed') {
-        badgeClass += ' badge-green';
-      } else {
-        badgeClass += ' badge-yellow';
-      }
-      return '<span class="' + badgeClass + '">' + escapeHtml(eventType) + '</span>';
-    }
+  function render() {
+    if (!state) return;
+    const ids = new Set(state.dashboard.waiting.map(i => i.id));
+    const isNew = id => seenWaiting !== null && !seenWaiting.has(id);
+    const parts = state.dashboard.hasEvents
+      ? [waitingSection(isNew), totalsSection(), recentSection(), settingsSection()]
+      : [emptySection(), settingsSection()];
+    app.replaceChildren(...parts);
+    seenWaiting = new Set([...(seenWaiting || []), ...ids]);
+    prevWaitCount = ids.size;
+    for (const id of [...expanded]) if (!state.dashboard.recent.some(i => i.id === id)) expanded.delete(id);
+  }
 
-    function getRiskHtml(eventType, riskScore, riskLevel, riskReasons, structuralChangePercent, functionsDeleted) {
-      if (eventType === 'edit-blocked') {
-        let html = '<span class="recent-risk-none">Blocked</span>';
-        if (structuralChangePercent !== null && structuralChangePercent !== undefined) {
-          html += '<div class="risk-reason"><span class="risk-reason-points">Structure change:</span>' + escapeHtml(structuralChangePercent + '%') + '</div>';
-        }
-        if (functionsDeleted !== null && functionsDeleted !== undefined) {
-          html += '<div class="risk-reason"><span class="risk-reason-points">Functions deleted:</span>' + escapeHtml(String(functionsDeleted)) + '</div>';
-        }
-        return html;
-      }
-      if (riskScore === null || riskLevel === null) {
-        return '<span class="recent-risk-none">Risk: pending</span>';
-      }
-      const badgeClass = riskLevel === 'high' ? 'badge badge-red'
-                       : riskLevel === 'medium' ? 'badge badge-yellow'
-                       : 'badge badge-green';
-      let html = '<span class="risk-score">Risk: ' + riskScore + '</span>' +
-                 '<span class="' + badgeClass + '">' + riskLevel.toUpperCase() + '</span>';
-      if (riskReasons && riskReasons.length > 0) {
-        html += '<div class="risk-reasons">';
-        for (const r of riskReasons) {
-          const sign = r.points >= 0 ? '+' : '';
-          html += '<div class="risk-reason">' +
-                  '<span class="risk-reason-points">' + sign + r.points + '</span>' +
-                  escapeHtml(r.description) +
-                  '</div>';
-        }
-        html += '</div>';
-      }
-      return html;
-    }
-
-    function getLlmHtml(reasoning, llmPending, riskEventTimestamp) {
-      if (reasoning && typeof reasoning === 'string' && reasoning.trim()) {
-        return '<div class="llm-section">' +
-               '<div class="llm-label">Gemini Analysis</div>' +
-               '<div class="llm-text">' + escapeHtml(reasoning) + '</div>' +
-               '</div>';
-      }
-      if (llmPending && riskEventTimestamp) {
-        const elapsed = Date.now() - new Date(riskEventTimestamp).getTime();
-        if (elapsed < 10000) {
-          return '<div id="llm-analysis-pending" class="llm-section">' +
-                 '<div class="llm-label">Gemini Analysis</div>' +
-                 '<div class="llm-loading">Analyzing...</div>' +
-                 '</div>';
-        }
-      }
-      return '';
-    }
-
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    }
-  </script>
+  window.addEventListener('message', e => {
+    const m = e.data;
+    if (!m || m.type !== 'update') return;
+    state = m;
+    render();
+  });
+  setInterval(() => { if (state && state.dashboard.hasEvents) render(); }, 30000); // refresh relative times
+  send('ready');
+})();
+</script>
 </body>
 </html>

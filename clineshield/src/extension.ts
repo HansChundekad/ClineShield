@@ -1,224 +1,97 @@
 import * as vscode from 'vscode';
+import * as os from 'os';
 import { randomUUID } from 'crypto';
-import { loadConfig } from './config/configLoader';
 import { appendEvent } from './metrics/writer';
-import { readEvents } from './metrics/reader';
 import { resolveMetricsRoot } from './metrics/metricsRoot';
-import { selectVisibleSessionIds } from './metrics/sessions';
-import { MetricsSidebarProvider } from './sidebar/MetricsSidebarProvider';
+import { testEvents } from './metrics/testEvents';
+import { GEMINI_KEY_SECRET, MetricsSidebarProvider } from './sidebar/MetricsSidebarProvider';
 import { ChangeMapProvider } from './changeMap/ChangeMapProvider';
+import { ConfigStore, CONFIG_FILE } from './plugin/config/store';
 
-// Store current session ID at module level for file watcher access
+/**
+ * ClineShield VS Code extension: an optional dashboard over the plugin's
+ * .cline-shield/metrics.json. Read-only toward the log (except the dev
+ * command "Generate Test Metrics") and toward ~/.cline-shield.yml (except
+ * "Create config", which only creates a missing file after confirmation).
+ *
+ * Sessions (Decision 7): dashboards show every session whose session-start is
+ * at or after activation, plus this extension's own id (kept in memory only).
+ */
+
 let currentSessionId: string | undefined;
 
-function formatTooltip(clineSessions: number, events: number): string {
-  const label = clineSessions === 1 ? 'session' : 'sessions';
-  return `Following ${clineSessions} Cline ${label} | Events: ${events} | Extension session: ${currentSessionId}`;
-}
-
-/**
- * Extension activation function
- * Called when the extension is activated (on VS Code startup)
- */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  console.log('ClineShield extension is now active');
-
-  // Load YAML config first so env vars are set before hooks run
   const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  if (workspaceRoot) {
-    loadConfig(workspaceRoot);
-  }
-
   // The plugin logs to the git root, which can be above the opened folder.
   const metricsRoot = workspaceRoot ? await resolveMetricsRoot(workspaceRoot) : undefined;
-
-  // Generate fresh session ID on each activation (no persistence).
-  // Dashboards follow every session whose session-start is at or after this time.
   const activationTime = Date.now();
   currentSessionId = randomUUID();
-  console.log(`ClineShield session ID: ${currentSessionId}`);
+  const sessionId = currentSessionId;
+  const homeDir = os.homedir();
 
-  // Set environment variable for hooks to access sessionId
-  process.env.CLINESHIELD_SESSION_ID = currentSessionId;
-
-  // Create status bar item
-  const statusBarItem = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Right,
-    100
-  );
-  statusBarItem.text = '🛡️ ClineShield';
-  statusBarItem.tooltip = formatTooltip(0, 0);
-
-  // Show status bar item immediately
-  statusBarItem.show();
-
-  // Add status bar item to subscriptions for cleanup
-  context.subscriptions.push(statusBarItem);
-
-  // Write initial session-start event to metrics.json
-  if (metricsRoot) {
-    void appendEvent(
-      {
-        timestamp: new Date(activationTime).toISOString(),
-        sessionId: currentSessionId,
-        type: 'edit-allowed',
-        data: {
-          file: 'session-start',
-          structuralChangePercent: 0,
-          functionsDeleted: 0,
-          exportsDeleted: 0,
-        },
-      },
-      metricsRoot
-    ).then(() => {
-      console.log('Session-start event written to metrics.json');
-    }).catch((error) => {
-      console.error('Failed to write session-start event:', error);
-    });
-  } else {
-    console.warn('No workspace folder found, skipping session-start event');
-  }
-
-  // Register command: ClineShield: Reload Configuration
-  const reloadConfigCommand = vscode.commands.registerCommand('clineshield.reloadConfig', () => {
-    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!root) {
-      vscode.window.showWarningMessage('ClineShield: No workspace open — cannot reload config.');
-      return;
-    }
-    loadConfig(root);
-    vscode.window.showInformationMessage('ClineShield: Configuration reloaded.');
-  });
-
-  context.subscriptions.push(reloadConfigCommand);
-
-  // Register command: ClineShield: Deactivate (stub for Phase 3)
-  const deactivateCommand = vscode.commands.registerCommand('clineshield.deactivate', async () => {
-    // TODO: Phase 3 - Implement full deactivation:
-    // - Disable hook scripts
-    // - Stop file watcher
-    // - Hide UI elements
-    // - Write session-end event
-    vscode.window.showInformationMessage(
-      'ClineShield deactivate - Full implementation coming in Phase 3'
-    );
-  });
-
-  // Add deactivate command to subscriptions
-  context.subscriptions.push(deactivateCommand);
-
-  // Create file watcher for metrics.json
-  const metricsWatcher = vscode.workspace.createFileSystemWatcher(
-    metricsRoot
-      ? new vscode.RelativePattern(vscode.Uri.file(metricsRoot), '.cline-shield/metrics.json')
-      : '**/.cline-shield/metrics.json'
-  );
-
-  // Atomic writes (write-temp + rename) fire onDidCreate on macOS, not onDidChange.
-  // Wire both events to the same handler so neither path is missed.
-  const handleMetricsChange = async (uri: vscode.Uri, eventName: string) => {
-    try {
-      console.log(`[CS:watcher] ${eventName} fired — uri:${uri.fsPath}`);
-
-      // Use module-level session ID
-      if (!currentSessionId) {
-        console.log('[CS:watcher] no sessionId — skipping');
-        return;
-      }
-
-      // Read events for current session
-      if (!metricsRoot) {
-        console.log('[CS:watcher] no metricsRoot — skipping');
-        return;
-      }
-
-      const allEvents = await readEvents(metricsRoot);
-      const visibleIds = selectVisibleSessionIds(allEvents, activationTime, currentSessionId);
-      const events = allEvents.filter(e => !!e && visibleIds.has(e.sessionId));
-
-      // Update status bar tooltip: Cline sessions followed (excluding our own) + event count
-      statusBarItem.tooltip = formatTooltip(visibleIds.size - 1, events.length);
-
-    } catch (error) {
-      console.error('Error reading metrics events:', error);
-    }
+  const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  statusBar.command = 'workbench.view.extension.clineshield';
+  const setWaiting = (n: number) => {
+    statusBar.text = n > 0 ? `$(shield) ClineShield · ${n} waiting` : '$(shield) ClineShield';
+    statusBar.tooltip = n > 0 ? `ClineShield: ${n} waiting on you` : 'ClineShield: nothing waiting on you';
   };
+  setWaiting(0);
+  statusBar.show();
+  context.subscriptions.push(statusBar);
 
-  metricsWatcher.onDidChange((uri) => void handleMetricsChange(uri, 'onDidChange'));
-  metricsWatcher.onDidCreate((uri) => void handleMetricsChange(uri, 'onDidCreate'));
-
-  // Add watcher to subscriptions for cleanup
-  context.subscriptions.push(metricsWatcher);
-
-  // Register metrics sidebar
-  if (metricsRoot) {
-    const sidebarProvider = new MetricsSidebarProvider(context.extensionUri, metricsRoot, currentSessionId, activationTime);
-    context.subscriptions.push(
-      vscode.window.registerWebviewViewProvider(MetricsSidebarProvider.viewType, sidebarProvider)
-    );
-    context.subscriptions.push(sidebarProvider);
-  }
-
-  // Register change map tree view
-  if (metricsRoot) {
-    const changeMapProvider = new ChangeMapProvider(metricsRoot, currentSessionId, activationTime);
-    context.subscriptions.push(
-      vscode.window.registerTreeDataProvider(ChangeMapProvider.viewType, changeMapProvider)
-    );
-    context.subscriptions.push(changeMapProvider);
-  }
-
-  // Register command: ClineShield: Generate Test Metrics
-  const generateTestMetricsCommand = vscode.commands.registerCommand('clineshield.generateTestMetrics', async () => {
-    const root = metricsRoot;
-    if (!root || !currentSessionId) {
-      vscode.window.showWarningMessage('ClineShield: No workspace open.');
-      return;
-    }
-    const now = Date.now();
-    const ts = (minsAgo: number) => new Date(now - minsAgo * 60000).toISOString();
-
-    // src/auth/userService.ts — HIGH risk (protected path + functions deleted)
-    await appendEvent({ timestamp: ts(8), sessionId: currentSessionId, type: 'edit-blocked', data: { file: 'src/auth/userService.ts', reason: 'Too many deletions', structuralChangePercent: 82, functionsDeleted: 4, exportsDeleted: 2 } }, root);
-    await appendEvent({ timestamp: ts(7), sessionId: currentSessionId, type: 'edit-allowed', data: { file: 'src/auth/userService.ts', structuralChangePercent: 30, functionsDeleted: 1, exportsDeleted: 0 } }, root);
-    await appendEvent({ timestamp: ts(6), sessionId: currentSessionId, type: 'sanity-failed', data: { file: 'src/auth/userService.ts', tool: 'eslint', errors: ["Line 24: 'token' is defined but never used", "Line 31: Missing return type annotation"], retryCount: 1, maxRetries: 3 } }, root);
-    await appendEvent({ timestamp: ts(6), sessionId: currentSessionId, type: 'risk-assessed', data: { file: 'src/auth/userService.ts', rulesScore: 75, level: 'high', reasons: [{ rule: 'protected_path', points: 30, description: 'File is in a protected path (src/auth/userService.ts)' }, { rule: 'deleted_functions_high', points: 35, description: '4 functions deleted (exceeds 3)' }, { rule: 'sanity_failed', points: 20, description: 'Quality checks (eslint/tsc/prettier) failed after this edit' }] } }, root);
-
-    // src/config/appConfig.ts — MEDIUM risk (protected path)
-    await appendEvent({ timestamp: ts(5), sessionId: currentSessionId, type: 'edit-allowed', data: { file: 'src/config/appConfig.ts', structuralChangePercent: 40, functionsDeleted: 0, exportsDeleted: 0 } }, root);
-    await appendEvent({ timestamp: ts(4), sessionId: currentSessionId, type: 'sanity-passed', data: { file: 'src/config/appConfig.ts', tools: ['prettier', 'eslint', 'tsc'], duration: 4 } }, root);
-    await appendEvent({ timestamp: ts(4), sessionId: currentSessionId, type: 'risk-assessed', data: { file: 'src/config/appConfig.ts', rulesScore: 45, level: 'medium', reasons: [{ rule: 'protected_path', points: 30, description: 'File is in a protected path (src/config/appConfig.ts)' }, { rule: 'structural_change_medium', points: 25, description: 'Structural change is 40% (exceeds 25%)' }] } }, root);
-
-    // src/models/product.ts — MEDIUM risk (sanity failed + large diff)
-    await appendEvent({ timestamp: ts(3), sessionId: currentSessionId, type: 'edit-allowed', data: { file: 'src/models/product.ts', structuralChangePercent: 55, functionsDeleted: 1, exportsDeleted: 0 } }, root);
-    await appendEvent({ timestamp: ts(2), sessionId: currentSessionId, type: 'sanity-failed', data: { file: 'src/models/product.ts', tool: 'tsc', errors: ["src/models/product.ts(18,3): error TS2322: Type 'string' is not assignable to type 'number'"], retryCount: 1, maxRetries: 3 } }, root);
-    await appendEvent({ timestamp: ts(2), sessionId: currentSessionId, type: 'risk-assessed', data: { file: 'src/models/product.ts', rulesScore: 40, level: 'medium', reasons: [{ rule: 'deleted_functions_low', points: 20, description: '1 function deleted' }, { rule: 'sanity_failed', points: 20, description: 'Quality checks (eslint/tsc/prettier) failed after this edit' }] } }, root);
-
-    // src/utils/formatters.ts — LOW risk (clean edit)
-    await appendEvent({ timestamp: ts(1), sessionId: currentSessionId, type: 'edit-allowed', data: { file: 'src/utils/formatters.ts', structuralChangePercent: 15, functionsDeleted: 0, exportsDeleted: 0 } }, root);
-    await appendEvent({ timestamp: ts(0), sessionId: currentSessionId, type: 'sanity-passed', data: { file: 'src/utils/formatters.ts', tools: ['prettier', 'eslint', 'tsc'], duration: 3 } }, root);
-    await appendEvent({ timestamp: ts(0), sessionId: currentSessionId, type: 'risk-assessed', data: { file: 'src/utils/formatters.ts', rulesScore: 10, level: 'low', reasons: [] } }, root);
-
-    vscode.window.showInformationMessage('ClineShield: Generated 13 test metrics events.');
+  const sidebar = new MetricsSidebarProvider({
+    extensionUri: context.extensionUri, metricsRoot, workspaceRoot, sessionId, activationTime, homeDir,
+    secrets: context.secrets, configStore: new ConfigStore({ homeDir }), onWaitingCount: setWaiting,
   });
-  context.subscriptions.push(generateTestMetricsCommand);
+  context.subscriptions.push(vscode.window.registerWebviewViewProvider(MetricsSidebarProvider.viewType, sidebar), sidebar);
+
+  if (metricsRoot) {
+    const changeMap = new ChangeMapProvider(metricsRoot, sessionId, activationTime);
+    context.subscriptions.push(vscode.window.registerTreeDataProvider(ChangeMapProvider.viewType, changeMap), changeMap);
+  }
+
+  // ~/.cline-shield.yml is outside the workspace; Reload Config is the fallback if this watcher misses a save.
+  const configWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.file(homeDir), CONFIG_FILE));
+  configWatcher.onDidCreate(() => sidebar.refresh());
+  configWatcher.onDidChange(() => sidebar.refresh());
+  configWatcher.onDidDelete(() => sidebar.refresh());
+  context.subscriptions.push(configWatcher);
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('clineshield.reloadConfig', () => {
+      sidebar.refresh();
+      void vscode.window.showInformationMessage('ClineShield: config reloaded.');
+    }),
+    vscode.commands.registerCommand('clineshield.setGeminiKey', async () => {
+      const key = await vscode.window.showInputBox({
+        title: 'ClineShield: Set Gemini API Key',
+        prompt: 'Used only when you click Explain. Stored in VS Code secret storage, never in a file.',
+        password: true, ignoreFocusOut: true,
+        validateInput: v => (v.trim() ? undefined : 'Paste a Gemini API key'),
+      });
+      if (!key?.trim()) return;
+      await context.secrets.store(GEMINI_KEY_SECRET, key.trim());
+      sidebar.refresh();
+      void vscode.window.showInformationMessage('ClineShield: Gemini key saved. Explanations are on.');
+    }),
+    vscode.commands.registerCommand('clineshield.clearGeminiKey', async () => {
+      await context.secrets.delete(GEMINI_KEY_SECRET);
+      sidebar.refresh();
+      void vscode.window.showInformationMessage('ClineShield: Gemini key cleared. Explanations are off.');
+    }),
+    context.secrets.onDidChange(e => { if (e.key === GEMINI_KEY_SECRET) sidebar.refresh(); }),
+    vscode.commands.registerCommand('clineshield.generateTestMetrics', async () => {
+      if (!metricsRoot) {
+        void vscode.window.showWarningMessage('ClineShield: no workspace open.');
+        return;
+      }
+      const events = testEvents(sessionId, Date.now());
+      for (const event of events) await appendEvent(event, metricsRoot);
+      void vscode.window.showInformationMessage(`ClineShield: generated ${events.length} test events.`);
+    }),
+  );
 }
 
-/**
- * Extension deactivation function
- * Called when the extension is deactivated
- *
- * Note: Resources added to context.subscriptions are automatically disposed
- */
 export function deactivate(): void {
-  console.log('ClineShield extension deactivated');
-
-  // Clear session ID from module scope and environment
   currentSessionId = undefined;
-  delete process.env.CLINESHIELD_SESSION_ID;
-
-  // All disposables in context.subscriptions are cleaned up automatically:
-  // - Status bar item
-  // - File watcher
-  // - Command registrations
 }
