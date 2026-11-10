@@ -7,41 +7,9 @@ import { resolveMetricsRoot } from './metrics/metricsRoot';
 import { selectVisibleSessionIds } from './metrics/sessions';
 import { MetricsSidebarProvider } from './sidebar/MetricsSidebarProvider';
 import { ChangeMapProvider } from './changeMap/ChangeMapProvider';
-import { processRiskEvent } from './extension/riskAnalysis/llmTrigger';
 
 // Store current session ID at module level for file watcher access
 let currentSessionId: string | undefined;
-
-// Tracks risk-assessed event timestamps already sent to Gemini this session.
-// Prevents re-triggering when subsequent metrics.json writes fire the watcher.
-const processedRiskTimestamps = new Set<string>();
-
-// Gemini free tier: 10 RPM → 1 call per 6 s to stay safely under the limit.
-const GEMINI_MIN_INTERVAL_MS = 6000;
-let geminiLastCallMs = 0;
-const geminiQueue: Array<() => void> = [];
-let geminiDraining = false;
-
-function enqueueGeminiCall(fn: () => void): void {
-  geminiQueue.push(fn);
-  if (!geminiDraining) {
-    void drainGeminiQueue();
-  }
-}
-
-async function drainGeminiQueue(): Promise<void> {
-  geminiDraining = true;
-  while (geminiQueue.length > 0) {
-    const fn = geminiQueue.shift()!;
-    const wait = GEMINI_MIN_INTERVAL_MS - (Date.now() - geminiLastCallMs);
-    if (wait > 0) {
-      await new Promise<void>(resolve => setTimeout(resolve, wait));
-    }
-    geminiLastCallMs = Date.now();
-    fn();
-  }
-  geminiDraining = false;
-}
 
 function formatTooltip(clineSessions: number, events: number): string {
   const label = clineSessions === 1 ? 'session' : 'sessions';
@@ -171,19 +139,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       // Update status bar tooltip: Cline sessions followed (excluding our own) + event count
       statusBarItem.tooltip = formatTooltip(visibleIds.size - 1, events.length);
 
-      // Fire LLM analysis for any new medium/high risk-assessed events
-      for (const event of events) {
-        if (
-          event.type === 'risk-assessed' &&
-          event.data.level !== 'low' &&
-          !processedRiskTimestamps.has(`${event.sessionId}|${event.timestamp}|${event.data.file}`)
-        ) {
-          // Keyed by session too: parallel sessions can write in the same millisecond.
-          processedRiskTimestamps.add(`${event.sessionId}|${event.timestamp}|${event.data.file}`);
-          console.log(`[CS:llm] enqueuing Gemini call — level:${event.data.level} score:${event.data.rulesScore} file:${event.data.file}`);
-          enqueueGeminiCall(() => void processRiskEvent(event, currentSessionId!, metricsRoot));
-        }
-      }
     } catch (error) {
       console.error('Error reading metrics events:', error);
     }
