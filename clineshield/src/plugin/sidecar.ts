@@ -54,7 +54,16 @@ export async function readSidecar(root: string): Promise<Sidecar> {
   }
 }
 
-export async function appendSidecar(root: string, entries: SidecarEntry[]): Promise<void> {
+/** Appends run one at a time per process, so concurrent decisions don't overwrite each other's entries. */
+let queue: Promise<void> = Promise.resolve();
+
+export function appendSidecar(root: string, entries: SidecarEntry[]): Promise<void> {
+  const next = queue.then(() => appendNow(root, entries));
+  queue = next;
+  return next;
+}
+
+async function appendNow(root: string, entries: SidecarEntry[]): Promise<void> {
   if (entries.length === 0) return;
   const target = sidecarPath(root);
   const temp = `${target}.${randomUUID()}.tmp`;

@@ -60,6 +60,11 @@ describe('appendSidecar / readSidecar', () => {
     expect(entries[entries.length - 1].timestamp).toBe('t59');
   });
 
+  it('keeps every entry when appends run concurrently in one process', async () => {
+    await Promise.all(Array.from({ length: 5 }, (_, i) => appendSidecar(root, [entry(i)])));
+    expect((await readSidecar(root)).entries.map(e => e.timestamp).sort()).toEqual(['t0', 't1', 't2', 't3', 't4']);
+  });
+
   it('replaces a corrupt file with the new entries', async () => {
     await fs.mkdir(path.dirname(file()), { recursive: true });
     await fs.writeFile(file(), '{not json');

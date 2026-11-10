@@ -165,14 +165,19 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
   /** Diff sidecar entries (asks, blocks, and allowed edits with points) keyed to this decision's logged events; best effort, tracked by flush(). */
   function writeDiffs(decision: Decision, action: ActionContext | undefined, timestamp: string): void {
     if (!workspaceRoot || !action) return;
-    const entries = decision.files.flatMap(f => {
-      const change = f.score > 0 || decision.tier !== 'allow' ? action.changes.find(c => c.path === f.file) : undefined;
-      const e = change ? sidecarEntry(sid(), timestamp, f.file, change.op) : undefined;
-      return e ? [e] : [];
-    });
-    if (entries.length === 0) return;
-    const write = appendSidecar(workspaceRoot, entries).finally(() => pending.delete(write));
-    pending.add(write);
+    try {
+      const entries = decision.files.flatMap(f => {
+        const change = f.score > 0 || decision.tier !== 'allow' ? action.changes.find(c => c.path === f.file) : undefined;
+        const e = change ? sidecarEntry(sid(), timestamp, f.file, change.op) : undefined;
+        return e ? [e] : [];
+      });
+      if (entries.length === 0) return;
+      const write = appendSidecar(workspaceRoot, entries).finally(() => pending.delete(write));
+      pending.add(write);
+    } catch (error) {
+      // Never let the sidecar change a decision: a throw here would make beforeTool fail open.
+      console.error('[ClineShield] diff sidecar skipped:', (error as Error)?.message ?? error);
+    }
   }
   const editData = (f: FileScore) => ({
     file: f.file, structuralChangePercent: f.structuralChangePercent, functionsDeleted: f.functionsDeleted, exportsDeleted: f.exportsDeleted,

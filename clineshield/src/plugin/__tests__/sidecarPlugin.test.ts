@@ -9,6 +9,7 @@ import * as path from 'path';
 import { createClineShieldPlugin } from '../index';
 import type { AgentToolResult, ClineShieldPlugin } from '../index';
 import type { AgentMessage } from '../types';
+import * as sidecar from '../sidecar';
 import { SIDECAR_FILE, readSidecar } from '../sidecar';
 
 type Event = { type: string; timestamp: string; sessionId: string; data: Record<string, unknown> };
@@ -107,5 +108,11 @@ describe('diff sidecar (plugin)', () => {
     const r = await run('c1', 'apply_patch', BLOCK_EDIT).before();
     expect(r).toEqual({ skip: true, reason: expect.stringContaining('ClineShield blocked') });
     expect(await events('edit-blocked')).toHaveLength(1);
+  });
+
+  it('a throw while building sidecar entries does not change a block into an allow', async () => {
+    jest.spyOn(sidecar, 'sidecarEntry').mockImplementation(() => { throw new Error('boom'); });
+    const r = await run('c1', 'apply_patch', BLOCK_EDIT).before();
+    expect(r).toEqual({ skip: true, reason: expect.stringContaining('ClineShield blocked') });
   });
 });

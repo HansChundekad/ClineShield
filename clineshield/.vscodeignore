@@ -1,6 +1,7 @@
 .vscode/**
 .github/**
 src/**
+!src/sidebar/metrics.html
 node_modules/**
 scripts/**
 .cline-shield/**
@@ -8,7 +9,6 @@ scripts/**
 **/*.ts
 !dist/**
 !images/**
-!hooks/**
 jest.config.*
 tsconfig.json
 .eslintrc*
