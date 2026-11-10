@@ -263,11 +263,14 @@ Approval is read from the conversation history (`rubric/approval.ts`), never fro
 - [x] Manual (2026-10-15): the user sees the block reason in the terminal as `Error: ClineShield blocked this action…`
 
 #### VS Code extension (optional dashboard)
-- [ ] Shows `edit-approval` outcomes and rubric categories
-- [ ] Change map marks files with a blocked attempt: today the level comes only from `risk-assessed`, written after a successful edit, so a file with a blocked edit can still show low
-- [ ] No longer sets env vars for hooks; works when no plugin has run yet
-- [ ] Opt-in LLM explanation: off by default, own Gemini key in SecretStorage ("Set/Clear Gemini API Key"),
-  secrets stripped before sending, `gemini_api_key` in YAML ignored with a warning, plugin writes the diff sidecar
+Design: `docs/superpowers/specs/2026-11-10-extension-dashboard-design.md`.
+- [x] Shows `edit-approval` outcomes, `command-assessed` events and rubric categories: sidebar "Waiting on you" (unanswered asks and the latest block; cleared by the approval, a newer ask/block, a later action ≥ 15 s after, or ×), totals counted as `/clineshield` counts, last 15 actions, labelled Settings (preset, mode, config file, `on_error: allow` and config warnings)
+- [x] Change map marks files with a blocked attempt: level is the worst of `risk-assessed`, asked (medium) and blocked (high)
+- [x] No longer sets env vars for hooks or writes to `metrics.json` at activation; works when no plugin has run yet (install / "watching this repo" empty states)
+- [x] Opt-in LLM explanation: on click only, key is the switch, own Gemini key in SecretStorage ("Set/Clear Gemini API Key", sent in a header, never the URL),
+  secrets stripped before sending, `gemini_api_key` in YAML ignored with a warning, plugin writes the diff sidecar (`.cline-shield/diff-context.json`, newest 50, redacted)
+- [x] Reads `~/.cline-shield.yml` read-only through the plugin's `ConfigStore`; watches it; "Reload Config" as fallback; "Create config" writes it only when missing, after confirming
+- [ ] Manual: sidebar, change map and explanations checked by the owner in a real session
 
 #### Retire 1.x hooks
 - [ ] Remove `clineshield/hooks/`, root and `test-workspace/` `.clinerules/hooks/`, and hook-only env-var code in `configLoader.ts`
