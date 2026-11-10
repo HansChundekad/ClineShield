@@ -97,7 +97,9 @@ describe('Risk rubric (plugin)', () => {
     expect(r).toMatchObject({ skip: true, reason: expect.stringContaining("needs the user's approval") });
     expect((r as { reason: string }).reason).toMatch(/needs the user.s approval/);
     const [ev] = await events('edit-approval');
-    expect(ev.data).toMatchObject({ file: 'lib/small.ts', approved: false, structuralChangePercent: 95 });
+    expect(ev.data).toMatchObject({ file: 'lib/small.ts', approved: false, structuralChangePercent: 95, cutoffs: { ask: 40, block: 70 } });
+    expect(ev.data.score).toBeGreaterThanOrEqual(40);
+    expect(ev.data.reasons).toEqual(expect.arrayContaining([expect.objectContaining({ rule: 'rewrite_share' })]));
   });
 
   it('placeholder rewrite → blocked, edit-blocked, reason without points', async () => {
@@ -106,7 +108,10 @@ describe('Risk rubric (plugin)', () => {
     expect(r.skip).toBe(true);
     expect(r.reason).toMatch(/placeholder/);
     expect(r.reason).not.toMatch(/points|cut-?off/);
-    expect((await events('edit-blocked'))[0].data.file).toBe('lib/small.ts');
+    const [ev] = await events('edit-blocked');
+    expect(ev.data).toMatchObject({ file: 'lib/small.ts', score: expect.any(Number), cutoffs: { ask: 40, block: 70 } });
+    expect(ev.data.reasons).toEqual(expect.arrayContaining([expect.objectContaining({ rule: 'placeholder', points: expect.any(Number) })]));
+    expect(ev.data.reason).not.toMatch(/\d+\s*points|cut-?off/i);
   });
 
   it('file delete is now evaluated (Decision 8)', async () => {

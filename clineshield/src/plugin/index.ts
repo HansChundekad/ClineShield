@@ -21,6 +21,8 @@ import { randomUUID } from 'crypto';
 import * as os from 'os';
 import * as path from 'path';
 import { appendEvent } from '../metrics/writer';
+import { readEvents } from '../metrics/reader';
+import { formatSummary, formatWhy, summarize, USAGE } from './visibility/report';
 import type { MetricsEvent } from '../types/metrics';
 import { ConfigStore } from './config/store';
 import type { RubricConfig } from './config/schema';
@@ -121,7 +123,12 @@ export interface ClineShieldPlugin extends AgentPlugin {
   /** Config warnings seen this session (shown by `/clineshield` later). */
   readonly configWarnings: string[];
   flush(): Promise<void>;
+  /** The /clineshield slash command: '' = session summary, 'why' = last ask/block in full. Never throws. */
+  runCommand(input: string): Promise<string>;
 }
+
+/** Slash-command registration (sdk/packages/shared/src/extensions/contribution-registry.ts AgentExtensionCommand). */
+interface CommandApi { registerCommand?: (command: { name: string; description?: string; handler: (input: string) => Promise<string> }) => void }
 
 export interface PluginOptions { homeDir?: string; pluginDir?: string }
 
@@ -156,6 +163,13 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
   const editData = (f: FileScore) => ({
     file: f.file, structuralChangePercent: f.structuralChangePercent, functionsDeleted: f.functionsDeleted, exportsDeleted: f.exportsDeleted,
   });
+  /** Every finding of one file, as logged in risk-assessed. */
+  const reasonsOf = (f: FileScore) => [
+    ...f.findings.map(x => ({ rule: x.id, points: x.points, description: x.detail })),
+    ...f.skipped.map(s => ({ rule: `skipped:${s.split(':')[0]}`, points: 0, description: s })),
+  ];
+  /** Points, total and cut-offs for asked/blocked edits: logs and /clineshield why only, never Cline. */
+  const scoreData = (f: FileScore) => ({ score: f.score, reasons: reasonsOf(f), cutoffs: { ...f.cutoffs } });
 
   async function loadConfig(): Promise<RubricConfig> {
     const { config, warnings } = await store!.get();
@@ -172,7 +186,8 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
   /** One command-assessed event (Decision 1): every item's findings; file findings name the file. */
   function recordCommand(decision: Decision, command: string, extra: { tier?: Decision['tier']; observedTier?: 'ask' | 'block'; approved?: boolean } = {}): void {
     const tier = extra.tier ?? decision.tier;
-    const score = worstItem(decision)?.score ?? 0;
+    const worst = worstItem(decision);
+    const score = worst?.score ?? 0;
     if (score === 0 && tier === 'allow') return;
     const name = (f: FileScore, text: string) => (f.file === COMMAND_ITEM ? text : `${f.file}: ${text}`);
     const reasons = [
@@ -185,7 +200,10 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     ];
     record({
       timestamp: new Date().toISOString(), sessionId: sid(), type: 'command-assessed',
-      data: { command, tier, score, reasons, ...(extra.approved === undefined ? {} : { approved: extra.approved }) },
+      data: {
+        command, tier, score, reasons, ...(extra.approved === undefined ? {} : { approved: extra.approved }),
+        ...(worst ? { cutoffs: { ...worst.cutoffs } } : {}),
+      },
     });
   }
 
@@ -307,7 +325,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
       const n = (blockCounts.get(key) ?? 0) + 1;
       blockCounts.set(key, n);
       if (n >= 3) reason += ` ${REPEAT_BLOCK_NOTE}`;
-      for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-blocked', data: { ...editData(f), reason } });
+      for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-blocked', data: { ...editData(f), reason, ...scoreData(f) } });
       return { skip: true, reason };
     }
 
@@ -317,7 +335,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
         decided.set(id!, { decision, asked: true, reason });
         return { policy: { autoApprove: true } };
       }
-      for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-approval', data: { ...editData(f), reason, approved: false } });
+      for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-approval', data: { ...editData(f), reason, approved: false, ...scoreData(f) } });
       return { skip: true, reason };
     }
 
@@ -331,8 +349,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     for (const f of decision.files) {
       if (f.file.startsWith('(unparsed')) continue;
       const reasons = [
-        ...f.findings.map(x => ({ rule: x.id, points: x.points, description: x.detail })),
-        ...f.skipped.map(s => ({ rule: `skipped:${s.split(':')[0]}`, points: 0, description: s })),
+        ...reasonsOf(f),
         ...(observedTier ? [{ rule: 'observe', points: 0, description: `Observe mode: would have ${observedTier === 'ask' ? 'asked' : 'blocked'}` }] : []),
       ];
       record({ timestamp, sessionId: sid(), type: 'risk-assessed', data: { file: f.file, rulesScore: f.score, level: f.level, reasons } });
@@ -358,7 +375,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
       const approved = !isApprovalDenied(ctx.result);
       const timestamp = new Date().toISOString();
       for (const f of entry.decision.files) {
-        record({ timestamp, sessionId: sid(), type: 'edit-approval', data: { ...editData(f), reason: entry.reason, approved } });
+        record({ timestamp, sessionId: sid(), type: 'edit-approval', data: { ...editData(f), reason: entry.reason, approved, ...scoreData(f) } });
       }
     }
     if (ctx.result?.isError) return undefined;
@@ -375,16 +392,39 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     return undefined;
   }
 
+  /** Output goes only to the user's terminal: a reply-only command result never reaches the model. */
+  async function runCommand(input: string): Promise<string> {
+    try {
+      const arg = String(input ?? '').trim().toLowerCase();
+      if (arg !== '' && arg !== 'why') return USAGE;
+      await Promise.all([...pending]);
+      const events = workspaceRoot ? await readEvents(workspaceRoot) : [];
+      if (arg === 'why') return formatWhy(events, sid());
+      const { config, warnings } = await (store ??= new ConfigStore({ homeDir })).get();
+      return formatSummary(summarize(events, sid()), { warnings, onErrorAllow: config.onError === 'allow' });
+    } catch (error) {
+      return `ClineShield: could not read activity (${(error as Error)?.message ?? error})`;
+    }
+  }
+
   return {
     name: 'clineshield',
-    manifest: { capabilities: ['hooks'] },
+    manifest: { capabilities: ['hooks', 'commands'] },
     get sessionId() { return sessionId; },
     get workspaceRoot() { return workspaceRoot; },
     get configWarnings() { return configWarnings; },
     async flush() { await Promise.all([...pending]); },
+    runCommand,
     // Synchronous on purpose: no heavy work before the first model call.
     // The session-start write is fire-and-forget.
-    setup(_api: unknown, ctx: PluginSetupContext): void {
+    setup(api: unknown, ctx: PluginSetupContext): void {
+      try {
+        (api as CommandApi | null)?.registerCommand?.({
+          name: 'clineshield', description: 'ClineShield activity for this session (why: the last ask or block in full)', handler: runCommand,
+        });
+      } catch (error) {
+        console.error('[ClineShield] could not register /clineshield:', error);
+      }
       try {
         workspaceRoot = ctx?.workspaceInfo?.rootPath || ctx?.cwd || process.cwd();
         sessionId = ctx?.session?.sessionId || randomUUID();

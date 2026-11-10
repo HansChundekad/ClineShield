@@ -25,10 +25,22 @@ export function validateEvent(event: unknown): string[] {
     (Array.isArray(d[k]) && (d[k] as unknown[]).every(x => typeof x === 'string')) ||
     problems.push(`data.${k} is not a string[]`);
   const optNum = (k: string) => d[k] === undefined || num(k);
+  const isReasons = (v: unknown) => Array.isArray(v) && v.every(r => typeof r === 'object' && r !== null &&
+    typeof (r as Record<string, unknown>).rule === 'string' && typeof (r as Record<string, unknown>).points === 'number' &&
+    typeof (r as Record<string, unknown>).description === 'string');
+  const optCutoffs = () => d.cutoffs === undefined ||
+    (typeof d.cutoffs === 'object' && d.cutoffs !== null && typeof (d.cutoffs as Record<string, unknown>).ask === 'number' &&
+      typeof (d.cutoffs as Record<string, unknown>).block === 'number') || problems.push('data.cutoffs is not {ask, block}');
+  const optScoreFields = () => {
+    optNum('score');
+    if (d.reasons !== undefined && !isReasons(d.reasons)) problems.push('data.reasons is not {rule, points, description}[]');
+    optCutoffs();
+  };
 
   switch (e.type) {
     case 'edit-blocked':
       str('file'); str('reason'); num('structuralChangePercent'); num('functionsDeleted'); num('exportsDeleted');
+      optScoreFields();
       break;
     case 'edit-allowed':
       str('file'); num('structuralChangePercent'); num('functionsDeleted'); num('exportsDeleted');
@@ -36,6 +48,7 @@ export function validateEvent(event: unknown): string[] {
     case 'edit-approval':
       str('file'); num('structuralChangePercent'); num('functionsDeleted'); num('exportsDeleted'); str('reason');
       if (typeof d.approved !== 'boolean') problems.push('data.approved is not a boolean');
+      optScoreFields();
       break;
     case 'sanity-failed':
       str('file'); str('tool'); strArr('errors'); num('retryCount'); num('maxRetries');
@@ -52,9 +65,8 @@ export function validateEvent(event: unknown): string[] {
       str('command'); num('score');
       if (typeof d.command === 'string' && d.command.length > 500) problems.push('data.command is longer than 500 chars');
       if (!['allow', 'ask', 'block'].includes(d.tier as string)) problems.push('data.tier is not allow|ask|block');
-      if (!Array.isArray(d.reasons) || !(d.reasons as unknown[]).every(r => typeof r === 'object' && r !== null &&
-        typeof (r as Record<string, unknown>).rule === 'string' && typeof (r as Record<string, unknown>).points === 'number' &&
-        typeof (r as Record<string, unknown>).description === 'string')) problems.push('data.reasons is not {rule, points, description}[]');
+      if (!isReasons(d.reasons)) problems.push('data.reasons is not {rule, points, description}[]');
+      optCutoffs();
       if (d.approved !== undefined && typeof d.approved !== 'boolean') problems.push('data.approved is not a boolean');
       break;
     case 'llm-analysis':
