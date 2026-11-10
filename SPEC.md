@@ -28,7 +28,7 @@ An **optional VS Code extension** reads that log and shows live dashboards (side
 Cline agent loop
   ├─ beforeTool ──▶ Risk rubric ──▶ allow | ask user | skip + reason
   ├─ tool runs
-  └─ afterTool  ──▶ record outcome · post-edit checks ──▶ feedback to Cline
+  └─ afterTool  ──▶ record outcome · after-edit risk score
          └──▶ .cline-shield/metrics.json ──▶ /clineshield (terminal) · VS Code extension (optional)
 ```
 
@@ -73,7 +73,7 @@ The mechanism every rule uses. Driven by the Risk rubric.
 
 #### Risk scoring after edits
 - [x] `afterTool` scores each successful edit with `computeRiskScore()` and writes `risk-assessed` (lands with PR #18)
-- `risk-assessed` now comes from the Risk rubric (①): every file type, `reasons[]` = fired categories, `level` follows the decision (②). Sanity checks are still assumed passed
+- `risk-assessed` now comes from the Risk rubric (①): every file type, `reasons[]` = fired categories, `level` follows the decision (②). Sanity checks are assumed passed (post-edit checks are out of 2.0, see Later)
 
 #### Dashboards follow plugin sessions
 - [x] Sidebar, change map and status bar show every session started since VS Code opened, incl. parallel ones (Decision 7)
@@ -253,14 +253,6 @@ Approval is read from the conversation history (`rubric/approval.ts`), never fro
 - [ ] Works the same with auto-approve on or off, interactive and one-shot; headless with no user → stays refused
 - [ ] Report upstream: a plugin's `autoApprove: false` should override auto-approve all
 
-#### Post-edit checks (time-budgeted)
-After an edit, run the project's checkers and feed errors back to Cline, without ever hitting the 3 s hook limit.
-- [ ] Checkers configurable per file glob (any language: e.g. `ruff`, `go vet`); default prettier → eslint → tsc for TS/JS
-- [ ] Feedback via `appendContext` ("Attempt X/N", output, fix-only instruction); stop after `max_retries`, per task + file
-- [ ] Warm checkers in the background; hard 2.5 s budget; late results delivered on the next hook call (Decision 3)
-- [ ] Writes `sanity-passed` / `sanity-failed`; result feeds the rubric's after-edit score
-- [ ] Unit tests with fake checkers: pass, fail, slow → deferred
-
 #### Terminal visibility (`/clineshield`)
 - [x] Slash command (`"commands"` capability) prints this session's allowed / asked / blocked counts and riskiest files (edits and commands counted per action; an ask refused then approved counts once; allowed commands with no findings aren't logged, so they aren't counted)
 - [x] `/clineshield why`: the last ask/block in full (every category, points, total, cut-off)
@@ -289,6 +281,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 - [ ] One-line install, architecture diagram, rubric + config guide, eval results, CI badge, "what's next"
 
 ### Later
+- Post-edit checks (the 2.0 sanity checks), cut from 2.0 on 2026-11-09. Planned scope: after an edit, run the project's checkers (configurable per file glob; default prettier → eslint → tsc for TS/JS), feed errors back through `appendContext` ("Attempt X/N"), stop after `max_retries` per task + file, write `sanity-passed` / `sanity-failed`, and feed the result into the after-edit score. Cut because it is code quality, not safety (Cline usually catches these errors when it runs the build or tests); it is the hardest remaining piece under the 3 s hook limit (background checkers, results delivered on a later hook call); and running a cloned repo's eslint/prettier config executes that repo's code, which breaks the rule that a cloned repo can't change anything. Settle how untrusted repos are handled before building it.
 - Dependency categories deferred from ③: `dep_added` (10), `dep_unpinned` (15), `dep_downgrade` (20), `dep_low_downloads` (40, < 1,000/week, npm only).
 - `/clineshield init` and `/clineshield preset <name>` (edit the config file; the handler gets the text after the command name, see Appendix)
 - LLM providers beyond Gemini: VS Code model API (needs Copilot), OpenAI-compatible endpoints (OpenRouter, local Ollama)
@@ -303,12 +296,12 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 
 | # | Question | Status |
 |---|---|---|
-| 3 | Record post-edit checks that miss the time budget? (new event type) | open |
 | 9 | Rubric defaults: starting points and cut-offs set in Risk rubric (2026-10-15) | open → tune with the eval |
 
 **Decided**
 - **1** — Commands get a new `command-assessed` event (`command, tier, score, reasons, approved?`) added to `metrics.ts`, one per `run_commands` request; the extension learns it (2026-10-15).
 - **2** — Ask-tier outcome: new `edit-approval` event (`file, structuralChangePercent, functionsDeleted, exportsDeleted, reason, approved`). `approved: false` is written in `beforeTool` when the action is refused pending the user (incl. headless); `approved: true` in `afterTool` when it runs after their yes, so an approved action logs both. `command-assessed` `approved` works the same way.
+- **3** — Late post-edit check results: no new event type; if post-edit checks are built later, late results are logged as normal `sanity-passed` / `sanity-failed` when delivered. Post-edit checks are cut from 2.0 (2026-11-09).
 - **4** — Interim edit thresholds hard-coded in `EDIT_SIZE_THRESHOLDS`; default preset `balanced` (2026-10-15).
 - **5** — Plugin lives in `clineshield/src/plugin/`; minimal root `package.json` lists it (git install reads only the root manifest; `.ts` loads via jiti).
 - **6** — `metrics.json.lock` in `appendEvent()`: exclusive create, stale after 5 s, write without it after 1 s wait.
