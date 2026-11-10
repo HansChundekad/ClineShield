@@ -1,0 +1,373 @@
+[
+  {
+    "timestamp": "2026-11-09T10:00:00.000Z",
+    "sessionId": "s0",
+    "type": "edit-blocked",
+    "data": {
+      "file": "old.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "ClineShield blocked this action, so nothing was changed. Why: an old reason."
+    }
+  },
+  {
+    "timestamp": "2026-11-09T10:00:01.000Z",
+    "sessionId": "s2",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:00.000Z",
+    "sessionId": "s1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:01.000Z",
+    "sessionId": "s1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/x.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:02.000Z",
+    "sessionId": "s1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/y.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:03.000Z",
+    "sessionId": "s1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/m1.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:03.000Z",
+    "sessionId": "s1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/m2.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:03.500Z",
+    "sessionId": "s2",
+    "type": "edit-blocked",
+    "data": {
+      "file": "other.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "r",
+      "score": 99,
+      "reasons": [],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:04.000Z",
+    "sessionId": "s1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/b.ts",
+      "rulesScore": 20,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "manifest",
+          "points": 20,
+          "description": "dependency manifest"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:05.000Z",
+    "sessionId": "s1",
+    "type": "edit-approval",
+    "data": {
+      "file": "src/a.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "needs the user's approval",
+      "approved": false,
+      "score": 55,
+      "reasons": [
+        {
+          "rule": "rewrite_share",
+          "points": 50,
+          "description": "95% of the file rewritten"
+        },
+        {
+          "rule": "empty_catch",
+          "points": 5,
+          "description": "empty catch"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:05.000Z",
+    "sessionId": "s1",
+    "type": "edit-approval",
+    "data": {
+      "file": "src/c.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "needs the user's approval",
+      "approved": false,
+      "score": 25,
+      "reasons": [
+        {
+          "rule": "rewrite_share",
+          "points": 25,
+          "description": "45% of the file rewritten"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:06.000Z",
+    "sessionId": "s1",
+    "type": "edit-approval",
+    "data": {
+      "file": "src/a.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "needs the user's approval",
+      "approved": true,
+      "score": 55,
+      "reasons": [
+        {
+          "rule": "rewrite_share",
+          "points": 50,
+          "description": "95% of the file rewritten"
+        },
+        {
+          "rule": "empty_catch",
+          "points": 5,
+          "description": "empty catch"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:06.000Z",
+    "sessionId": "s1",
+    "type": "edit-approval",
+    "data": {
+      "file": "src/c.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "needs the user's approval",
+      "approved": true,
+      "score": 25,
+      "reasons": [
+        {
+          "rule": "rewrite_share",
+          "points": 25,
+          "description": "45% of the file rewritten"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:06.100Z",
+    "sessionId": "s1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/a.ts",
+      "rulesScore": 55,
+      "level": "medium",
+      "reasons": [
+        {
+          "rule": "rewrite_share",
+          "points": 50,
+          "description": "95% of the file rewritten"
+        },
+        {
+          "rule": "empty_catch",
+          "points": 5,
+          "description": "empty catch"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:07.000Z",
+    "sessionId": "s1",
+    "type": "edit-blocked",
+    "data": {
+      "file": "src/auth/login.ts",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "ClineShield blocked this action",
+      "score": 75,
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "protected path"
+        },
+        {
+          "rule": "auth_removed",
+          "points": 45,
+          "description": "auth check removed"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:08.000Z",
+    "sessionId": "s1",
+    "type": "command-assessed",
+    "data": {
+      "command": "chmod -R 755 dist",
+      "tier": "allow",
+      "score": 30,
+      "reasons": [
+        {
+          "rule": "chmod_broad",
+          "points": 30,
+          "description": "broad chmod"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:09.000Z",
+    "sessionId": "s1",
+    "type": "command-assessed",
+    "data": {
+      "command": "sudo apt-get install jq",
+      "tier": "ask",
+      "score": 40,
+      "approved": false,
+      "reasons": [
+        {
+          "rule": "sudo",
+          "points": 40,
+          "description": "runs apt-get as root (sudo)"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:10.000Z",
+    "sessionId": "s1",
+    "type": "command-assessed",
+    "data": {
+      "command": "sudo apt-get install jq",
+      "tier": "ask",
+      "score": 40,
+      "approved": true,
+      "reasons": [
+        {
+          "rule": "sudo",
+          "points": 40,
+          "description": "runs apt-get as root (sudo)"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:10.500Z",
+    "sessionId": "s2",
+    "type": "risk-assessed",
+    "data": {
+      "file": "s2.ts",
+      "rulesScore": 10,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-09T11:00:11.000Z",
+    "sessionId": "s1",
+    "type": "command-assessed",
+    "data": {
+      "command": "rm -rf /",
+      "tier": "block",
+      "score": 100,
+      "reasons": [
+        {
+          "rule": "rm_outside",
+          "points": 0,
+          "description": "recursive delete outside the workspace: /"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

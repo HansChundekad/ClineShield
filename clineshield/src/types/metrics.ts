@@ -21,6 +21,19 @@ interface BaseEvent {
     data: unknown;
   }
   
+  /** One scored category (risk-assessed, command-assessed, and asked/blocked edits). */
+  export interface RiskReason {
+    rule: string;         // Rule ID (e.g., 'secrets_file')
+    points: number;       // Points added to score
+    description: string;  // Human explanation
+  }
+
+  /** The ask / block cut-offs that applied to a decision. */
+  export interface Cutoffs {
+    ask: number;
+    block: number;
+  }
+
   /**
    * Event type discriminator - used by ALL features to filter
    */
@@ -47,6 +60,9 @@ interface BaseEvent {
       structuralChangePercent: number; // Required - Rules Engine reads this
       functionsDeleted: number;        // Required - Rules Engine reads this
       exportsDeleted: number;          // Optional
+      score?: number;                  // Optional (plugin 2.0+) - this file's rubric score, 0-100; never shown to Cline
+      reasons?: RiskReason[];          // Optional (plugin 2.0+) - every finding, as in risk-assessed
+      cutoffs?: Cutoffs;               // Optional (plugin 2.0+) - this file's effective cut-offs
     };
   }
   
@@ -74,6 +90,9 @@ interface BaseEvent {
       exportsDeleted: number;          // Required
       reason: string;                  // Required - why approval was needed (shown to Cline)
       approved: boolean;               // Required - false when refused pending the user (incl. headless runs); true when run after their yes
+      score?: number;                  // Optional (plugin 2.0+) - this file's rubric score, 0-100; never shown to Cline
+      reasons?: RiskReason[];          // Optional (plugin 2.0+) - every finding, as in risk-assessed
+      cutoffs?: Cutoffs;               // Optional (plugin 2.0+) - this file's effective cut-offs
     };
   }
 
@@ -139,6 +158,7 @@ interface BaseEvent {
         description: string;
       }>;
       approved?: boolean;     // Asked requests only: false when denied (incl. headless)
+      cutoffs?: Cutoffs;      // Optional - the deciding item's effective cut-offs
     };
   }
 

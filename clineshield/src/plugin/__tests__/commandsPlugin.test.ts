@@ -100,7 +100,7 @@ describe('run_commands (plugin)', () => {
     expect(isAsk(r)).toBe(true);
     expect((r as { reason: string }).reason).toMatch(/runs apt-get as root/);
     const [ev] = await events('command-assessed');
-    expect(ev.data).toMatchObject({ tier: 'ask', score: 40, approved: false, reasons: [{ rule: 'sudo', points: 40, description: 'runs apt-get as root (sudo)' }] });
+    expect(ev.data).toMatchObject({ tier: 'ask', score: 40, approved: false, cutoffs: { ask: 40, block: 70 }, reasons: [{ rule: 'sudo', points: 40, description: 'runs apt-get as root (sudo)' }] });
   });
 
   it('cat > file <<EOF rewrite with a placeholder → hard block; reasons name the file', async () => {

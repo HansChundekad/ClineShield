@@ -189,7 +189,8 @@ file-relative, same field) and `risk-assessed` after a successful edit (`reasons
 the decision: allow = low, ask = medium, block = high. Commands use the new **`command-assessed`** event (Decision 1), one
 per `run_commands` request, written when score > 0 or tier ≠ allow: `command` (pieces joined, capped at 500 chars,
 secrets masked with the `secret_added` patterns), `tier`, `score`, `reasons` (`{rule, points, description}`; file findings
-name the file, e.g. "app.ts: 82% of the file rewritten"), `approved` (asked commands only, written in `afterTool`).
+name the file, e.g. "app.ts: 82% of the file rewritten"), `approved` (asked commands only, written in `afterTool`), `cutoffs`
+(the deciding item's). `edit-blocked` and `edit-approval` also carry that file's `score`, `reasons` and `cutoffs` (for `/clineshield why`).
 
 - [x] ① Rubric engine: categories → points → capped score → tier; one engine for before and after the action; replaces the interim 1.x size rules and `DEFAULT_PROTECTED_PATHS`; closes Decision 8
 - [x] ① Edits measured against the real file via in-memory apply; patch-only fallback; worst file decides
@@ -261,10 +262,12 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 - [ ] Unit tests with fake checkers: pass, fail, slow → deferred
 
 #### Terminal visibility (`/clineshield`)
-- [ ] Slash command (`"commands"` capability) prints this session's allowed / asked / blocked counts and riskiest files
-- [ ] `/clineshield why`: the last ask/block in full (every category, points, total, cut-off)
-- [ ] Shows config warnings and an `on_error: allow` notice
-- [ ] Never throws; clear message when there are no events; unit test against a fixture `metrics.json`
+- [x] Slash command (`"commands"` capability) prints this session's allowed / asked / blocked counts and riskiest files (edits and commands counted per action; an ask refused then approved counts once; allowed commands with no findings aren't logged, so they aren't counted)
+- [x] `/clineshield why`: the last ask/block in full (every category, points, total, cut-off)
+- [x] Shows config warnings and an `on_error: allow` notice
+- [x] Never throws; clear message when there are no events; unit test against a fixture `metrics.json`
+- [x] To make `why` possible, `edit-blocked` / `edit-approval` gained optional `score`, `reasons`, `cutoffs` and `command-assessed` gained optional `cutoffs` (owner decision 2026-11-09; additive, old events stay valid)
+- Needs CLI 3.0.74+: older CLIs ran commands in a separate plugin copy that doesn't know the session
 - [x] Manual (2026-10-15): the user sees the block reason in the terminal as `Error: ClineShield blocked this action…`
 
 #### VS Code extension (optional dashboard)
@@ -287,7 +290,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 
 ### Later
 - Dependency categories deferred from ③: `dep_added` (10), `dep_unpinned` (15), `dep_downgrade` (20), `dep_low_downloads` (40, < 1,000/week, npm only).
-- `/clineshield init` and `/clineshield preset <name>` (edit the config file; check how the CLI passes command arguments first)
+- `/clineshield init` and `/clineshield preset <name>` (edit the config file; the handler gets the text after the command name, see Appendix)
 - LLM providers beyond Gemini: VS Code model API (needs Copilot), OpenAI-compatible endpoints (OpenRouter, local Ollama)
 - LLM explanations for CLI-only users (plugin-side, key from an env var)
 - Code structure via tree-sitter (WASM `web-tree-sitter` + ~6 grammars, ~10 MB; native bindings ruled out: need a compiler on install). Only if the eval shows patterns miss real deletions
@@ -330,6 +333,7 @@ After an edit, run the project's checkers and feed errors back to Cline, without
 | `.ts` entries load via jiti, so relative TS imports work without a build | `plugin-sandbox.ts`, `plugin-module-import.ts` |
 | `run_commands` input is one of 9 shapes: `{commands: string[]}`, `{commands: (string \| {command, args?})[]}`, `{commands: string \| {command, args?}}`, `{command, args?}[]`, `{command, args?}`, `{command: string}`, `{cmd: string}`, `string[]`, `string`. A `{command, args}` entry runs without a shell; `{command}` without `args` is a shell string | `core/src/extensions/tools/schemas.ts` L127–172, `helpers.ts` L140–165 (`main` ee7f4f5) |
 | Plugins can add slash commands (`"commands"`, `api.registerCommand`) | [plugin reference](https://github.com/cline/cline/blob/main/.agents/skills/cline-sdk/references/plugins/REFERENCE.md) |
+| A command handler gets the text after `/name`, trimmed (`/clineshield why` → `"why"`). A reply-only result is shown in the terminal and the turn ends with 0 tokens; nothing enters the conversation (only `submitPrompt` reaches the model). From CLI 3.0.74 (`@cline/core` 0.2.0) a command runs in the session's own plugin copy; 3.0.73 used a separate per-workspace copy (`main` 1e8ae47) | `core/src/services/plugin-command-api.ts`, `core/src/runtime/host/local-runtime-host.ts`, `apps/cli/src/runtime/interactive/chat-command-runner.ts` |
 | CLI auto-approve all (`toolAutoApprove`) returns `approved: true` before looking at the request's policy, so a hook's `autoApprove: false` is overridden | `apps/cli/src/runtime/interactive/approvals.ts` `requestToolApproval` |
 | `beforeTool` gets `snapshot.messages` (full history with roles). Typed user turns and steers are stored as `<user_input mode="…">text</user_input>`, optionally with a `<mode_notice>`; other user-role messages (`<hook_context>`, reminders, loop and recovery notices, compaction summaries) are not user speech. A skip is stored as a tool result `{ output: { error: reason }, isError: true }` (`main` 94eecbb) | `agents/src/agent-runtime.ts`, `core/src/runtime/host/local-runtime-host.ts`, `shared/src/prompt/format.ts` |
 | Subagents and teammates run plugin hooks, and their task arrives as a user-role message written by another model. Subagents have `parentAgentId`; teammates have neither it nor `agentRole` | `core/src/extensions/tools/team/{delegated-agent,multi-agent,team-tools}.ts` |

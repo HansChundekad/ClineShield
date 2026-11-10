@@ -4,6 +4,7 @@ import * as path from 'path';
 import defaultPlugin, { createClineShieldPlugin, guardHook, plugin as namedPlugin } from '../index';
 import type { PluginSetupContext } from '../types';
 import { validateEvent } from './validateEvent';
+import * as reader from '../../metrics/reader';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -34,8 +35,8 @@ describe('ClineShield plugin', () => {
       expect(defaultPlugin.name).toBe('clineshield');
     });
 
-    it('declares only the hooks capability', () => {
-      expect(defaultPlugin.manifest.capabilities).toEqual(['hooks']);
+    it('declares the hooks and commands capabilities', () => {
+      expect(defaultPlugin.manifest.capabilities).toEqual(['hooks', 'commands']);
     });
 
     it('provides beforeTool and afterTool hooks', () => {
@@ -184,6 +185,81 @@ describe('ClineShield plugin', () => {
       const guarded = guardHook('afterTool', async () => { throw new Error('async boom'); });
       await expect(guarded({} as never)).resolves.toBeUndefined();
       expect(console.error).toHaveBeenCalledWith('[ClineShield] afterTool hook failed:', expect.any(Error));
+    });
+  });
+  describe('/clineshield command', () => {
+    let home: string;
+    const lines = Array.from({ length: 40 }, (_, i) => `l${i}`).join('\n') + '\n';
+    const blockEdit = { input: ['*** Begin Patch', '*** Update File: lib/small.ts', '@@', ' l0', '-l1', '+// ... rest of code unchanged', '*** End Patch'].join('\n') };
+    const setUp = () => {
+      const commands: Array<{ name: string; description?: string; handler: (input: string) => unknown }> = [];
+      const p = createClineShieldPlugin({ homeDir: home, pluginDir: '/nonexistent' });
+      p.setup?.({ registerCommand: (c: (typeof commands)[number]) => commands.push(c) }, { session: { sessionId: 's1' }, workspaceInfo: { rootPath: root } });
+      return { p, commands };
+    };
+    const blockOnce = (p: ReturnType<typeof createClineShieldPlugin>) => {
+      const tc = { toolCallId: 'b1', toolName: 'apply_patch', input: blockEdit };
+      return p.hooks!.beforeTool!({ snapshot, tool: { name: 'apply_patch' }, toolCall: tc, input: blockEdit });
+    };
+
+    beforeEach(async () => {
+      home = await fs.mkdtemp(path.join(os.tmpdir(), 'clineshield-home-'));
+      await fs.mkdir(path.join(root, 'lib'));
+      await fs.writeFile(path.join(root, 'lib', 'small.ts'), lines);
+    });
+    afterEach(async () => { await fs.rm(home, { recursive: true, force: true }); });
+
+    it('registers one command named clineshield whose handler is runCommand', async () => {
+      const { p, commands } = setUp();
+      expect(commands.map(c => c.name)).toEqual(['clineshield']);
+      expect(await commands[0].handler('')).toBe(await p.runCommand(''));
+      await p.flush();
+    });
+
+    it('summary and why reflect this session\'s block', async () => {
+      const { p } = setUp();
+      expect(await blockOnce(p)).toMatchObject({ skip: true });
+      expect(await p.runCommand('')).toContain('1 blocked');
+      const why = await p.runCommand('why');
+      expect(why).toContain('lib/small.ts');
+      expect(why).toContain('placeholder');
+      expect(why).toContain('Total:');
+      expect(why).toContain('Cut-offs: ask 40 · block 70');
+    });
+
+    it('empty workspace → no activity message', async () => {
+      const { p } = setUp();
+      await p.flush();
+      expect(await p.runCommand('')).toContain('No ClineShield activity in this session yet.');
+    });
+
+    it('unknown argument → usage', async () => {
+      const { p } = setUp();
+      expect(await p.runCommand('bogus')).toBe('Usage: /clineshield [why]');
+      expect(await p.runCommand('  WHY ')).not.toBe('Usage: /clineshield [why]');
+    });
+
+    it('never throws: a read failure becomes a message', async () => {
+      const { p } = setUp();
+      jest.spyOn(reader, 'readEvents').mockRejectedValue(new Error('disk on fire'));
+      const out = await p.runCommand('');
+      expect(out).toMatch(/^ClineShield: could not read activity/);
+      expect(out).toContain('disk on fire');
+    });
+
+    it('shows config warnings and the on_error: allow notice before any action', async () => {
+      await fs.writeFile(path.join(home, '.cline-shield.yml'), 'on_error: allow\nbogus_key: 1\n');
+      const { p } = setUp();
+      const out = await p.runCommand('');
+      expect(out).toContain('bogus_key');
+      expect(out).toContain('on_error: allow');
+    });
+
+    it('setup with an api lacking registerCommand still works', async () => {
+      const p = createClineShieldPlugin({ homeDir: home });
+      expect(() => p.setup?.({}, { session: { sessionId: 's1' }, workspaceInfo: { rootPath: root } })).not.toThrow();
+      expect(() => p.setup?.(null, { session: { sessionId: 's1' }, workspaceInfo: { rootPath: root } })).not.toThrow();
+      await p.flush();
     });
   });
 });

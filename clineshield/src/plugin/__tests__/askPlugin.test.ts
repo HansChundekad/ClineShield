@@ -92,6 +92,13 @@ describe('Ask through the conversation (plugin)', () => {
       await ok.after();
       const evs = await events(eventType);
       expect(evs.map(e => e.data.approved)).toEqual([false, true]);
+      for (const e of evs) {
+        expect(e.data.cutoffs).toEqual({ ask: 40, block: 70 });
+        if (eventType === 'edit-approval') {
+          expect(e.data.score).toEqual(expect.any(Number));
+          expect((e.data.reasons as unknown[]).length).toBeGreaterThan(0);
+        }
+      }
 
       const again = await run('c3', toolName, input, [...history, toolCall('c2', toolName, input)]).before();
       expect(again).toMatchObject({ skip: true });
