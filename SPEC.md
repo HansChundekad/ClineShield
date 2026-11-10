@@ -251,7 +251,7 @@ Cline's interactive auto-approve all approves a plugin's `autoApprove: false` wi
 Approval is read from the conversation history (`rubric/approval.ts`), never from a retry alone: the same tool and input were refused with the same reason, the user's next typed reply is a plain yes, and that yes is unused. Only the user's own agent can be approved; subagents and teammates stay refused. `ask_question` answers don't count. One-shot runs end refused; the user replies through `cline --id <session>`.
 - [x] Ask = skip with a reason telling Cline to ask the user in chat; after the user agrees, the identical action is allowed once
 - [ ] Works the same with auto-approve on or off, interactive and one-shot; headless with no user → stays refused
-- [ ] Report upstream: a plugin's `autoApprove: false` should override auto-approve all
+- [x] Report upstream: a plugin's `autoApprove: false` should override auto-approve all ([cline/cline#15645](https://github.com/cline/cline/issues/15645), 2026-11-10, CLI 3.0.74)
 
 #### Terminal visibility (`/clineshield`)
 - [x] Slash command (`"commands"` capability) prints this session's allowed / asked / blocked counts and riskiest files (edits and commands counted per action; an ask refused then approved counts once; allowed commands with no findings aren't logged, so they aren't counted)
