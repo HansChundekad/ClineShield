@@ -35,6 +35,8 @@ import { COMMAND_ITEM, RANK, scoreAction } from './rubric/engine';
 import { UNPARSED_COMMANDS, assessCommands } from './rubric/commands';
 import { isApproved } from './rubric/approval';
 import type { Decision, FileScore } from './rubric/engine';
+import type { ActionContext } from './rubric/types';
+import { appendSidecar, sidecarEntry } from './sidecar';
 import { askMessage, blockMessage, REPEAT_BLOCK_NOTE } from './rubric/messages';
 import type {
   AgentAfterToolContext,
@@ -160,6 +162,18 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     pending.add(write);
   }
   const sid = () => sessionId ?? 'unknown-session';
+  /** Diff sidecar entries (asks, blocks, and allowed edits with points) keyed to this decision's logged events; best effort, tracked by flush(). */
+  function writeDiffs(decision: Decision, action: ActionContext | undefined, timestamp: string): void {
+    if (!workspaceRoot || !action) return;
+    const entries = decision.files.flatMap(f => {
+      const change = f.score > 0 || decision.tier !== 'allow' ? action.changes.find(c => c.path === f.file) : undefined;
+      const e = change ? sidecarEntry(sid(), timestamp, f.file, change.op) : undefined;
+      return e ? [e] : [];
+    });
+    if (entries.length === 0) return;
+    const write = appendSidecar(workspaceRoot, entries).finally(() => pending.delete(write));
+    pending.add(write);
+  }
   const editData = (f: FileScore) => ({
     file: f.file, structuralChangePercent: f.structuralChangePercent, functionsDeleted: f.functionsDeleted, exportsDeleted: f.exportsDeleted,
   });
@@ -214,7 +228,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     };
   }
 
-  async function decide(toolName: string, input: unknown): Promise<{ decision: Decision; config: RubricConfig } | undefined> {
+  async function decide(toolName: string, input: unknown): Promise<{ decision: Decision; config: RubricConfig; action?: ActionContext } | undefined> {
     const startedAt = Date.now();
     const config = await loadConfig();
     const ops = operationsFor(toolName, input);
@@ -225,7 +239,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     codeowners ??= readCodeowners(workspaceRoot!);
     const action = await gatherAction(ops, { workspaceRoot: workspaceRoot!, homeDir, pluginDir, codeownersGlobs: await codeowners });
     await assessDependencies(action, config, startedAt);
-    return { decision: scoreAction(action, config), config };
+    return { decision: scoreAction(action, config), config, action };
   }
 
   async function decideCommands(input: unknown): Promise<{ decision: Decision; config: RubricConfig; command: string } | undefined> {
@@ -299,7 +313,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     if (toolName === COMMAND_TOOL && workspaceRoot) return beforeCommands(ctx);
     if (!EDIT_TOOLS.has(toolName) || !workspaceRoot) return undefined;
     store ??= new ConfigStore({ homeDir });
-    let result: { decision: Decision; config: RubricConfig } | undefined;
+    let result: { decision: Decision; config: RubricConfig; action?: ActionContext } | undefined;
     try {
       result = await decide(toolName, ctx.input);
     } catch (error) {
@@ -308,14 +322,16 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
       result = config?.onError === 'allow' ? undefined : { decision: errorDecision(UNPARSED(toolName)), config: config! };
     }
     if (!result) return undefined;
-    const { decision, config } = result;
+    const { decision, config, action } = result;
     const id = ctx.toolCall?.toolCallId;
     const timestamp = new Date().toISOString();
+    const diffs = () => writeDiffs(decision, action, timestamp);
 
     // Observe mode logs asks/blocks instead of enforcing them, except hard rules, which always block.
     if (config?.mode === 'observe' && decision.tier !== 'allow' && !hasHardFinding(decision)) {
       if (id !== undefined) decided.set(id, { decision, asked: false, reason: '', observedTier: decision.tier });
       for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-allowed', data: editData(f) });
+      diffs();
       return undefined;
     }
 
@@ -326,6 +342,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
       blockCounts.set(key, n);
       if (n >= 3) reason += ` ${REPEAT_BLOCK_NOTE}`;
       for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-blocked', data: { ...editData(f), reason, ...scoreData(f) } });
+      diffs();
       return { skip: true, reason };
     }
 
@@ -336,11 +353,13 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
         return { policy: { autoApprove: true } };
       }
       for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-approval', data: { ...editData(f), reason, approved: false, ...scoreData(f) } });
+      diffs();
       return { skip: true, reason };
     }
 
     if (id !== undefined) decided.set(id, { decision, asked: false, reason: '' });
     for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-allowed', data: editData(f) });
+    diffs();
     return undefined;
   }
 
