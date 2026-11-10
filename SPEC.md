@@ -208,8 +208,8 @@ name the file, e.g. "app.ts: 82% of the file rewritten"), `approved` (asked comm
 - [x] ② Tests: `rm -rf node_modules` allowed vs `rm -rf /` blocked, `/tmp` exemption, each shell-edit form, chains, pipes, `sudo`, `VAR=x`, `bash -c`, every input shape; < 200 ms typical per request (measured: median 10–15 ms, worst 23 ms on a git temp workspace)
 - [x] ③ Dependency categories; registry lookups with cap, cache and `offline: true`; bundled top-5k lists (`clineshield/scripts/refresh-top-packages.js`, run by hand); tests with a fake registry
 - [ ] ④ Session state store (test-run outcomes, edit history, reads); `test_and_source` +25; log-only session signals
-- [ ] Manual: real CLI session in `test-workspace/` hitting allow, ask and block
-  - Allow and block recorded 2026-11-08 (CLI 3.0.73, `e7a0edd`, one-shot runs in a disposable git repo, not `test-workspace/`; ask not tested). Allow: small edit (`edit-allowed`, `risk-assessed` 0), `rm -rf node_modules` (no event). Block: placeholder and added-token edits (`edit-blocked`), `rm -rf` outside the workspace (`command-assessed`, `rm_outside`); nothing changed, Cline saw the reason, no points or cut-offs reached it. Commands matched the spec: chain and `bash -c` (`chmod_broad` 30, allow), pipe into `rm -rf` outside (block), `cat > new <<EOF` (`shell_edit` 15, allow), `cat > existing <<EOF` with a placeholder (block)
+- [ ] Manual: real CLI session in a disposable git repo hitting allow, ask and block
+  - Allow and block recorded 2026-11-08 (CLI 3.0.73, `e7a0edd`, one-shot runs in a disposable git repo; ask not tested). Allow: small edit (`edit-allowed`, `risk-assessed` 0), `rm -rf node_modules` (no event). Block: placeholder and added-token edits (`edit-blocked`), `rm -rf` outside the workspace (`command-assessed`, `rm_outside`); nothing changed, Cline saw the reason, no points or cut-offs reached it. Commands matched the spec: chain and `bash -c` (`chmod_broad` 30, allow), pipe into `rm -rf` outside (block), `cat > new <<EOF` (`shell_edit` 15, allow), `cat > existing <<EOF` with a placeholder (block)
 
 #### Rubric configuration
 Zero config works (`balanced`). The only config file is `~/.cline-shield.yml` (Decision 10); a `.cline-shield.yml`
@@ -273,10 +273,10 @@ Design: `docs/superpowers/specs/2026-11-10-extension-dashboard-design.md`.
 - [ ] Manual: sidebar, change map and explanations checked by the owner in a real session
 
 #### Retire 1.x hooks
-- [ ] Remove `clineshield/hooks/`, root and `test-workspace/` `.clinerules/hooks/`, and hook-only env-var code in `configLoader.ts`
+- [x] Remove `clineshield/hooks/`, root and `test-workspace/` `.clinerules/hooks/`, and hook-only env-var code in `configLoader.ts` (deleted with `test-workspace/`, the 1.x `rulesEngine.ts` and the phase-6 smoke test; `.vscode/launch.json` opens `~/clineshield-sandbox`)
 
 #### Evaluation ⛔
-- [ ] 20–30 tasks in `test-workspace/`, labelled safe/destructive in advance, approved by the owner with a budget
+- [ ] 20–30 tasks in a purpose-built eval project, labelled safe/destructive in advance, approved by the owner with a budget
 - [ ] Report: destructive actions attempted / caught, false positives (safe actions asked or blocked), time added (median, p95)
 - [ ] Raw results committed; README numbers are exactly what the run produced
 

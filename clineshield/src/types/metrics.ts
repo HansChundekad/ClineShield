@@ -38,12 +38,12 @@ interface BaseEvent {
    * Event type discriminator - used by ALL features to filter
    */
   type EventType = 
-    | 'edit-blocked'      // No-Nuke: PreToolUse blocked edit
-    | 'edit-allowed'      // No-Nuke: PreToolUse allowed edit
+    | 'edit-blocked'      // Plugin beforeTool: edit blocked
+    | 'edit-allowed'      // Plugin beforeTool: edit allowed
     | 'edit-approval'     // Edit Size Policy: user decided on a medium-tier edit
-    | 'sanity-failed'     // Sanity Check: PostToolUse found errors
-    | 'sanity-passed'     // Sanity Check: PostToolUse all checks green
-    | 'risk-assessed'     // Rules Engine: PostToolUse scored edit
+    | 'sanity-failed'     // 1.x only (post-edit checks cut from 2.0)
+    | 'sanity-passed'     // 1.x only (post-edit checks cut from 2.0)
+    | 'risk-assessed'     // Plugin afterTool: successful edit scored
     | 'command-assessed'  // Risk rubric: one run_commands request scored (Decision 1)
     | 'llm-analysis';     // LLM Analyzer: Extension added reasoning
   
@@ -51,7 +51,7 @@ interface BaseEvent {
   // NO-NUKE HOOK EVENTS
   // ============================================================================
   
-  /** Written by: PreToolUse hook when blocking destructive edit */
+  /** Written by: plugin beforeTool when an edit is blocked (1.x: PreToolUse hook) */
   export interface EditBlockedEvent extends BaseEvent {
     type: 'edit-blocked';
     data: {
@@ -66,7 +66,7 @@ interface BaseEvent {
     };
   }
   
-  /** Written by: PreToolUse hook when allowing edit */
+  /** Written by: plugin beforeTool when an edit is allowed (1.x: PreToolUse hook) */
   export interface EditAllowedEvent extends BaseEvent {
     type: 'edit-allowed';
     data: {
@@ -100,7 +100,7 @@ interface BaseEvent {
   // SANITY CHECK HOOK EVENTS
   // ============================================================================
   
-  /** Written by: PostToolUse hook when quality checks fail */
+  /** Written by: 1.x PostToolUse hook only (post-edit checks cut from 2.0) */
   export interface SanityFailedEvent extends BaseEvent {
     type: 'sanity-failed';
     data: {
@@ -112,7 +112,7 @@ interface BaseEvent {
     };
   }
   
-  /** Written by: PostToolUse hook when all quality checks pass */
+  /** Written by: 1.x PostToolUse hook only (post-edit checks cut from 2.0) */
   export interface SanityPassedEvent extends BaseEvent {
     type: 'sanity-passed';
     data: {
@@ -126,7 +126,7 @@ interface BaseEvent {
   // RULES ENGINE EVENT
   // ============================================================================
   
-  /** Written by: PostToolUse hook after running rules engine */
+  /** Written by: plugin afterTool after a successful edit (1.x: PostToolUse hook) */
   export interface RiskAssessedEvent extends BaseEvent {
     type: 'risk-assessed';
     data: {

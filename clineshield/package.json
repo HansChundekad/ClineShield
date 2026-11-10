@@ -63,14 +63,12 @@
     "watch": "tsc -watch -p ./",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "smoke:phase6": "node scripts/smoke-test-phase6.js"
+    "test:coverage": "jest --coverage"
   },
   "keywords": [
     "vscode",
     "cline",
-    "security",
-    "hooks"
+    "security"
   ],
   "author": "",
   "license": "MIT",

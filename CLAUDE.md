@@ -30,53 +30,49 @@ sessionId:
 
 ## Critical Rules
 
-### Hook Scripts
-- **<2s execution** - Hooks block Cline's workflow
-- **Exit 0 always** - Non-zero exit = Cline error (use `"cancel": true` instead)
-- **stderr for logs, stdout for JSON** - Never mix them
+### Plugin Hooks
+- **< 2 s internal deadline** - Cline times plugin hooks out after 3 s and then fails open
+- **Never throw** - every hook error is caught and logged; a crash must not end the run
+- **stderr for logs** - never print to stdout from the plugin
 - **Atomic writes** - Temp file + rename for shared state
 
 ### The Shared Contract: metrics.json
 **ALL features communicate through this file. SCHEMA IS FIXED. Never change the shape of metrics.json events.**
 
 
-### Hook Responses
-```json
-// PreToolUse - blocks edit
-{"cancel": true, "errorMessage": "ClineShield: 47% change. Make smaller edits."}
+### Plugin Results
+```ts
+// beforeTool - block (Cline sees the reason and keeps working)
+{ skip: true, reason: "ClineShield blocked this action: ..." }
 
-// PostToolUse - guides fix
-{"contextModification": "CLINESHIELD: Fix errors:\n- Line 23: Missing semicolon\nAttempt 1/3"}
+// beforeTool - ask (Cline asks the user in chat; the identical action is allowed once after a plain yes)
+{ skip: true, reason: "ClineShield: this edit needs the user's approval. ..." }
 ```
 
 ## File Organization
 
-Current layout (1.x). The 2.0 plugin layout is decided in SPEC.md.
-
 ```
+package.json                      // root manifest: cline.plugins -> ./clineshield/src/plugin/index.ts
 clineshield/
-├── hooks/
-│   ├── PreToolUse                // bash - No-Nuke guard (canonical copy)
-│   └── PostToolUse               // bash - sanity checks + bash port of risk rules + diff sidecar
-├── scripts/                      // smoke-test-phase6.js, benchmark-atomic-writes.js
+├── scripts/                      // check-plugin-load.ts, refresh-top-packages.js, benchmark-atomic-writes.js
 └── src/
-    ├── extension.ts              // activation, status bar, metrics watcher, commands
-    ├── config/configLoader.ts    // reads .cline-shield.yml, sets CLINESHIELD_* env vars
+    ├── plugin/                   // the Cline plugin: index.ts, rubric/, patch/, config/, visibility/, sidecar.ts
     ├── types/metrics.ts          // metrics.json schema (source of truth)
-    ├── metrics/{reader,writer}.ts
-    ├── sidebar/                  // MetricsSidebarProvider.ts + metrics.html webview
-    ├── changeMap/ChangeMapProvider.ts
-    ├── extension/riskAnalysis/   // rulesEngine.ts, llmAnalyzer.ts (Gemini), llmTrigger.ts
-    └── hooks/clineshield-analyze.js  // standalone AST prototype, not used by the hooks
+    ├── metrics/                  // reader, writer (appendEvent), sessions, metricsRoot, testEvents
+    ├── extension.ts              // VS Code extension: activation, status bar, commands, config watcher
+    ├── config/                   // configView.ts (read-only config line), setup.ts (plugin check, Create config)
+    ├── sidebar/                  // dashboard.ts (pure model), MetricsSidebarProvider.ts, metrics.html
+    ├── changeMap/                // aggregate.ts (pure), ChangeMapProvider.ts
+    ├── extension/riskAnalysis/   // explain.ts, llmAnalyzer.ts (Gemini, on click)
+    └── hooks/clineshield-analyze.js  // standalone 1.x AST prototype, unused
 ```
-`.clinerules/hooks/` (repo root) and `test-workspace/.clinerules/hooks/` hold copies of the hooks; `clineshield/hooks/` is canonical.
 
 ## Testing Requirements
 
 Write tests before implementation (TDD). Focus on:
 - **Unit**: Test functions in isolation (80%+ coverage target)
-- **Integration**: Test hook stdin/stdout, metrics.json updates
-- **E2E**: Real Cline edits in test workspace (manual initially)
+- **Integration**: Test plugin hooks against a temp workspace, metrics.json updates
+- **E2E**: Real Cline sessions in a disposable git repo (manual)
 
 ## Phase-Specific Focus
 

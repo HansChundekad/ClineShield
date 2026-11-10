@@ -7,7 +7,7 @@
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}/clineshield",
-        "${workspaceFolder}/test-workspace"
+        "${env:HOME}/clineshield-sandbox"
       ],
       "outFiles": [
         "${workspaceFolder}/clineshield/dist/**/*.js"
