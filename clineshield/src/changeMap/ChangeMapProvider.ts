@@ -14,24 +14,13 @@ import * as path from 'path';
 import { readEvents } from '../metrics/reader';
 import { filterVisibleEvents } from '../metrics/sessions';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+import { aggregateFileStats, worstOf } from './aggregate';
+import type { FileStats, RiskLevel } from './aggregate';
 
-type RiskLevel = 'low' | 'medium' | 'high';
-
-interface FileStats {
-  editCount: number;
-  worstLevel: RiskLevel | null;
-}
-
-const LEVEL_ORDER: Record<RiskLevel, number> = { low: 1, medium: 2, high: 3 };
-
-function worstOf(a: RiskLevel | null, b: RiskLevel | null): RiskLevel | null {
-  if (!a) { return b; }
-  if (!b) { return a; }
-  return LEVEL_ORDER[a] >= LEVEL_ORDER[b] ? a : b;
-}
-
-function iconForLevel(level: RiskLevel | null): vscode.ThemeIcon {
+function iconForLevel(level: RiskLevel | null, blocked = false): vscode.ThemeIcon {
+  if (blocked) {
+    return new vscode.ThemeIcon('error', new vscode.ThemeColor('charts.red'));
+  }
   if (level === 'high') {
     return new vscode.ThemeIcon('circle-filled', new vscode.ThemeColor('charts.red'));
   }
@@ -56,14 +45,15 @@ export class FileItem extends vscode.TreeItem {
     super(label, vscode.TreeItemCollapsibleState.None);
 
     const levelLabel = stats.worstLevel ? stats.worstLevel.toUpperCase() : 'UNSCORED';
-    this.description = `${stats.editCount} edit${stats.editCount !== 1 ? 's' : ''} · ${levelLabel}`;
-    this.tooltip = `${filePath}\nEdits: ${stats.editCount}\nWorst risk: ${levelLabel}`;
-    this.iconPath = iconForLevel(stats.worstLevel);
+    const blockedLabel = stats.blocked ? ' · BLOCKED' : '';
+    this.description = `${stats.editCount} edit${stats.editCount !== 1 ? 's' : ''} · ${levelLabel}${blockedLabel}`;
+    this.tooltip = `${filePath}\nEdits: ${stats.editCount}\nWorst risk: ${levelLabel}\nBlocked attempt: ${stats.blocked ? 'yes' : 'no'}`;
+    this.iconPath = iconForLevel(stats.worstLevel, stats.blocked);
     this.contextValue = 'changeMapFile';
     this.command = {
       command: 'vscode.open',
       title: 'Open File',
-      arguments: [vscode.Uri.file(path.join(workspaceRoot, filePath))],
+      arguments: [vscode.Uri.file(path.isAbsolute(filePath) ? filePath : path.join(workspaceRoot, filePath))],
     };
   }
 }
@@ -149,42 +139,8 @@ export class ChangeMapProvider implements vscode.TreeDataProvider<ChangeMapItem>
   // ── Aggregation ─────────────────────────────────────────────────────────────
 
   private async aggregateStats(): Promise<Map<string, FileStats>> {
-    // readEvents returns [] on any error — safe to call without extra try/catch.
-    // Shows every session started since activation (see metrics/sessions.ts).
-    const events = filterVisibleEvents(
-      await readEvents(this.workspaceRoot),
-      this.activationTime,
-      this.sessionId
-    );
-
-    const statsMap = new Map<string, FileStats>();
-
-    const getOrCreate = (file: string): FileStats => {
-      if (!statsMap.has(file)) {
-        statsMap.set(file, { editCount: 0, worstLevel: null });
-      }
-      return statsMap.get(file)!;
-    };
-
-    for (const event of events) {
-      const data = event.data as { file?: string; level?: string };
-      const file = data.file;
-      if (!file || file === 'session-start') { continue; }
-
-      if (event.type === 'edit-allowed' || event.type === 'edit-blocked') {
-        getOrCreate(file).editCount += 1;
-      }
-
-      if (event.type === 'risk-assessed') {
-        const level = data.level as RiskLevel | undefined;
-        if (level === 'low' || level === 'medium' || level === 'high') {
-          const stats = getOrCreate(file);
-          stats.worstLevel = worstOf(stats.worstLevel, level);
-        }
-      }
-    }
-
-    return statsMap;
+    // readEvents returns [] on any error. Shows every session started since activation (metrics/sessions.ts).
+    return aggregateFileStats(filterVisibleEvents(await readEvents(this.workspaceRoot), this.activationTime, this.sessionId));
   }
 
   // ── Tree building ────────────────────────────────────────────────────────────
@@ -193,7 +149,7 @@ export class ChangeMapProvider implements vscode.TreeDataProvider<ChangeMapItem>
     const statsMap = await this.aggregateStats();
 
     if (statsMap.size === 0) {
-      const empty = new vscode.TreeItem('No edits recorded this session');
+      const empty = new vscode.TreeItem('No Cline edits yet');
       empty.iconPath = new vscode.ThemeIcon('info');
       return [empty as ChangeMapItem];
     }
