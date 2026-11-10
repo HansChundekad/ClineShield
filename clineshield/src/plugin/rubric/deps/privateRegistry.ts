@@ -34,6 +34,8 @@ const requirementFiles = (dir: string) =>
 
 /** Checked per action, so a registry added mid-session counts. Any folder being private makes the whole action private. */
 export async function privateEcosystems(dirs: string[], home: string, env: NodeJS.ProcessEnv, capMs: number): Promise<PrivateEcosystems> {
+  // No time means not read. Racing a 0 ms timer would let fast reads win only sometimes.
+  if (capMs <= 0) return { npm: true, pypi: true, timedOut: true };
   const work = (async () => {
     const reqs = (await Promise.all(dirs.map(requirementFiles))).flat();
     const inDirs = (names: string[]) => dirs.flatMap(d => names.map(n => path.join(d, n)));
