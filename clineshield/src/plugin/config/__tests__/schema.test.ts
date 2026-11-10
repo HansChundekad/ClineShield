@@ -18,9 +18,16 @@ describe('validateConfig', () => {
   });
 
   it('ignores 1.x keys silently and warns on unknown keys', () => {
-    const { config, warnings } = v({ 'no-nuke': {}, sanity: {}, risk: {}, gemini_api_key: 'k', bogus: 1 });
+    const { config, warnings } = v({ 'no-nuke': {}, sanity: {}, risk: {}, bogus: 1 });
     expect(config).toEqual({});
     expect(warnings).toEqual(['unknown key "bogus" ignored']);
+  });
+
+  it('warns that gemini_api_key is ignored, without echoing the key', () => {
+    const { config, warnings } = v({ gemini_api_key: 'AIzaSECRET' });
+    expect(config).toEqual({});
+    expect(warnings).toEqual(['gemini_api_key is ignored — set the key in VS Code with "ClineShield: Set Gemini API Key"']);
+    expect(warnings.join('\n')).not.toContain('AIzaSECRET');
   });
 
   it('loosening keys are accepted (only the personal file is read)', () => {
