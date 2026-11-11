@@ -72,10 +72,23 @@ async function findClineShield(dir: string, depth: number): Promise<boolean> {
   return false;
 }
 
+const clineDirOf = (homeDir: string, env: NodeJS.ProcessEnv) => env.CLINE_DIR?.trim() || path.join(homeDir, '.cline');
+
+/**
+ * Folders to watch for an install. Bases are folders that exist before the
+ * install (the Cline dir, the workspace), so a newly created plugins/ folder
+ * is still seen.
+ */
+export function pluginWatchTargets(homeDir: string, workspaceRoot: string | undefined, env: NodeJS.ProcessEnv = process.env): { base: string; pattern: string }[] {
+  return [
+    { base: clineDirOf(homeDir, env), pattern: 'plugins/**' },
+    ...(workspaceRoot ? [{ base: workspaceRoot, pattern: '.cline/plugins/**' }] : []),
+  ];
+}
+
 /** True if a ClineShield install is found in the global or the workspace plugin folder. Never throws. */
 export async function isPluginInstalled(homeDir: string, workspaceRoot: string | undefined, env: NodeJS.ProcessEnv = process.env): Promise<boolean> {
-  const clineDir = env.CLINE_DIR?.trim() || path.join(homeDir, '.cline');
-  const roots = [path.join(clineDir, 'plugins'), ...(workspaceRoot ? [path.join(workspaceRoot, '.cline', 'plugins')] : [])];
+  const roots = [path.join(clineDirOf(homeDir, env), 'plugins'), ...(workspaceRoot ? [path.join(workspaceRoot, '.cline', 'plugins')] : [])];
   for (const root of roots) if (await findClineShield(root, 1)) return true;
   return false;
 }

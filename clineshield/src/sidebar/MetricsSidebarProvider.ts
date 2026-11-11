@@ -17,7 +17,9 @@ import { buildDashboard } from './dashboard';
 import type { ActionItem, Dashboard } from './dashboard';
 import { readConfigSummary } from '../config/configView';
 import type { ConfigSummary } from '../config/configView';
-import { createConfigFromTemplate, isPluginInstalled } from '../config/setup';
+import { createConfigFromTemplate, isPluginInstalled, pluginWatchTargets } from '../config/setup';
+import { createInstallWatch } from '../config/installWatch';
+import type { InstallWatch } from '../config/installWatch';
 import { CONFIG_FILE } from '../plugin/config/store';
 import type { ConfigStore } from '../plugin/config/store';
 import { createExplainer } from '../extension/riskAnalysis/explain';
@@ -52,6 +54,8 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
   private dashboard: Dashboard | undefined;
   private timer: NodeJS.Timeout | undefined;
   private readonly explain: (item: ActionItem) => Promise<GeminiResult>;
+  private readonly installWatch: InstallWatch;
+  private readonly installWatchers: vscode.Disposable[] = [];
 
   constructor(private readonly opts: SidebarOptions) {
     this.explain = opts.metricsRoot
@@ -65,7 +69,27 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
       watcher.onDidCreate(() => this.refresh());
       this.disposables.push(watcher);
     }
+    this.installWatch = this.watchForInstall();
     this.refresh();
+  }
+
+  /**
+   * Notices a plugin install without "Reload Config": re-checks on plugin
+   * folder changes, window focus and the view becoming visible, until found.
+   */
+  private watchForInstall(): InstallWatch {
+    const { homeDir, workspaceRoot } = this.opts;
+    const stop = () => { for (const d of this.installWatchers.splice(0)) d.dispose(); };
+    const watch = createInstallWatch(() => isPluginInstalled(homeDir, workspaceRoot), () => { stop(); this.refresh(); });
+    for (const { base, pattern } of pluginWatchTargets(homeDir, workspaceRoot)) {
+      const w = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.file(base), pattern));
+      w.onDidCreate(() => watch.poke());
+      w.onDidChange(() => watch.poke());
+      this.installWatchers.push(w);
+    }
+    this.installWatchers.push(vscode.window.onDidChangeWindowState(s => { if (s.focused) watch.poke(); }));
+    this.disposables.push({ dispose: () => { watch.dispose(); stop(); } });
+    return watch;
   }
 
   async resolveWebviewView(webviewView: vscode.WebviewView): Promise<void> {
@@ -73,11 +97,13 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
     webviewView.webview.options = { enableScripts: true, localResourceRoots: [] };
     webviewView.webview.html = await this.html(webviewView.webview);
     this.disposables.push(webviewView.webview.onDidReceiveMessage(m => void this.onMessage(m)));
+    this.disposables.push(webviewView.onDidChangeVisibility(() => { if (webviewView.visible) this.installWatch.poke(); }));
     webviewView.onDidDispose(() => { this.view = undefined; });
   }
 
   /** Debounced: a burst of metrics.json writes triggers one read. */
   refresh(): void {
+    this.installWatch?.poke();
     if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => { this.timer = undefined; void this.update(); }, REFRESH_DEBOUNCE_MS);
   }
@@ -101,11 +127,11 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
   private async post(): Promise<void> {
     if (!this.view || !this.dashboard) return;
     const dashboard = this.dashboard;
-    const [config, hasKey, pluginInstalled] = await Promise.all([
+    const [config, hasKey] = await Promise.all([
       readConfigSummary(this.opts.configStore, this.opts.homeDir),
       this.getKey().then(Boolean),
-      dashboard.hasEvents ? Promise.resolve(true) : isPluginInstalled(this.opts.homeDir, this.opts.workspaceRoot),
     ]);
+    const pluginInstalled = dashboard.hasEvents || this.installWatch.found;
     const message: { type: 'update'; dashboard: Dashboard; config: ConfigSummary; hasKey: boolean; pluginInstalled: boolean; explanations: Record<string, Explanation> } =
       { type: 'update', dashboard, config, hasKey, pluginInstalled, explanations: { ...this.explanations } };
     void this.view?.webview.postMessage(message);
