@@ -30,6 +30,41 @@ describe('isPluginInstalled', () => {
     expect(await isPluginInstalled(home, repo)).toBe(true);
   });
 
+  it('true for the real git install layout (_installed/git/<host>/<repo-id>/package)', async () => {
+    const id = path.join(home, '.cline', 'plugins', '_installed', 'git', 'github.com', 'someone-fork-2ed8deb762f7');
+    await manifest(id, 'fork');
+    await manifest(path.join(id, 'package'), 'clineshield-cline-plugin');
+    expect(await isPluginInstalled(home, repo)).toBe(true);
+  });
+
+  it('false for another plugin in the real git install layout', async () => {
+    const id = path.join(home, '.cline', 'plugins', '_installed', 'git', 'github.com', 'someone-guard-1a2b3c');
+    await manifest(id, 'guard');
+    await manifest(path.join(id, 'package'), 'gitignore-guard');
+    expect(await isPluginInstalled(home, repo)).toBe(false);
+  });
+
+  it('true for an npm install (_installed/npm/<id>/package/node_modules/<name>)', async () => {
+    const pkg = path.join(home, '.cline', 'plugins', '_installed', 'npm', 'x-1a2b', 'package');
+    await manifest(pkg, 'cline-plugin-install');
+    await manifest(path.join(pkg, 'node_modules', 'clineshield-cline-plugin'), 'clineshield-cline-plugin');
+    expect(await isPluginInstalled(home, repo)).toBe(true);
+  });
+
+  it('honours CLINE_DIR for the plugin root', async () => {
+    const clineDir = path.join(home, 'custom-cline');
+    await manifest(path.join(clineDir, 'plugins', '_installed', 'git', 'github.com', 'a-b-1', 'package'), 'clineshield-cline-plugin');
+    expect(await isPluginInstalled(home, repo, {})).toBe(false);
+    expect(await isPluginInstalled(home, repo, { CLINE_DIR: clineDir })).toBe(true);
+  });
+
+  it("does not treat a dependency inside another plugin's node_modules as installed", async () => {
+    const pkg = path.join(home, '.cline', 'plugins', '_installed', 'git', 'github.com', 'other-1', 'package');
+    await manifest(pkg, 'other');
+    await manifest(path.join(pkg, 'node_modules', 'some-dep', 'node_modules', 'clineshield-cline-plugin'), 'clineshield-cline-plugin');
+    expect(await isPluginInstalled(home, repo)).toBe(false);
+  });
+
   it("true for a folder named after ClineShield in the repo's .cline/plugins", async () => {
     await fs.mkdir(path.join(repo, '.cline', 'plugins', 'ClineShield'), { recursive: true });
     expect(await isPluginInstalled(home, repo)).toBe(true);

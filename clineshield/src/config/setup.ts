@@ -31,16 +31,25 @@ on_error: ask
 # cutoffs: { ask: 40, block: 70 }
 `;
 
+/**
+ * Cline (CLI 3.0.74) installs plugins under <clineDir>/plugins/_installed/<type>/...:
+ *   git: git/<host>/<repo-id>/package   npm: npm/<id>/package/node_modules/<name>
+ * <clineDir> is $CLINE_DIR or ~/.cline; `--cwd <ws>` installs to <ws>/.cline/plugins.
+ * Deep enough for git installs; dot folders and node_modules are not walked.
+ */
+const MAX_DEPTH = 5;
+
 async function dirs(dir: string): Promise<string[]> {
   try {
-    return (await fs.readdir(dir, { withFileTypes: true })).filter(d => d.isDirectory()).map(d => path.join(dir, d.name));
+    return (await fs.readdir(dir, { withFileTypes: true }))
+      .filter(d => d.isDirectory() && !d.name.startsWith('.') && d.name !== 'node_modules')
+      .map(d => path.join(dir, d.name));
   } catch {
     return [];
   }
 }
 
-async function isClineShield(dir: string): Promise<boolean> {
-  if (/clineshield/i.test(path.basename(dir))) return true;
+async function hasManifest(dir: string): Promise<boolean> {
   try {
     const pkg = JSON.parse(await fs.readFile(path.join(dir, 'package.json'), 'utf-8')) as { name?: unknown };
     return pkg?.name === PLUGIN_PACKAGE_NAME;
@@ -49,14 +58,25 @@ async function isClineShield(dir: string): Promise<boolean> {
   }
 }
 
-/** Looks in ~/.cline/plugins and <workspace>/.cline/plugins, two levels deep (git installs live in _installed/<id>). */
-export async function isPluginInstalled(homeDir: string, workspaceRoot: string | undefined): Promise<boolean> {
-  const roots = [path.join(homeDir, '.cline', 'plugins'), ...(workspaceRoot ? [path.join(workspaceRoot, '.cline', 'plugins')] : [])];
-  for (const root of roots) {
-    const level1 = await dirs(root);
-    const level2 = (await Promise.all(level1.map(dirs))).flat();
-    for (const d of [...level1, ...level2]) if (await isClineShield(d)) return true;
+async function isClineShield(dir: string): Promise<boolean> {
+  if (/clineshield/i.test(path.basename(dir))) return true;
+  return (await hasManifest(dir)) || hasManifest(path.join(dir, 'node_modules', PLUGIN_PACKAGE_NAME));
+}
+
+async function findClineShield(dir: string, depth: number): Promise<boolean> {
+  if (depth > MAX_DEPTH) return false;
+  for (const d of await dirs(dir)) {
+    if (await isClineShield(d)) return true;
+    if (await findClineShield(d, depth + 1)) return true;
   }
+  return false;
+}
+
+/** True if a ClineShield install is found in the global or the workspace plugin folder. Never throws. */
+export async function isPluginInstalled(homeDir: string, workspaceRoot: string | undefined, env: NodeJS.ProcessEnv = process.env): Promise<boolean> {
+  const clineDir = env.CLINE_DIR?.trim() || path.join(homeDir, '.cline');
+  const roots = [path.join(clineDir, 'plugins'), ...(workspaceRoot ? [path.join(workspaceRoot, '.cline', 'plugins')] : [])];
+  for (const root of roots) if (await findClineShield(root, 1)) return true;
   return false;
 }
 
