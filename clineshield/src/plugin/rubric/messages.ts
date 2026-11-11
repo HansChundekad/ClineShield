@@ -34,7 +34,8 @@ export function askMessage(d: Decision): string {
   return (
     `ClineShield needs the user's approval, so nothing was changed. Why: ${whyText} ` +
     'Ask the user in a plain chat message (not the ask_question tool) and end your turn. ' +
-    'Retry the identical action once only if they reply yes. ' +
+    'If they reply yes to that message, retry the identical action. ' +
+    "A yes given before this message doesn't count. " +
     "If the user says no, don't retry the same action; ask them what they want."
   );
 }
