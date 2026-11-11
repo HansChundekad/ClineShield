@@ -23,6 +23,15 @@ describe('messages', () => {
     expect(m).toMatch(/If the user says no, don't retry the same action/);
   });
 
+  it('ask message says only a yes to this message counts, with no retry limit to misread', () => {
+    const d = scoreAction(action([change(['*** Delete File: lib/a.ts'], { gitDirty: true })]), cfg);
+    const m = askMessage(d);
+    expect(m).toContain('If they reply yes to that message, retry the identical action.');
+    expect(m).toContain("A yes given before this message doesn't count.");
+    expect(m).not.toMatch(/\bonce\b/);
+    expect(m).not.toMatch(/\b\d+ points?\b|cut-?off|\b(40|70)\b/);
+  });
+
   it('errored with no findings', () => {
     expect(askMessage({ tier: 'ask', files: [], errored: true, errors: ['x'] })).toMatch(/could not check this action/);
   });

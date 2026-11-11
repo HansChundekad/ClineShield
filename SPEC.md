@@ -171,7 +171,7 @@ it would add); promoted to points only if the eval shows value. PR column = deli
 **Reasons.** Cline gets what happened, the top 3 categories and one fixed "safer alternative" sentence per category,
 **never points or cut-offs** (so it can't learn to slip under them). Block adds: "Don't retry the same change in
 smaller pieces to get around this." After 3 blocks on the same file in one task: "Stop and ask the user how to
-proceed." Ask adds: "If the user says no, don't retry; ask what they want." Points, totals and cut-offs go to the logs
+proceed." Ask adds: "If they reply yes to that message, retry the identical action. A yes given before this message doesn't count. If the user says no, don't retry; ask what they want." (no "once": a model read it as a used-up retry and stopped after a valid yes, manual test 2026-11-11) Points, totals and cut-offs go to the logs
 and `/clineshield why`.
 
 **Failure and time.** Unreadable tool input (incl. `run_commands` input matching no shape, unbalanced quotes, a parser
