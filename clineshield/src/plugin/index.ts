@@ -37,6 +37,7 @@ import { isApproved } from './rubric/approval';
 import type { Decision, FileScore } from './rubric/engine';
 import type { ActionContext } from './rubric/types';
 import { appendSidecar, sidecarEntry } from './sidecar';
+import { appendAnswer, findAnswer } from './answers';
 import { askMessage, blockMessage, REPEAT_BLOCK_NOTE } from './rubric/messages';
 import type {
   AgentAfterToolContext,
@@ -44,6 +45,7 @@ import type {
   AgentAfterToolResult,
   AgentBeforeToolContext,
   AgentBeforeToolResult,
+  AgentBeforeModelContext,
   AgentPlugin,
   PluginSetupContext,
 } from './types';
@@ -416,6 +418,38 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     return undefined;
   }
 
+  /** Refusals (toolCallIds) whose answer is already in answers.json. */
+  const answered = new Set<string>();
+
+  /**
+   * Records the user's reply to the latest ClineShield refusal in the answers
+   * sidecar. Runs in beforeModel, not beforeRun: in CLI 3.0.74
+   * (@cline/agents execute()) beforeRun gets its snapshot before the new user
+   * message is pushed, while beforeModel's snapshot already holds it (and any
+   * steer). Runs on every model call; the answered set and the file's
+   * sessionId + toolCallId dedupe keep it to one entry per refusal. Fire and
+   * forget (tracked by flush()), never throws, always returns undefined: it
+   * must not slow down or change a model request.
+   */
+  function beforeModel(ctx: AgentBeforeModelContext): undefined {
+    try {
+      if (!workspaceRoot) return undefined;
+      const snapshot = ctx?.snapshot;
+      if (primaryAgentId !== undefined && snapshot?.agentId !== primaryAgentId) return undefined;
+      const found = findAnswer(snapshot);
+      if (!found || answered.has(found.toolCallId)) return undefined;
+      answered.add(found.toolCallId);
+      const entry = { sessionId: sid(), toolCallId: found.toolCallId, answeredAt: new Date().toISOString(), answer: found.answer };
+      const write = appendAnswer(workspaceRoot, entry)
+        .then(ok => { if (!ok) answered.delete(found.toolCallId); })
+        .finally(() => pending.delete(write));
+      pending.add(write);
+    } catch (error) {
+      console.error('[ClineShield] answers sidecar skipped:', (error as Error)?.message ?? error);
+    }
+    return undefined;
+  }
+
   /** Output goes only to the user's terminal: a reply-only command result never reaches the model. */
   async function runCommand(input: string): Promise<string> {
     try {
@@ -468,6 +502,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     },
 
     hooks: {
+      beforeModel: guardHook<AgentBeforeModelContext, undefined>('beforeModel', beforeModel),
       beforeTool: guardHook<AgentBeforeToolContext, AgentBeforeToolResult>('beforeTool', beforeTool),
       afterTool: guardHook<AgentAfterToolContext, AgentAfterToolResult>('afterTool', afterTool),
     },

@@ -76,7 +76,14 @@ export interface PluginSetupContext {
   cwd?: string;
 }
 
+/** Runs before every model request; the snapshot already holds the user's new message (see answers.ts). */
+export interface AgentBeforeModelContext {
+  snapshot: AgentRuntimeStateSnapshot;
+  request: unknown;
+}
+
 export interface AgentPluginHooks {
+  beforeModel?: (ctx: AgentBeforeModelContext) => undefined | Promise<undefined>;
   beforeTool?: (
     ctx: AgentBeforeToolContext
   ) => AgentBeforeToolResult | undefined | Promise<AgentBeforeToolResult | undefined>;
