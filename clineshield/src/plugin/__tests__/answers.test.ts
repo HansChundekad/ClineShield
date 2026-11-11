@@ -121,6 +121,9 @@ describe('answers plugin hook', () => {
   });
 
   it('a write failure is swallowed', async () => {
+    // setup() writes session-start in the background, which creates .cline-shield/; wait for it, then replace it with a file.
+    await plugin.flush();
+    await fs.rm(path.join(root, '.cline-shield'), { recursive: true, force: true });
     await fs.writeFile(path.join(root, '.cline-shield'), 'not a dir');
     await expect(model(plugin, [call('c1'), refused('c1', ASK), said('no')])).resolves.toBeUndefined();
   });
