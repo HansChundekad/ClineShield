@@ -57,6 +57,17 @@ export const DEFAULT_CONFIG: RubricConfig = {
 
 const PRESETS = ['relaxed', 'balanced', 'strict'];
 const LEGACY_KEYS = new Set(['no-nuke', 'sanity', 'risk', 'gemini_api_key']);
+
+/**
+ * Every top-level key validateConfig accepts. A key not listed here is
+ * rejected as unknown, so a new key must be added here, and the setup test
+ * then requires it in the starter config (config/setup.ts CONFIG_TEMPLATE).
+ */
+export const CONFIG_KEYS = [
+  'mode', 'preset', 'on_error', 'offline', 'cutoffs', 'categories',
+  'protected_paths', 'trusted_commands', 'trusted_domains', 'paths', 'custom_rules',
+] as const;
+const KNOWN_KEYS: ReadonlySet<string> = new Set(CONFIG_KEYS);
 const MAX_PATTERN = 200;
 /** Custom content rules only test this many characters of each line. */
 export const MAX_LINE_SCAN = 500;
@@ -133,6 +144,7 @@ export function validateConfig(raw: unknown): { config: PartialConfig; warnings:
   for (const [key, val] of Object.entries(raw)) {
     if (key === 'gemini_api_key') warn('gemini_api_key in the YAML is ignored. Set the key in VS Code with "ClineShield: Set Gemini API Key"');
     if (LEGACY_KEYS.has(key)) continue;
+    if (!KNOWN_KEYS.has(key)) { warn(`unknown key "${key}" ignored`); continue; }
     switch (key) {
       case 'mode': if (val === 'enforce' || val === 'observe') config.mode = val; else warn('mode must be enforce or observe; ignored'); break;
       case 'preset': if (PRESETS.includes(val as string)) config.preset = val as Preset; else warn('preset must be relaxed, balanced or strict; ignored'); break;

@@ -271,7 +271,7 @@ Design: `docs/superpowers/specs/2026-11-10-extension-dashboard-design.md`.
 - [x] No longer sets env vars for hooks or writes to `metrics.json` at activation; works when no plugin has run yet (install / "watching this repo" empty states)
 - [x] Opt-in LLM explanation: on click only, key is the switch, own Gemini key in SecretStorage ("Set/Clear Gemini API Key", sent in a header, never the URL),
   secrets stripped before sending, `gemini_api_key` in YAML ignored with a warning, plugin writes the diff sidecar (`.cline-shield/diff-context.json`, newest 50, redacted)
-- [x] Reads `~/.cline-shield.yml` read-only through the plugin's `ConfigStore`; watches it; "Reload Config" as fallback; "Create config" writes it only when missing, after confirming
+- [x] Reads `~/.cline-shield.yml` read-only through the plugin's `ConfigStore`; watches it; "Reload Config" as fallback; "Create config" writes it only when missing, after confirming; the file lists every setting (active or as a commented example), checked by a test against the schema's `CONFIG_KEYS`
 - [ ] Manual: sidebar, change map and explanations checked by the owner in a real session
 
 #### Retire 1.x hooks

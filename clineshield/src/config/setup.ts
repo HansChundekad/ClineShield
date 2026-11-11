@@ -13,22 +13,57 @@ import { CONFIG_FILE } from '../plugin/config/store';
 
 export const PLUGIN_PACKAGE_NAME = 'clineshield-cline-plugin';
 
-export const CONFIG_TEMPLATE = `# ClineShield config. Only this file is read (a .cline-shield.yml inside a repo is ignored).
-# Changes apply on the next Cline action. Full key list: .cline-shield.example.yml in the ClineShield repo.
+export const CONFIG_TEMPLATE = `# ClineShield config. Only this file is read; a .cline-shield.yml inside a repo is ignored.
+# Changes apply on the next Cline action. Every setting is listed below.
+# To use an example, remove the "# " at the start of its lines.
+# Hard rules (deleting outside the project, placeholder code, adding secrets,
+# editing ClineShield's own files) always block and can't be configured.
 
-# enforce: asks and blocks apply. observe: only logs (hard rules still block).
+# enforce = asks and blocks apply. observe = only log them (hard rules still block).
 mode: enforce
 
-# relaxed, balanced or strict: how readily ClineShield asks and blocks.
+# How readily ClineShield asks and blocks. relaxed (ask 60, block 90),
+# balanced (40, 70) or strict (25, 50).
 preset: balanced
 
-# If ClineShield itself fails: ask (safe default) or allow (the action runs unchecked).
+# If ClineShield itself fails. ask = safe default. allow = the action runs unchecked.
 on_error: ask
 
-# Examples (uncomment to use):
-# protected_paths: ["src/payments/**"]
-# trusted_commands: ["npm test"]
+# true = never look packages up online (public npm and PyPI).
+offline: false
+
+# Your own ask and block scores (0-100, ask lower than block), instead of the preset's.
 # cutoffs: { ask: 40, block: 70 }
+
+# Change a category's points, or turn it off, or make it always block.
+# Category ids: https://github.com/HansChundekad/ClineShield/blob/main/SPEC.md#risk-rubric
+# categories:
+#   ci_config: 40
+#   generated: off
+#   tests_skipped: block
+
+# Paths that always need approval (globs). Setting this replaces the defaults
+# (src/auth/**, src/config/**, src/middleware/**, auth/**, config/**).
+# CODEOWNERS paths are always protected.
+# protected_paths: ["src/payments/**"]
+
+# Commands that are never scored (exact match).
+# trusted_commands: ["npm test", "make build"]
+
+# Domains not counted as new when they appear in code.
+# trusted_domains: ["api.mycompany.com"]
+
+# Per-folder settings, in every repo. The first matching glob wins.
+# paths:
+#   "src/auth/**": { preset: strict }
+#   "tests/**": { preset: relaxed, categories: { tests_skipped: off } }
+
+# Your own rules. Match a path (glob), added code (regex) or a command (regex).
+# custom_rules:
+#   - { match: path, pattern: "billing/**", points: 40, message: "Billing code: ask first" }
+
+# No API keys here. The Gemini key for explanations is set in VS Code
+# ("ClineShield: Set Gemini API Key").
 `;
 
 /**

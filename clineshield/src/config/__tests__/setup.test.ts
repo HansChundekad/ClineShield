@@ -3,7 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { CONFIG_TEMPLATE, createConfigFromTemplate, isPluginInstalled } from '../setup';
-import { validateConfig } from '../../plugin/config/schema';
+import { CONFIG_KEYS, validateConfig } from '../../plugin/config/schema';
 
 describe('isPluginInstalled', () => {
   let home: string;
@@ -98,8 +98,35 @@ describe('createConfigFromTemplate', () => {
 
   it('the template is valid config with no warnings and no em dashes', () => {
     expect(validateConfig(yaml.load(CONFIG_TEMPLATE, { schema: yaml.CORE_SCHEMA }))).toEqual({
-      config: { mode: 'enforce', preset: 'balanced', onError: 'ask' }, warnings: [],
+      config: { mode: 'enforce', preset: 'balanced', onError: 'ask', offline: false }, warnings: [],
     });
     expect(CONFIG_TEMPLATE).not.toContain('—');
+  });
+});
+
+// Every option a user can set must be discoverable in the file they edit (owner decision 2026-11-11).
+describe('CONFIG_TEMPLATE lists every option', () => {
+  const SAMPLES: Record<string, unknown> = {
+    mode: 'observe', preset: 'strict', on_error: 'allow', offline: true, cutoffs: { ask: 30, block: 60 },
+    categories: { generated: 'off' }, protected_paths: ['a/**'], trusted_commands: ['npm test'], trusted_domains: ['x.com'],
+    paths: { 'a/**': { preset: 'strict' } }, custom_rules: [{ match: 'path', pattern: 'b/**', points: 10, message: 'm' }],
+  };
+  /** Removes "# " from example lines (a key or an indented line), leaving prose comments. */
+  const uncommentExamples = (t: string) => t.split('\n').map(l => l.replace(/^# (?=[a-z_]+:|\s)/, '')).join('\n');
+
+  it('CONFIG_KEYS is exactly the keys the schema accepts', () => {
+    expect(Object.keys(SAMPLES).sort()).toEqual([...CONFIG_KEYS].sort());
+    for (const key of CONFIG_KEYS) expect(validateConfig({ [key]: SAMPLES[key] }).warnings).toEqual([]);
+    expect(validateConfig({ nope: 1 }).warnings).toEqual(['unknown key "nope" ignored']);
+  });
+
+  it('every key appears as a setting or an example line', () => {
+    for (const key of CONFIG_KEYS) expect(CONFIG_TEMPLATE).toMatch(new RegExp(`^(# )?${key}:`, 'm'));
+  });
+
+  it('uncommenting every example still gives valid config with no warnings', () => {
+    const { config, warnings } = validateConfig(yaml.load(uncommentExamples(CONFIG_TEMPLATE), { schema: yaml.CORE_SCHEMA }));
+    expect(warnings).toEqual([]);
+    expect(Object.keys(config).length).toBe(CONFIG_KEYS.length);
   });
 });
