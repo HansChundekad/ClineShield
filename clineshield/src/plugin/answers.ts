@@ -15,6 +15,7 @@ import * as path from 'path';
 import { randomUUID } from 'crypto';
 import type { AgentRuntimeStateSnapshot } from './types';
 import { flatten, isPlainYes, normalizeReply } from './rubric/approval';
+import { acquireLock } from '../metrics/writer';
 
 export const ANSWERS_FILE = 'answers.json';
 export const MAX_ANSWERS = 200;
@@ -63,7 +64,13 @@ export async function readAnswers(root: string): Promise<Answers> {
   }
 }
 
-/** Appends run one at a time per process; an entry already recorded for the same refusal is skipped. */
+/**
+ * Appends run one at a time per process, and across processes (parallel
+ * sessions each run their own plugin) under answers.json.lock, the same lock
+ * as metrics.json: held for one read-modify-write; after 1 s busy we write
+ * anyway rather than hold up the session. An entry already recorded for the
+ * same refusal is skipped.
+ */
 let queue: Promise<boolean> = Promise.resolve(false);
 
 /** Resolves true when the entry is in the file (written now or before). */
@@ -76,10 +83,13 @@ export function appendAnswer(root: string, entry: AnswerEntry): Promise<boolean>
 async function appendNow(root: string, entry: AnswerEntry): Promise<boolean> {
   const target = answersPath(root);
   const temp = `${target}.${randomUUID()}.tmp`;
+  let release: (() => Promise<void>) | undefined;
   try {
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    release = await acquireLock(`${target}.lock`);
+    if (!release) console.error('[ClineShield] answers.json lock busy, writing without it');
     const existing = (await readAnswers(root)).entries;
     if (existing.some(e => e.sessionId === entry.sessionId && e.toolCallId === entry.toolCallId)) return true;
-    await fs.mkdir(path.dirname(target), { recursive: true });
     const next: Answers = { entries: [...existing, entry].slice(-MAX_ANSWERS) };
     await fs.writeFile(temp, JSON.stringify(next), 'utf-8');
     await fs.rename(temp, target);
@@ -88,5 +98,7 @@ async function appendNow(root: string, entry: AnswerEntry): Promise<boolean> {
     console.error('[ClineShield] answers sidecar not written:', (error as Error)?.message ?? error);
     await fs.rm(temp, { force: true }).catch(() => undefined);
     return false;
+  } finally {
+    await release?.().catch(() => undefined);
   }
 }
