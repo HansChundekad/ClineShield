@@ -13,9 +13,13 @@ const YES_WORDS = new Set(['yes', 'y', 'yep', 'yeah', 'ok', 'okay', 'sure', 'app
 const MODE_NOTICE = /<mode_notice>[\s\S]*?<\/mode_notice>/g;
 const USER_INPUT = /^<user_input mode="(?:act|plan|yolo)">([\s\S]*)<\/user_input>$/;
 
+/** A typed reply without the mode notice, trailing . or !, and case. */
+export function normalizeReply(userText: string): string {
+  return userText.replace(MODE_NOTICE, '').trim().replace(/[.!]+$/, '').trim().toLowerCase();
+}
+
 export function isPlainYes(userText: string): boolean {
-  const text = userText.replace(MODE_NOTICE, '').trim().replace(/[.!]+$/, '').trim().toLowerCase();
-  return YES_WORDS.has(text);
+  return YES_WORDS.has(normalizeReply(userText));
 }
 
 export interface ApprovalCheck {
@@ -26,7 +30,7 @@ export interface ApprovalCheck {
 }
 
 type Part = Record<string, unknown>;
-type Entry =
+export type Entry =
   | { kind: 'call'; id: unknown; tool: unknown; key: string }
   | { kind: 'result'; id: unknown; refusal: unknown }
   | { kind: 'reply'; text: string | undefined };
@@ -41,6 +45,22 @@ function canonicalJson(value: unknown): string {
 
 const isPart = (p: unknown): p is Part => typeof p === 'object' && p !== null;
 
+/**
+ * The refusal text of an error result. Within a turn the runtime stores
+ * `{ error }`; between turns Cline saves history and rebuilds it, and the
+ * output comes back as that object's JSON string (CLI 3.0.74).
+ */
+export function refusalOf(output: unknown): unknown {
+  if (isPart(output)) return output.error;
+  if (typeof output !== 'string') return undefined;
+  try {
+    const parsed: unknown = JSON.parse(output);
+    return isPart(parsed) ? parsed.error : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** A typed user turn, or undefined for other user-role messages (notices, hook context, summaries). */
 function typedReply(parts: Part[]): Entry | undefined {
   const text = parts.filter(p => p.type === 'text').map(p => String(p.text)).join('').trim();
@@ -49,7 +69,8 @@ function typedReply(parts: Part[]): Entry | undefined {
   return { kind: 'reply', text: parts.every(p => p.type === 'text') ? match[1] : undefined };
 }
 
-function flatten(messages: readonly unknown[]): Entry[] {
+/** History as tool calls, error results and typed user replies, in order. */
+export function flatten(messages: readonly unknown[]): Entry[] {
   const entries: Entry[] = [];
   for (const message of messages) {
     if (!isPart(message) || !Array.isArray(message.content)) continue;
@@ -62,8 +83,8 @@ function flatten(messages: readonly unknown[]): Entry[] {
     for (const part of parts) {
       if (part.type === 'tool-call') {
         entries.push({ kind: 'call', id: part.toolCallId, tool: part.toolName, key: canonicalJson(part.input) });
-      } else if (part.type === 'tool-result' && part.isError === true && isPart(part.output)) {
-        entries.push({ kind: 'result', id: part.toolCallId, refusal: part.output.error });
+      } else if (part.type === 'tool-result' && part.isError === true) {
+        entries.push({ kind: 'result', id: part.toolCallId, refusal: refusalOf(part.output) });
       }
     }
   }

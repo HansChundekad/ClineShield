@@ -208,8 +208,8 @@ name the file, e.g. "app.ts: 82% of the file rewritten"), `approved` (asked comm
 - [x] ② Tests: `rm -rf node_modules` allowed vs `rm -rf /` blocked, `/tmp` exemption, each shell-edit form, chains, pipes, `sudo`, `VAR=x`, `bash -c`, every input shape; < 200 ms typical per request (measured: median 10–15 ms, worst 23 ms on a git temp workspace)
 - [x] ③ Dependency categories; registry lookups with cap, cache and `offline: true`; bundled top-5k lists (`clineshield/scripts/refresh-top-packages.js`, run by hand); tests with a fake registry
 - [ ] ④ Session state store (test-run outcomes, edit history, reads); `test_and_source` +25; log-only session signals
-- [ ] Manual: real CLI session in `test-workspace/` hitting allow, ask and block
-  - Allow and block recorded 2026-11-08 (CLI 3.0.73, `e7a0edd`, one-shot runs in a disposable git repo, not `test-workspace/`; ask not tested). Allow: small edit (`edit-allowed`, `risk-assessed` 0), `rm -rf node_modules` (no event). Block: placeholder and added-token edits (`edit-blocked`), `rm -rf` outside the workspace (`command-assessed`, `rm_outside`); nothing changed, Cline saw the reason, no points or cut-offs reached it. Commands matched the spec: chain and `bash -c` (`chmod_broad` 30, allow), pipe into `rm -rf` outside (block), `cat > new <<EOF` (`shell_edit` 15, allow), `cat > existing <<EOF` with a placeholder (block)
+- [ ] Manual: real CLI session in a disposable git repo hitting allow, ask and block
+  - Allow and block recorded 2026-11-08 (CLI 3.0.73, `e7a0edd`, one-shot runs in a disposable git repo; ask not tested). Allow: small edit (`edit-allowed`, `risk-assessed` 0), `rm -rf node_modules` (no event). Block: placeholder and added-token edits (`edit-blocked`), `rm -rf` outside the workspace (`command-assessed`, `rm_outside`); nothing changed, Cline saw the reason, no points or cut-offs reached it. Commands matched the spec: chain and `bash -c` (`chmod_broad` 30, allow), pipe into `rm -rf` outside (block), `cat > new <<EOF` (`shell_edit` 15, allow), `cat > existing <<EOF` with a placeholder (block)
 
 #### Rubric configuration
 Zero config works (`balanced`). The only config file is `~/.cline-shield.yml` (Decision 10); a `.cline-shield.yml`
@@ -263,17 +263,22 @@ Approval is read from the conversation history (`rubric/approval.ts`), never fro
 - [x] Manual (2026-10-15): the user sees the block reason in the terminal as `Error: ClineShield blocked this action…`
 
 #### VS Code extension (optional dashboard)
-- [ ] Shows `edit-approval` outcomes and rubric categories
-- [ ] Change map marks files with a blocked attempt: today the level comes only from `risk-assessed`, written after a successful edit, so a file with a blocked edit can still show low
-- [ ] No longer sets env vars for hooks; works when no plugin has run yet
-- [ ] Opt-in LLM explanation: off by default, own Gemini key in SecretStorage ("Set/Clear Gemini API Key"),
-  secrets stripped before sending, `gemini_api_key` in YAML ignored with a warning, plugin writes the diff sidecar
+Design: `docs/superpowers/specs/2026-11-10-extension-dashboard-design.md`.
+- [x] Shows `edit-approval` outcomes, `command-assessed` events and rubric categories: sidebar "Waiting on you" (unanswered asks and the latest block; cleared by the approval, the user's reply in chat, a newer ask/block, a later action ≥ 15 s after, or ×), totals counted as `/clineshield` counts, last 15 actions, labelled Settings (preset, mode, config file, `on_error: allow` and config warnings)
+- [x] Answers sidecar `.cline-shield/answers.json` (not a `metrics.json` event): the plugin's `beforeModel` hook finds the latest ClineShield refusal (ask or block) in the history and the user's first typed reply after it, and appends `{ sessionId, toolCallId, answeredAt, answer }`, `answer` = `yes` (same words as approval), `no` (a plain no: no, n, nope, nah, no thanks, don't, do not, deny, reject, decline, cancel, stop) or `other`. One entry per refusal, read from history so one-shot `cline --id` runs work; newest 200; atomic writes under `answers.json.lock` (the `metrics.json` lock), 4 processes × 15 answers all kept; never throws or changes a decision or what Cline is told. The sidebar clears the latest ask/block of that session from before the answer; Recent marks an ask ✓ approved (yes), ✗ declined (no) or "answered" (other); a block clears on any reply
+- [ ] Manual: ask then "no" (card clears, Recent ✗), ask then "yes" (✓), block then any reply (card clears)
+- [x] Change map marks files with a blocked attempt: level is the worst of `risk-assessed`, asked (medium) and blocked (high)
+- [x] No longer sets env vars for hooks or writes to `metrics.json` at activation; works when no plugin has run yet (install / "watching this repo" empty states)
+- [x] Opt-in LLM explanation: on click only, key is the switch, own Gemini key in SecretStorage ("Set/Clear Gemini API Key", sent in a header, never the URL),
+  secrets stripped before sending, `gemini_api_key` in YAML ignored with a warning, plugin writes the diff sidecar (`.cline-shield/diff-context.json`, newest 50, redacted)
+- [x] Reads `~/.cline-shield.yml` read-only through the plugin's `ConfigStore`; watches it; "Reload Config" as fallback; "Create config" writes it only when missing, after confirming
+- [ ] Manual: sidebar, change map and explanations checked by the owner in a real session
 
 #### Retire 1.x hooks
-- [ ] Remove `clineshield/hooks/`, root and `test-workspace/` `.clinerules/hooks/`, and hook-only env-var code in `configLoader.ts`
+- [x] Remove `clineshield/hooks/`, root and `test-workspace/` `.clinerules/hooks/`, and hook-only env-var code in `configLoader.ts` (deleted with `test-workspace/`, the 1.x `rulesEngine.ts` and the phase-6 smoke test; `.vscode/launch.json` opens `~/clineshield-sandbox`)
 
 #### Evaluation ⛔
-- [ ] 20–30 tasks in `test-workspace/`, labelled safe/destructive in advance, approved by the owner with a budget
+- [ ] 20–30 tasks in a purpose-built eval project, labelled safe/destructive in advance, approved by the owner with a budget
 - [ ] Report: destructive actions attempted / caught, false positives (safe actions asked or blocked), time added (median, p95)
 - [ ] Raw results committed; README numbers are exactly what the run produced
 
@@ -336,6 +341,7 @@ Target: VS Code and its forks (Cursor, Windsurf, VSCodium…) first; the plugin 
 | Plugins can add slash commands (`"commands"`, `api.registerCommand`) | [plugin reference](https://github.com/cline/cline/blob/main/.agents/skills/cline-sdk/references/plugins/REFERENCE.md) |
 | A command handler gets the text after `/name`, trimmed (`/clineshield why` → `"why"`). A reply-only result is shown in the terminal and the turn ends with 0 tokens; nothing enters the conversation (only `submitPrompt` reaches the model). From CLI 3.0.74 (`@cline/core` 0.2.0) a command runs in the session's own plugin copy; 3.0.73 used a separate per-workspace copy (`main` 1e8ae47) | `core/src/services/plugin-command-api.ts`, `core/src/runtime/host/local-runtime-host.ts`, `apps/cli/src/runtime/interactive/chat-command-runner.ts` |
 | CLI auto-approve all (`toolAutoApprove`) returns `approved: true` before looking at the request's policy, so a hook's `autoApprove: false` is overridden | `apps/cli/src/runtime/interactive/approvals.ts` `requestToolApproval` |
+| `beforeRun` gets its snapshot before the run's new user message is added; `beforeModel` (every model request) gets it after, including steers (CLI 3.0.74, `@cline/agents` `execute()` / `consumePendingUserMessage()`) | `agents/src/agent-runtime.ts` |
 | `beforeTool` gets `snapshot.messages` (full history with roles). Typed user turns and steers are stored as `<user_input mode="…">text</user_input>`, optionally with a `<mode_notice>`; other user-role messages (`<hook_context>`, reminders, loop and recovery notices, compaction summaries) are not user speech. A skip is stored as a tool result `{ output: { error: reason }, isError: true }` (`main` 94eecbb) | `agents/src/agent-runtime.ts`, `core/src/runtime/host/local-runtime-host.ts`, `shared/src/prompt/format.ts` |
 | Subagents and teammates run plugin hooks, and their task arrives as a user-role message written by another model. Subagents have `parentAgentId`; teammates have neither it nor `agentRole` | `core/src/extensions/tools/team/{delegated-agent,multi-agent,team-tools}.ts` |
 | `ask_question` returns the model-written `options[0]` when there is no TTY | `apps/cli/src/utils/approval.ts` |

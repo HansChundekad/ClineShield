@@ -1,218 +1,216 @@
+/**
+ * MetricsSidebarProvider.ts
+ *
+ * The sidebar webview: Waiting on you, totals, recent activity, settings.
+ * I/O and messaging only; the model is dashboard.ts, the config line
+ * configView.ts, explanations explain.ts. Messages from the webview are
+ * validated: unknown types and ids not in the current dashboard are ignored.
+ */
+
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import { randomBytes } from 'crypto';
 import { readEvents } from '../metrics/reader';
-import { filterVisibleEvents, isSessionStartMarker } from '../metrics/sessions';
-import type { MetricsEvent } from '../types/metrics';
+import { selectVisibleSessionIds } from '../metrics/sessions';
+import { buildDashboard } from './dashboard';
+import { ANSWERS_FILE, readAnswers } from '../plugin/answers';
+import type { ActionItem, Dashboard } from './dashboard';
+import { readConfigSummary } from '../config/configView';
+import type { ConfigSummary } from '../config/configView';
+import { createConfigFromTemplate, isPluginInstalled, pluginWatchTargets } from '../config/setup';
+import { createInstallWatch } from '../config/installWatch';
+import type { InstallWatch } from '../config/installWatch';
+import { CONFIG_FILE } from '../plugin/config/store';
+import type { ConfigStore } from '../plugin/config/store';
+import { createExplainer } from '../extension/riskAnalysis/explain';
+import type { GeminiResult } from '../extension/riskAnalysis/llmAnalyzer';
 
-interface SidebarStats {
-  blockedEdits: number;
-  allowedEdits: number;
-  passedEdits: number;
-  failedEdits: number;
-  avgRetries: number;
-  mostRecent: {
-    file: string;
-    eventType: string;
-    timestamp: string;
-    riskScore: number | null;
-    riskLevel: 'low' | 'medium' | 'high' | null;
-    riskReasons: Array<{ description: string; points: number }> | null;
-    llmReasoning: string | null;
-    llmPending: boolean;
-    riskEventTimestamp: string | null;
-    structuralChangePercent: number | null;
-    functionsDeleted: number | null;
-  } | null;
+export const GEMINI_KEY_SECRET = 'clineshield.geminiApiKey';
+const INSTALL_COMMAND = 'cline plugin install https://github.com/HansChundekad/ClineShield';
+const HELP_URL = 'https://github.com/HansChundekad/ClineShield#configuration';
+const REFRESH_DEBOUNCE_MS = 50;
+
+type Explanation = { state: 'loading' | 'done' | 'error'; text: string };
+
+export interface SidebarOptions {
+  extensionUri: vscode.Uri;
+  metricsRoot: string | undefined;
+  workspaceRoot: string | undefined;
+  sessionId: string;
+  activationTime: number;
+  homeDir: string;
+  secrets: vscode.SecretStorage;
+  configStore: ConfigStore;
+  onWaitingCount: (n: number) => void;
 }
 
 export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   public static readonly viewType = 'clineshield.metricsView';
 
   private view?: vscode.WebviewView;
-  private readonly watcher: vscode.FileSystemWatcher;
   private readonly disposables: vscode.Disposable[] = [];
+  private readonly dismissed = new Set<string>();
+  private readonly explanations: Record<string, Explanation> = {};
+  private dashboard: Dashboard | undefined;
+  private timer: NodeJS.Timeout | undefined;
+  private readonly explain: (item: ActionItem) => Promise<GeminiResult>;
+  private readonly installWatch: InstallWatch;
+  private readonly installWatchers: vscode.Disposable[] = [];
 
-  constructor(
-    private readonly extensionUri: vscode.Uri,
-    private readonly workspaceRoot: string,
-    private readonly sessionId: string,
-    private readonly activationTime: number
-  ) {
-    this.watcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(vscode.Uri.file(workspaceRoot), '.cline-shield/metrics.json')
-    );
-
-    this.watcher.onDidChange(() => this.refresh());
-    this.watcher.onDidCreate(() => this.refresh());
-
-    this.disposables.push(this.watcher);
+  constructor(private readonly opts: SidebarOptions) {
+    this.explain = opts.metricsRoot
+      ? createExplainer({ root: opts.metricsRoot, getKey: () => this.getKey() })
+      : async () => ({ ok: false, error: 'no workspace' });
+    if (opts.metricsRoot) {
+      // Atomic writes (temp + rename) fire onDidCreate on macOS, not onDidChange.
+      // answers.json (the user's replies to asks and blocks) clears "Waiting on you".
+      for (const file of ['metrics.json', ANSWERS_FILE]) {
+        const watcher = vscode.workspace.createFileSystemWatcher(
+          new vscode.RelativePattern(vscode.Uri.file(opts.metricsRoot), `.cline-shield/${file}`));
+        watcher.onDidChange(() => this.refresh());
+        watcher.onDidCreate(() => this.refresh());
+        this.disposables.push(watcher);
+      }
+    }
+    this.installWatch = this.watchForInstall();
+    this.refresh();
   }
 
-  public async resolveWebviewView(
-    webviewView: vscode.WebviewView,
-    _context: vscode.WebviewViewResolveContext,
-    _token: vscode.CancellationToken
-  ): Promise<void> {
+  /**
+   * Notices a plugin install without "Reload Config": re-checks on plugin
+   * folder changes, window focus and the view becoming visible, until found.
+   */
+  private watchForInstall(): InstallWatch {
+    const { homeDir, workspaceRoot } = this.opts;
+    const stop = () => { for (const d of this.installWatchers.splice(0)) d.dispose(); };
+    const watch = createInstallWatch(() => isPluginInstalled(homeDir, workspaceRoot), () => { stop(); this.refresh(); });
+    for (const { base, pattern } of pluginWatchTargets(homeDir, workspaceRoot)) {
+      const w = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.file(base), pattern));
+      w.onDidCreate(() => watch.poke());
+      w.onDidChange(() => watch.poke());
+      this.installWatchers.push(w);
+    }
+    this.installWatchers.push(vscode.window.onDidChangeWindowState(s => { if (s.focused) watch.poke(); }));
+    this.disposables.push({ dispose: () => { watch.dispose(); stop(); } });
+    return watch;
+  }
+
+  async resolveWebviewView(webviewView: vscode.WebviewView): Promise<void> {
     this.view = webviewView;
-
-    webviewView.webview.options = {
-      enableScripts: true,
-    };
-
-    webviewView.webview.html = await this.getHtmlContent();
-
-    // Send initial stats
-    await this.refresh();
-
-    webviewView.onDidDispose(() => {
-      this.view = undefined;
-    });
+    webviewView.webview.options = { enableScripts: true, localResourceRoots: [] };
+    webviewView.webview.html = await this.html(webviewView.webview);
+    this.disposables.push(webviewView.webview.onDidReceiveMessage(m => void this.onMessage(m)));
+    this.disposables.push(webviewView.onDidChangeVisibility(() => { if (webviewView.visible) this.installWatch.poke(); }));
+    webviewView.onDidDispose(() => { this.view = undefined; });
   }
 
-  public async refresh(): Promise<void> {
-    if (!this.view) {
-      return;
-    }
-
-    const stats = await this.calculateStats();
-
-    this.view.webview.postMessage({
-      type: 'update',
-      stats,
-    });
+  /** Debounced: a burst of metrics.json / answers.json writes triggers one read. */
+  refresh(): void {
+    this.installWatch?.poke();
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = setTimeout(() => { this.timer = undefined; void this.update(); }, REFRESH_DEBOUNCE_MS);
   }
 
-  private async calculateStats(): Promise<SidebarStats> {
-    const events = filterVisibleEvents(
-      await readEvents(this.workspaceRoot),
-      this.activationTime,
-      this.sessionId
-    );
-
-    const blockedEdits = events.filter(e => e.type === 'edit-blocked').length;
-
-    // Exclude the synthetic 'session-start' markers (extension + each plugin session)
-    const allowedEdits = events.filter(
-      e => e.type === 'edit-allowed' && !isSessionStartMarker(e)
-    ).length;
-
-    const passedEdits = events.filter(e => e.type === 'sanity-passed').length;
-
-    const sanityFailed = events.filter(
-      (e): e is Extract<MetricsEvent, { type: 'sanity-failed' }> =>
-        e.type === 'sanity-failed'
-    );
-    const failedEdits = sanityFailed.length;
-
-    // Average max retryCount per unique file (= how many attempts each file needed)
-    let avgRetries = 0;
-    if (sanityFailed.length > 0) {
-      const maxPerFile = new Map<string, number>();
-      for (const e of sanityFailed) {
-        const file = e.data.file;
-        maxPerFile.set(file, Math.max(maxPerFile.get(file) ?? 0, e.data.retryCount));
-      }
-      const totals = [...maxPerFile.values()];
-      avgRetries = Math.round((totals.reduce((s, n) => s + n, 0) / totals.length) * 10) / 10;
-    }
-
-    // Most recent edit: only edit-allowed / edit-blocked events, so that
-    // risk-assessed and sanity events don't overwrite the panel. Session-start
-    // markers are skipped so a newly started parallel session doesn't either.
-    const editEvents = events.filter(
-      e => (e.type === 'edit-allowed' || e.type === 'edit-blocked') && !isSessionStartMarker(e)
-    );
-    const lastEdit = editEvents[editEvents.length - 1] ?? null;
-
-    let mostRecent: SidebarStats['mostRecent'] = null;
-    if (lastEdit) {
-      const file = (lastEdit.data as { file?: string }).file ?? 'unknown';
-
-      // Find the most recent risk-assessed event for this file that was written
-      // after (or at the same time as) the edit — links score to this specific edit.
-      let riskScore: number | null = null;
-      let riskLevel: 'low' | 'medium' | 'high' | null = null;
-      let riskReasons: Array<{ description: string; points: number }> | null = null;
-      let llmReasoning: string | null = null;
-      let llmPending = false;
-      let riskEventTimestamp: string | null = null;
-      let structuralChangePercent: number | null = null;
-      let functionsDeleted: number | null = null;
-
-      if (lastEdit.type === 'edit-blocked') {
-        const d = lastEdit.data as { structuralChangePercent?: number; functionsDeleted?: number };
-        structuralChangePercent = d.structuralChangePercent ?? null;
-        functionsDeleted = d.functionsDeleted ?? null;
-      }
-
-      if (lastEdit.type === 'edit-allowed') {
-        const riskEvent = [...events]
-          .reverse()
-          .find(
-            e =>
-              e.type === 'risk-assessed' &&
-              (e.data as { file?: string }).file === file &&
-              e.timestamp >= lastEdit.timestamp
-          );
-        if (riskEvent?.type === 'risk-assessed') {
-          const d = riskEvent.data as {
-            rulesScore: number;
-            level: 'low' | 'medium' | 'high';
-            reasons: Array<{ rule: string; points: number; description: string }>;
-          };
-          riskScore = d.rulesScore;
-          riskLevel = d.level;
-          riskReasons = d.reasons.map(r => ({ description: r.description, points: r.points }));
-
-          // Find llm-analysis linked to this specific risk event via relatedRiskEventTimestamp
-          const llmEvent = [...events]
-            .reverse()
-            .find(
-              e =>
-                e.type === 'llm-analysis' &&
-                (e.data as { file?: string }).file === file &&
-                (e.data as { relatedRiskEventTimestamp?: string }).relatedRiskEventTimestamp === riskEvent.timestamp
-            );
-          if (llmEvent?.type === 'llm-analysis') {
-            const reasoning = (llmEvent.data as { reasoning?: unknown }).reasoning;
-            if (typeof reasoning === 'string' && reasoning.trim()) {
-              llmReasoning = reasoning;
-            }
-          }
-
-          // If medium/high risk but no llm-analysis yet, signal loading state
-          if (llmReasoning === null && (riskLevel === 'medium' || riskLevel === 'high')) {
-            llmPending = true;
-            riskEventTimestamp = riskEvent.timestamp;
-          }
-        }
-      }
-
-      mostRecent = { file, eventType: lastEdit.type, timestamp: lastEdit.timestamp, riskScore, riskLevel, riskReasons, llmReasoning, llmPending, riskEventTimestamp, structuralChangePercent, functionsDeleted };
-    }
-
-    return { blockedEdits, allowedEdits, passedEdits, failedEdits, avgRetries, mostRecent };
+  private async getKey(): Promise<string | undefined> {
+    return (await this.opts.secrets.get(GEMINI_KEY_SECRET)) || undefined;
   }
 
-  private async getHtmlContent(): Promise<string> {
-    const htmlPath = path.join(
-      this.extensionUri.fsPath,
-      'src',
-      'sidebar',
-      'metrics.html'
-    );
-
+  private async update(): Promise<void> {
     try {
-      return await fs.readFile(htmlPath, 'utf-8');
-    } catch {
-      return `<html><body><p>Failed to load sidebar UI.</p></body></html>`;
+      const root = this.opts.metricsRoot;
+      const [events, answers] = root ? await Promise.all([readEvents(root), readAnswers(root)]) : [[], { entries: [] }];
+      const visible = selectVisibleSessionIds(events, this.opts.activationTime, this.opts.sessionId);
+      this.dashboard = buildDashboard(events, visible, this.dismissed, answers.entries);
+      this.opts.onWaitingCount(this.dashboard.waiting.length);
+      await this.post();
+    } catch (error) {
+      console.error('[ClineShield] sidebar update failed:', (error as Error)?.message ?? error);
     }
   }
 
-  public dispose(): void {
-    for (const d of this.disposables) {
-      d.dispose();
+  private async post(): Promise<void> {
+    if (!this.view || !this.dashboard) return;
+    const dashboard = this.dashboard;
+    const [config, hasKey] = await Promise.all([
+      readConfigSummary(this.opts.configStore, this.opts.homeDir),
+      this.getKey().then(Boolean),
+    ]);
+    const pluginInstalled = dashboard.hasEvents || this.installWatch.found;
+    const message: { type: 'update'; dashboard: Dashboard; config: ConfigSummary; hasKey: boolean; pluginInstalled: boolean; explanations: Record<string, Explanation> } =
+      { type: 'update', dashboard, config, hasKey, pluginInstalled, explanations: { ...this.explanations } };
+    void this.view?.webview.postMessage(message);
+  }
+
+  private findItem(id: unknown): ActionItem | undefined {
+    if (typeof id !== 'string' || !this.dashboard) return undefined;
+    return [...this.dashboard.waiting, ...this.dashboard.recent].find(i => i.id === id);
+  }
+
+  private async onMessage(m: unknown): Promise<void> {
+    if (typeof m !== 'object' || m === null) return;
+    const { type, id } = m as { type?: unknown; id?: unknown };
+    const configUri = vscode.Uri.file(path.join(this.opts.homeDir, CONFIG_FILE));
+    switch (type) {
+      case 'ready': return this.update();
+      case 'dismiss': {
+        const item = this.findItem(id);
+        if (item) { this.dismissed.add(item.id); await this.update(); }
+        return;
+      }
+      case 'explain': {
+        const item = this.findItem(id);
+        if (item) await this.runExplain(item);
+        return;
+      }
+      case 'setKey': await vscode.commands.executeCommand('clineshield.setGeminiKey'); return;
+      case 'clearKey': await vscode.commands.executeCommand('clineshield.clearGeminiKey'); return;
+      case 'openConfig': await vscode.window.showTextDocument(configUri); return;
+      case 'createConfig': {
+        const choice = await vscode.window.showInformationMessage(
+          'Create ~/.cline-shield.yml from the ClineShield template?', { modal: true }, 'Create');
+        if (choice !== 'Create') return;
+        const result = await createConfigFromTemplate(this.opts.homeDir);
+        if (result === 'failed') { void vscode.window.showErrorMessage('ClineShield: could not create ~/.cline-shield.yml.'); return; }
+        await vscode.window.showTextDocument(configUri);
+        this.refresh();
+        return;
+      }
+      case 'help': await vscode.env.openExternal(vscode.Uri.parse(HELP_URL)); return;
+      case 'copyInstall':
+        await vscode.env.clipboard.writeText(INSTALL_COMMAND);
+        void vscode.window.showInformationMessage('ClineShield: install command copied.');
+        return;
+      default: return;
     }
+  }
+
+  private async runExplain(item: ActionItem): Promise<void> {
+    if (!(await this.getKey())) {
+      await vscode.commands.executeCommand('clineshield.setGeminiKey');
+      if (!(await this.getKey())) return;
+    }
+    this.explanations[item.id] = { state: 'loading', text: '' };
+    await this.post();
+    const result = await this.explain(item);
+    this.explanations[item.id] = result.ok
+      ? { state: 'done', text: result.explanation }
+      : { state: 'error', text: result.error === 'no-key' ? 'Set a Gemini key to get explanations.' : `Gemini request failed: ${result.error}` };
+    await this.post();
+  }
+
+  private async html(webview: vscode.Webview): Promise<string> {
+    const nonce = randomBytes(16).toString('base64');
+    try {
+      const raw = await fs.readFile(path.join(this.opts.extensionUri.fsPath, 'src', 'sidebar', 'metrics.html'), 'utf-8');
+      return raw.split('{{nonce}}').join(nonce).split('{{cspSource}}').join(webview.cspSource);
+    } catch {
+      return '<!DOCTYPE html><html><body><p>Failed to load the ClineShield sidebar.</p></body></html>';
+    }
+  }
+
+  dispose(): void {
+    if (this.timer) clearTimeout(this.timer);
+    for (const d of this.disposables) d.dispose();
   }
 }

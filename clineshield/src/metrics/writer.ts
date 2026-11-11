@@ -56,8 +56,11 @@ export const LOCK_WAIT_MS = 1000;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-/** Returns a release function, or undefined if the lock could not be taken in time. */
-async function acquireLock(lockPath: string): Promise<(() => Promise<void>) | undefined> {
+/**
+ * Returns a release function, or undefined if the lock could not be taken in
+ * time. Also used for the plugin's answers.json (plugin/answers.ts).
+ */
+export async function acquireLock(lockPath: string): Promise<(() => Promise<void>) | undefined> {
   const token = `${process.pid}.${randomBytes(6).toString('hex')}`;
   const deadline = Date.now() + LOCK_WAIT_MS;
   for (;;) {

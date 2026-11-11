@@ -1,93 +1,57 @@
-# Features Demo Script
+# ClineShield
 
-### YAML Config
+A Cline plugin that checks every action Cline takes (file edits, deletes, shell commands) **before** it runs,
+scores its risk, and answers **allow**, **ask** or **block**. Everything is logged to `.cline-shield/metrics.json`.
+An optional VS Code extension shows the log as a live dashboard.
 
-ClineShield is configured through a `.cline-shield.yml` file in your project root. When the extension starts, it automatically reads this file and applies your settings to both safety hooks — no environment variables or manual setup required.
+Status, roadmap and the full rubric live in [SPEC.md](SPEC.md). A full README comes last (SPEC "README").
 
-The configuration is divided into 4 sections:
+## Install
 
-- **no-nuke** — Sets thresholds for destructive edits, such as function deletions or large structural changes, which can trigger PreToolUse protection.
-- **sanity** — Defines validation behavior, including which tools to run (Prettier, ESLint, TypeScript), retry limits, and per-tool timeouts.
-- **risk** — Specifies protected files and directories that add additional weight to the risk score.
-- Gemini api key - users will paste their api key in here to access the LLM analysis feature.
+```sh
+cline plugin install https://github.com/HansChundekad/ClineShield
+```
 
-Add `.cline-shield.yml` to your `.gitignore` so each developer can adjust safety thresholds locally without affecting the team.
+Works with zero config. Runs in the Cline CLI, SDK and Kanban (`/clineshield` needs CLI 3.0.74 or newer).
 
----
+## How it decides
 
-**Installing the hooks**
+- **Allow:** the action runs.
+- **Ask:** Cline is told to ask you in chat. Reply yes and the identical action runs once. In a one-shot run,
+  answer with `cline --id <session>`. Headless runs with no user stay refused.
+- **Block:** the action is skipped and Cline is told why, so it can try a smaller or safer change.
 
-Copy `clineshield/hooks/PreToolUse` and `clineshield/hooks/PostToolUse` into your project's `.clinerules/hooks/` and make them executable (`chmod +x`). The hooks need `jq` on your PATH.
+Type `/clineshield` in Cline for this session's counts, or `/clineshield why` for the last ask or block in full.
+That output stays in your terminal and never enters the conversation.
 
-> **Note:** ClineShield is being rebuilt as a Cline plugin (2.0). See [SPEC.md](SPEC.md) for status — in current Cline versions a blocked edit from these hook files ends the whole task.
+## Configuration
 
-## Edit Size Policy (2.0 plugin)
+The only config file is `~/.cline-shield.yml`; a `.cline-shield.yml` inside a repo is never read, so a cloned repo
+can't change your settings. Changes apply on the next Cline action. Every key is optional; see
+[.cline-shield.example.yml](.cline-shield.example.yml) for all of them.
 
-The 2.0 plugin replaces No-Nuke with three tiers for `apply_patch` / `editor` edits to TS/JS files:
+- **preset:** `relaxed`, `balanced` (default) or `strict`. How readily ClineShield asks and blocks
+  (ask/block cut-offs 60/90, 40/70, 25/50).
+- **mode:** `enforce` (default): asks and blocks apply. `observe`: only logs what it would have done; hard rules
+  (self-protection, placeholder rewrites, secrets added) still block.
+- **on_error:** `ask` (default) or `allow`. What happens if ClineShield itself fails; `allow` lets the action run
+  unchecked.
+- Also: `offline`, `cutoffs`, `categories`, `protected_paths`, `trusted_commands`, `trusted_domains`, per-folder
+  `paths`, and `custom_rules`.
 
-- **Small** edits run normally (`edit-allowed`).
-- **Medium** edits (2–3 functions deleted, or 40–75% of a patch over 10 lines changed) need your approval; Cline is told why. The outcome is logged as `edit-approval` with `approved: true/false`.
-- **Destructive** edits (more than 3 functions deleted, or more than 75% of a patch over 10 lines changed) are skipped. Cline gets the reason and is told to make smaller edits; the task keeps running (`edit-blocked`).
+## VS Code extension (optional)
 
-**Headless runs:** when Cline runs with no way to ask you (an SDK or CI run without an approval callback), the Cline runtime denies every edit that needs approval. Medium edits are then not applied, Cline is told the edit was rejected, and the event is logged with `approved: false`.
+Open the ClineShield view in the activity bar:
 
-## No-Nuke Hook (Blocks Destructive Edits)
+- **Waiting on you:** asks you haven't answered and the latest block, with every category, its points, the total
+  and the cut-off. Dismiss with ×. The status bar shows how many are waiting.
+- **Totals** and **Recent activity** (last 15 actions); click an action to see its categories.
+- **Settings:** your preset, mode and config file, with Open config / Create config.
+- **Change map:** every file Cline touched, coloured by its worst risk; files with a blocked attempt are marked.
 
-Before Cline writes to any file, this hook intercepts the edit and checks if the change is too destructive. It parses the patch Cline sends — scanning added and deleted lines — counting how many functions were deleted, exports removed and what percentage of the file changed overall. If thresholds exceed the configurations, the hook blocks the edit and tells Cline to make a smaller, more targeted change instead.
+**Explanations (opt-in):** run **ClineShield: Set Gemini API Key** and click **Explain** on an action to get a
+plain-English explanation from Gemini 2.5 Flash. Nothing is sent until you click. The key is kept in VS Code's
+secret storage (never in a file), and secrets are stripped from code before it is sent. **ClineShield: Clear
+Gemini API Key** turns it off. A `gemini_api_key` in the YAML is ignored.
 
-## Sanity Check Hook
-
-Once the No-Nuke check is passed Cline successfully edits a file, this hook runs prettier, then eslint, then TypeScript compilation using `tsc --noEmit`, which performs full type-checking without generating any build output. The pipeline stops on the first failure. If everything passes, the edit is marked clean. If a check fails, the hook injects the exact tool output into Cline's conversation telling it to fix only those errors. This repeats up to 3 times per task (but is configurable in the YAML file). After 3 failed attempts the hook stops sending feedback — it writes the failure to the metrics dashboard but otherwise gets out of the way. 
-
-Note: This is best-effort guidance, not a guaranteed fix loop as Cline usually acts on the tool feedback, but the model ultimately controls what happens. 
-
-## Rules Engine
-
-The rules engine runs inside the PostToolUse hook, acting as a lightweight safety layer that evaluates every edit and assigns a risk score from 0 to 100.
-
-Scores are influenced by factors such as:
-
-- Modifications to protected files or directories
-
-• Large structural changes
-
-• Function deletions
-
-• Failed validation checks
-
-• Unusually large diffs
-
-This scoring system is deterministic and rule-based, ensuring predictable behavior independent of any LLM analysis.
-
----
-
-## LLM risk explanation
-
-When an edit produces a medium or high risk score, the extension can optionally invoke Gemini 2.5 Flash to generate a plain-English explanation of why the change may be risky.
-
-The model receives:
-
-- The actual diff
-
-• Post-edit file contents
-
-Importantly, the rules engine determines the score — the LLM only provides human-readable context.
-
-If no API key is configured, LLM analysis is skipped and rules-only scoring remains fully functional.
-
-## Change Map
-
-The change map answers a question the metrics sidebar can’t: which files has Cline touched most, and how risky were those edits?
-
-The sidebar shows session totals, like “3 edits blocked” or “2 sanity failures,” but it doesn’t show where the activity actually happened.
-
-The change map gives you a quick view:
-
-- **src/auth/** is red → high-risk changes
-- **src/utils.ts** is green → low-risk edits
-- **src/auth/service.ts** shows 4 edits → repeatedly modified
-
-**Use case:** at the end of a session, you can prioritize review by opening the change map, sorting by risk color, and clicking through files in order — a ready-made, prioritized review queue based on Cline’s actual edits.
-
-Link to download extension:
-https://github.com/HansChundekad/ClineShield/releases/tag/v0.1.0  
+To run the extension from source, open this repo in VS Code and start the **Run Extension** launch config.

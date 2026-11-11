@@ -40,6 +40,4 @@ offline: false         # true = no package registry lookups
 
 # No API keys here: the Gemini key for LLM explanations is set in the VS Code extension.
 #
-# 1.x hook settings (no-nuke, sanity, risk, gemini_api_key) are still read from
-# <workspace>/.cline-shield.yml by the 1.x extension until it is retired, and
-# ignored by the plugin.
+# 1.x keys (no-nuke, sanity, risk) are ignored; gemini_api_key is ignored with a warning.
