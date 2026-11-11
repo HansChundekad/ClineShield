@@ -41,6 +41,22 @@ function canonicalJson(value: unknown): string {
 
 const isPart = (p: unknown): p is Part => typeof p === 'object' && p !== null;
 
+/**
+ * The refusal text of an error result. Within a turn the runtime stores
+ * `{ error }`; between turns Cline saves history and rebuilds it, and the
+ * output comes back as that object's JSON string (CLI 3.0.74).
+ */
+function refusalOf(output: unknown): unknown {
+  if (isPart(output)) return output.error;
+  if (typeof output !== 'string') return undefined;
+  try {
+    const parsed: unknown = JSON.parse(output);
+    return isPart(parsed) ? parsed.error : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** A typed user turn, or undefined for other user-role messages (notices, hook context, summaries). */
 function typedReply(parts: Part[]): Entry | undefined {
   const text = parts.filter(p => p.type === 'text').map(p => String(p.text)).join('').trim();
@@ -62,8 +78,8 @@ function flatten(messages: readonly unknown[]): Entry[] {
     for (const part of parts) {
       if (part.type === 'tool-call') {
         entries.push({ kind: 'call', id: part.toolCallId, tool: part.toolName, key: canonicalJson(part.input) });
-      } else if (part.type === 'tool-result' && part.isError === true && isPart(part.output)) {
-        entries.push({ kind: 'result', id: part.toolCallId, refusal: part.output.error });
+      } else if (part.type === 'tool-result' && part.isError === true) {
+        entries.push({ kind: 'result', id: part.toolCallId, refusal: refusalOf(part.output) });
       }
     }
   }

@@ -40,6 +40,30 @@ describe('isApproved', () => {
   it('approves a retry after a plain yes', () => {
     expect(check([...asked, said('yes'), call('c2')])).toBe(true);
   });
+
+  // Between turns Cline saves history and rebuilds it; the refusal output comes back as a JSON string (CLI 3.0.74).
+  const rebuiltRefusal = (id: string, reason = REASON, toolName = TOOL) => result(id, JSON.stringify({ error: reason }), true, toolName);
+
+  it('approves a yes given in a new turn, where the refusal was rebuilt as a JSON string', () => {
+    expect(check([call('c1'), rebuiltRefusal('c1'), said('yes'), call('c2')])).toBe(true);
+  });
+  it('approves a rebuilt refusal of an edit', () => {
+    const edit = { path: '/w/.env', new_text: 'PORT=3000\n' };
+    expect(check([call('c1', edit, 'editor'), rebuiltRefusal('c1', REASON, 'editor'), said('yes'), call('c2', edit, 'editor')])).toBe(true);
+  });
+  it('rejects a rebuilt refusal whose reason differs', () => {
+    expect(check([call('c1'), rebuiltRefusal('c1', 'something else'), said('yes'), call('c2')])).toBe(false);
+  });
+  it('rejects a string output that is not a JSON refusal', () => {
+    expect(check([call('c1'), result('c1', REASON, true), said('yes'), call('c2')])).toBe(false);
+    expect(check([call('c1'), result('c1', '{not json', true), said('yes'), call('c2')])).toBe(false);
+  });
+  it('rejects a rebuilt refusal that is not marked as an error', () => {
+    expect(check([call('c1'), result('c1', JSON.stringify({ error: REASON }), false), said('yes'), call('c2')])).toBe(false);
+  });
+  it('a used rebuilt yes cannot approve a third identical call', () => {
+    expect(check([call('c1'), rebuiltRefusal('c1'), said('yes'), call('c0'), ran('c0'), call('c2')])).toBe(false);
+  });
   it('approves in any mode wrapper', () => {
     expect(check([...asked, said('ok', 'yolo'), call('c2')])).toBe(true);
   });
