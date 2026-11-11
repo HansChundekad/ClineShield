@@ -254,7 +254,7 @@ Approval is read from the conversation history (`rubric/approval.ts`), never fro
 - [x] Ask = skip with a reason telling Cline to ask the user in chat; after the user agrees, the identical action is allowed once
 - [ ] Works the same with auto-approve on or off, interactive and one-shot; headless with no user → stays refused
   - Manual (2026-11-11, CLI 3.0.74, plugin `2b3ab81`–`b539d4d`, macOS, model claude-haiku, disposable git repo ~/clineshield-sandbox): interactive auto-approve on: ask → yes → ran once; interactive off: ask → "no, run git stash instead" recorded as answered, `git stash` scored fresh (a changed action is never covered by an approval); one-shot on and off: ask, then `cline --id <session> "yes"` → ran once (with off, the CLI also shows its own `[y/N]`, the user's setting); `--yolo` with no input → stays refused. Not run: interactive auto-approve off followed by a yes (same approval code as one-shot off)
-- [ ] Report upstream: a plugin's `autoApprove: false` should override auto-approve all
+- [x] Report upstream: a plugin's `autoApprove: false` should override auto-approve all ([cline/cline#15645](https://github.com/cline/cline/issues/15645), 2026-11-10, CLI 3.0.74)
 
 #### Terminal visibility (`/clineshield`)
 - [x] Slash command (`"commands"` capability) prints this session's allowed / asked / blocked counts and riskiest files (edits and commands counted per action; an ask refused then approved counts once; allowed commands with no findings aren't logged, so they aren't counted)
@@ -291,6 +291,13 @@ Design: `docs/superpowers/specs/2026-11-10-extension-dashboard-design.md`.
 #### README (last)
 - [ ] One-line install, architecture diagram, rubric + config guide, eval results, CI badge, "what's next"
 
+#### Release (after README)
+Target: VS Code and its forks (Cursor, Windsurf, VSCodium…) first; the plugin itself needs no IDE. Decided with the owner 2026-11-10.
+- [ ] Tag the release (e.g. `v2.0.0`) so `cline plugin install …@v2.0.0` installs a fixed version
+- [ ] Extension packaged as a VSIX with `vsce package` and attached to the GitHub release
+- [ ] Published to the VS Code Marketplace and to Open VSX (the registry most forks use) once the eval results are in
+- [ ] README install section covers the plugin (git install) and the extension (Marketplace, Open VSX, or VSIX file)
+
 ### Later
 - Post-edit checks (the 2.0 sanity checks), cut from 2.0 on 2026-11-09. Planned scope: after an edit, run the project's checkers (configurable per file glob; default prettier → eslint → tsc for TS/JS), feed errors back through `appendContext` ("Attempt X/N"), stop after `max_retries` per task + file, write `sanity-passed` / `sanity-failed`, and feed the result into the after-edit score. Cut because it is code quality, not safety (Cline usually catches these errors when it runs the build or tests); it is the hardest remaining piece under the 3 s hook limit (background checkers, results delivered on a later hook call); and running a cloned repo's eslint/prettier config executes that repo's code, which breaks the rule that a cloned repo can't change anything. Settle how untrusted repos are handled before building it.
 - Dependency categories deferred from ③: `dep_added` (10), `dep_unpinned` (15), `dep_downgrade` (20), `dep_low_downloads` (40, < 1,000/week, npm only).
@@ -300,6 +307,7 @@ Design: `docs/superpowers/specs/2026-11-10-extension-dashboard-design.md`.
 - Code structure via tree-sitter (WASM `web-tree-sitter` + ~6 grammars, ~10 MB; native bindings ruled out: need a compiler on install). Only if the eval shows patterns miss real deletions
 - Promote log-only signals to points when the eval shows they help
 - Project config (`.cline-shield.yml` in a repo), tighten-only: a repo can add protection but never loosen it.
+- JetBrains dashboard: a separate IntelliJ Platform plugin (Kotlin) reading the same `metrics.json`; only if users ask and Cline supports plugins inside JetBrains. The guarding needs no change.
 
 ---
 
