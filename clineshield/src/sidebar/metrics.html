@@ -203,9 +203,19 @@
   const TIER = { allow: 'Allow', ask: 'Ask', block: 'Block' };
   const canExplain = i => i.tier !== 'allow' || (i.score || 0) > 0;
 
+  /** An ask's outcome: approved (yes, or the approved retry), declined (a plain no) or answered (any other reply). */
+  function askOutcome(item) {
+    if (item.tier !== 'ask') return null;
+    if (item.approved) return { title: 'Asked, then approved', ico: 'i-tick' };
+    if (item.answer === 'no') return { title: 'Asked, then declined', ico: 'i-x' };
+    if (item.answer === 'other') return { title: 'Asked, then answered in chat', ico: null };
+    return null;
+  }
+
   function tierChip(item) {
-    return h('span', { class: 'tier t-' + item.tier, title: item.approved ? 'Asked, then approved' : undefined },
-      TIER[item.tier], item.approved ? icon('i-tick') : null);
+    const o = askOutcome(item);
+    return h('span', { class: 'tier t-' + item.tier, title: o ? o.title : undefined, 'aria-label': o ? o.title : undefined },
+      TIER[item.tier], o && o.ico ? icon(o.ico) : null);
   }
 
   function categories(item) {
@@ -287,7 +297,7 @@
       },
       tierChip(item),
       h('span', { class: 'target mono', title: item.target }, item.target),
-      h('span', { class: 'meta num' }, (item.score === null ? '' : item.score + ' · ') + ago(item.timestamp))));
+      h('span', { class: 'meta num' }, (askOutcome(item) && item.answer === 'other' ? 'answered · ' : '') + (item.score === null ? '' : item.score + ' · ') + ago(item.timestamp))));
       if (open) list.append(h('div', { class: 'detail' }, categories(item), explanation(item), h('div', { class: 'acts' }, explainLink(item))));
     }
     sec.append(list);

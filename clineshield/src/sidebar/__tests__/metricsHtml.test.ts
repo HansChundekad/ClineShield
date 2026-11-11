@@ -33,4 +33,10 @@ describe('metrics.html', () => {
   it('has no em dashes in UI copy', () => {
     expect(html).not.toContain('—');
   });
+
+  it('labels answered asks in Recent: approved, declined, answered', () => {
+    expect(html).toContain("'Asked, then approved'");
+    expect(html).toContain("'Asked, then declined'");
+    expect(html).toContain("'answered · '");
+  });
 });

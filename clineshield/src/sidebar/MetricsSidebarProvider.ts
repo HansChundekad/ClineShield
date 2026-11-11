@@ -14,6 +14,7 @@ import { randomBytes } from 'crypto';
 import { readEvents } from '../metrics/reader';
 import { selectVisibleSessionIds } from '../metrics/sessions';
 import { buildDashboard } from './dashboard';
+import { ANSWERS_FILE, readAnswers } from '../plugin/answers';
 import type { ActionItem, Dashboard } from './dashboard';
 import { readConfigSummary } from '../config/configView';
 import type { ConfigSummary } from '../config/configView';
@@ -63,11 +64,14 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
       : async () => ({ ok: false, error: 'no workspace' });
     if (opts.metricsRoot) {
       // Atomic writes (temp + rename) fire onDidCreate on macOS, not onDidChange.
-      const watcher = vscode.workspace.createFileSystemWatcher(
-        new vscode.RelativePattern(vscode.Uri.file(opts.metricsRoot), '.cline-shield/metrics.json'));
-      watcher.onDidChange(() => this.refresh());
-      watcher.onDidCreate(() => this.refresh());
-      this.disposables.push(watcher);
+      // answers.json (the user's replies to asks and blocks) clears "Waiting on you".
+      for (const file of ['metrics.json', ANSWERS_FILE]) {
+        const watcher = vscode.workspace.createFileSystemWatcher(
+          new vscode.RelativePattern(vscode.Uri.file(opts.metricsRoot), `.cline-shield/${file}`));
+        watcher.onDidChange(() => this.refresh());
+        watcher.onDidCreate(() => this.refresh());
+        this.disposables.push(watcher);
+      }
     }
     this.installWatch = this.watchForInstall();
     this.refresh();
@@ -101,7 +105,7 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
     webviewView.onDidDispose(() => { this.view = undefined; });
   }
 
-  /** Debounced: a burst of metrics.json writes triggers one read. */
+  /** Debounced: a burst of metrics.json / answers.json writes triggers one read. */
   refresh(): void {
     this.installWatch?.poke();
     if (this.timer) clearTimeout(this.timer);
@@ -114,9 +118,10 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
 
   private async update(): Promise<void> {
     try {
-      const events = this.opts.metricsRoot ? await readEvents(this.opts.metricsRoot) : [];
+      const root = this.opts.metricsRoot;
+      const [events, answers] = root ? await Promise.all([readEvents(root), readAnswers(root)]) : [[], { entries: [] }];
       const visible = selectVisibleSessionIds(events, this.opts.activationTime, this.opts.sessionId);
-      this.dashboard = buildDashboard(events, visible, this.dismissed);
+      this.dashboard = buildDashboard(events, visible, this.dismissed, answers.entries);
       this.opts.onWaitingCount(this.dashboard.waiting.length);
       await this.post();
     } catch (error) {

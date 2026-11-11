@@ -2,7 +2,10 @@
  * dashboard.ts
  *
  * Pure model for the sidebar (design: docs/superpowers/specs/2026-11-10-extension-dashboard-design.md):
- * "Waiting on you", totals, recent activity. No vscode import, no I/O, never
+ * "Waiting on you", totals, recent activity. An ask or block stops waiting when
+ * it is approved, the user answers it in chat (answers.json), a newer ask/block
+ * replaces it, an action follows 15 s or more later, or it is dismissed (×).
+ * No vscode import, no I/O, never
  * throws on malformed events. Text is kept verbatim; the webview escapes it.
  */
 
@@ -19,6 +22,8 @@ export interface ActionItem {
   kind: 'edit' | 'command';
   tier: 'allow' | 'ask' | 'block';
   approved?: boolean;
+  /** The user's typed reply to this ask or block (answers.json); a yes also sets approved on an ask. */
+  answer?: 'yes' | 'no' | 'other';
   target: string;
   files: string[];
   score: number | null;
@@ -144,6 +149,27 @@ function buildItems(evs: Ev[]): ActionItem[] {
   return items;
 }
 
+const ANSWERS = new Set(['yes', 'no', 'other']);
+
+/**
+ * Applies answers.json entries: each answer belongs to the latest ask or block
+ * in its session from before it was given (the plugin records a reply to the
+ * latest refusal). The first answer for an item wins.
+ */
+function applyAnswers(items: ActionItem[], answers: unknown): void {
+  if (!Array.isArray(answers)) return;
+  for (const a of answers) {
+    if (typeof a !== 'object' || a === null) continue;
+    const { sessionId, answeredAt, answer } = a as Record<string, unknown>;
+    const at = typeof answeredAt === 'string' ? Date.parse(answeredAt) : NaN;
+    if (typeof sessionId !== 'string' || !Number.isFinite(at) || !ANSWERS.has(answer as string)) continue;
+    const item = [...items].reverse().find(i => i.sessionId === sessionId && i.tier !== 'allow' && Date.parse(i.timestamp) < at);
+    if (!item || item.answer) continue;
+    item.answer = answer as ActionItem['answer'];
+    if (item.tier === 'ask' && answer === 'yes') item.approved = true;
+  }
+}
+
 function waitingItems(items: ActionItem[], dismissed: ReadonlySet<string>): ActionItem[] {
   const out: ActionItem[] = [];
   for (const sid of new Set(items.map(i => i.sessionId))) {
@@ -153,15 +179,17 @@ function waitingItems(items: ActionItem[], dismissed: ReadonlySet<string>): Acti
     const latest = own[pos];
     const clearAt = Date.parse(latest.timestamp) + WAIT_CLEAR_MS;
     const movedOn = own.slice(pos + 1).some(i => Date.parse(i.timestamp) >= clearAt);
-    if (latest.approved || movedOn || dismissed.has(latest.id)) continue;
+    if (latest.approved || latest.answer || movedOn || dismissed.has(latest.id)) continue;
     out.push(latest);
   }
   return out.sort((a, b) => items.indexOf(b) - items.indexOf(a));
 }
 
-export function buildDashboard(events: unknown, visibleIds: Set<string>, dismissed: ReadonlySet<string>): Dashboard {
+/** `answers` is answers.json's entries (plugin/answers.ts); malformed entries are ignored. */
+export function buildDashboard(events: unknown, visibleIds: Set<string>, dismissed: ReadonlySet<string>, answers: unknown = []): Dashboard {
   const evs = validEvents(events, visibleIds);
   const items = buildItems(evs);
+  applyAnswers(items, answers);
   const totals: Dashboard['totals'] = {
     edits: { allowed: 0, asked: 0, approved: 0, blocked: 0 },
     commands: { asked: 0, approved: 0, blocked: 0 },

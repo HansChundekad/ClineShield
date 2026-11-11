@@ -115,4 +115,67 @@ describe('buildDashboard', () => {
     const d = buildDashboard([blocked('a.ts', 0, undefined, 'other')], ids('s1'), none);
     expect(d).toMatchObject({ recent: [], waiting: [], hasEvents: false });
   });
+
+  describe('answers (answers.json)', () => {
+    const answer = (s: number, a: string, sid = 's1', toolCallId = `t${s}`) => ({ sessionId: sid, toolCallId, answeredAt: at(s), answer: a });
+
+    it('a "no" after an ask clears it and marks it declined', () => {
+      const d = buildDashboard([approval('a.ts', 0, false)], ids(), none, [answer(5, 'no')]);
+      expect(d.waiting).toEqual([]);
+      expect(d.recent[0]).toMatchObject({ tier: 'ask', approved: false, answer: 'no' });
+    });
+
+    it('a "yes" after an ask clears it and marks it approved before the retry runs', () => {
+      const d = buildDashboard([command('sudo x', 0, 'ask', { approved: false })], ids(), none, [answer(5, 'yes')]);
+      expect(d.waiting).toEqual([]);
+      expect(d.recent[0]).toMatchObject({ approved: true, answer: 'yes' });
+      expect(d.totals.commands).toEqual({ asked: 1, approved: 0, blocked: 0 });
+    });
+
+    it('a yes then the approved retry is still one approved item', () => {
+      const d = buildDashboard([approval('a.ts', 0, false), approval('a.ts', 8, true)], ids(), none, [answer(5, 'yes')]);
+      expect(d.recent).toHaveLength(1);
+      expect(d.recent[0]).toMatchObject({ approved: true });
+    });
+
+    it('any other reply clears an ask as answered', () => {
+      const d = buildDashboard([approval('a.ts', 0, false)], ids(), none, [answer(5, 'other')]);
+      expect(d.waiting).toEqual([]);
+      expect(d.recent[0]).toMatchObject({ approved: false, answer: 'other' });
+    });
+
+    it('any reply clears a block', () => {
+      for (const a of ['yes', 'no', 'other']) {
+        const d = buildDashboard([blocked('b.ts', 0)], ids(), none, [answer(5, a)]);
+        expect(d.waiting).toEqual([]);
+        expect(d.recent[0]).toMatchObject({ tier: 'block', answer: a });
+        expect(d.recent[0].approved).toBeUndefined();
+      }
+    });
+
+    it('an answer from before the item does not clear it', () => {
+      const d = buildDashboard([approval('a.ts', 10, false)], ids(), none, [answer(5, 'no')]);
+      expect(d.waiting.map(i => i.target)).toEqual(['a.ts']);
+      expect(d.recent[0].answer).toBeUndefined();
+    });
+
+    it('an answer applies to the latest ask or block before it in its own session only', () => {
+      const evs = [blocked('b.ts', 0, undefined, 's1'), approval('a.ts', 2, false, 's1'), approval('c.ts', 2, false, 's2')];
+      const d = buildDashboard(evs, ids('s1', 's2'), none, [answer(5, 'no', 's1')]);
+      expect(d.waiting.map(i => [i.sessionId, i.target])).toEqual([['s2', 'c.ts']]);
+      expect(d.recent.find(i => i.target === 'a.ts')!.answer).toBe('no');
+      expect(d.recent.find(i => i.target === 'b.ts')!.answer).toBeUndefined();
+    });
+
+    it('a newer ask after an answer waits again', () => {
+      const d = buildDashboard([approval('a.ts', 0, false), command('sudo x', 10, 'ask', { approved: false })], ids(), none, [answer(5, 'no')]);
+      expect(d.waiting.map(i => i.target)).toEqual(['sudo x']);
+    });
+
+    it.each([[undefined], [null], [{}], [[null, { sessionId: 's1' }, { sessionId: 's1', answeredAt: 'garbage', answer: 'no' }, { sessionId: 's1', answeredAt: at(5), answer: 'maybe' }]]])(
+      'malformed answers %p are ignored', bad => {
+        const d = buildDashboard([approval('a.ts', 0, false)], ids(), none, bad as never);
+        expect(d.waiting).toHaveLength(1);
+      });
+  });
 });
