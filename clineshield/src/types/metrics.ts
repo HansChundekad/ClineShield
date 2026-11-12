@@ -5,7 +5,6 @@
  * This file defines the contract that all features depend on.
  *
  * CRITICAL: Never change these types without updating:
- * - .cline-shield/metrics.json (example events)
  * - All hooks that write events
  * - All UI components that read events
  */

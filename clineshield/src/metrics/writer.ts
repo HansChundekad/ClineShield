@@ -13,6 +13,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomBytes } from 'crypto';
 import type { MetricsEvent } from '../types/metrics';
+import { sweepStaleTemps } from './tempSweep';
 
 const METRICS_DIR = '.cline-shield';
 const METRICS_FILE = 'metrics.json';
@@ -159,11 +160,12 @@ async function readModifyWrite(event: MetricsEvent, metricsPath: string): Promis
   // Unique temp path prevents concurrent writers from clobbering each other's temp.
   const suffix = `${Date.now()}.${randomBytes(4).toString('hex')}`;
   const tempPath = `${metricsPath}.${suffix}.tmp`;
-  await fs.writeFile(tempPath, JSON.stringify(events, null, 2), 'utf-8');
+  await sweepStaleTemps(metricsPath);
   try {
+    await fs.writeFile(tempPath, JSON.stringify(events, null, 2), 'utf-8');
     await fs.rename(tempPath, metricsPath);
-  } catch (renameError) {
+  } catch (writeError) {
     try { await fs.unlink(tempPath); } catch { /* ignore */ }
-    throw renameError;
+    throw writeError;
   }
 }

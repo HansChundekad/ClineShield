@@ -12,7 +12,7 @@ import * as ts from 'typescript';
 
 const PROCESSES = 4;
 const ANSWERS_PER_PROCESS = 15;
-const SOURCES = ['plugin/answers.ts', 'plugin/rubric/approval.ts', 'metrics/writer.ts'];
+const SOURCES = ['plugin/answers.ts', 'plugin/rubric/approval.ts', 'metrics/writer.ts', 'metrics/tempSweep.ts'];
 
 const WORKER_SOURCE = `
 const { appendAnswer } = require('./plugin/answers.js');

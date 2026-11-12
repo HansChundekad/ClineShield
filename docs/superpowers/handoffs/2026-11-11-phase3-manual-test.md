@@ -80,29 +80,32 @@ one Cline version. Everything below is evidence from real sessions plus log insp
 7. **Headless asks leave a card** until × (the session is technically still answerable via `--id`). Acceptable,
    but CI-style users may find it noisy.
 8. **Stray temp files.** `metrics.json.<n>.<id>.tmp` files were left in `.cline-shield/` (sandbox and main
-   checkout), likely from an interrupted write. Harmless, not cleaned up.
+   checkout). Both were complete JSON: the writer was killed between write and rename (Cline's 3 s hook limit).
+   Fixed on `fix/extension-hardening` (2026-11-12): every atomic writer removes its own temps older than 30 s.
 9. **Known limit (from SPEC):** 3 blocks in a row can end a one-shot run at the default `--retries 3`.
 10. Not exercised at all: VS Code forks (Cursor, Windsurf), JetBrains, Kanban, the Cline SDK directly,
     very large repos, non-English replies ("sí", "oui" are treated as "other", by design).
 
-### Deferred minors (from the extension's final review, still open)
-onMessage rejections unhandled; same-ms command id collision; risk pairing can borrow a later edit's score;
-a NaN timestamp leaves a waiting item stuck; no onDidDelete on metrics watchers; Explain uses only the first
-file; disposables accumulate on re-resolve.
+### Deferred minors (from the extension's final review)
+All fixed on `fix/extension-hardening` (2026-11-12), each with a test: onMessage rejections unhandled; same-ms
+command id collision; risk pairing can borrow a later edit's score; a NaN timestamp leaves a waiting item stuck;
+no onDidDelete on metrics watchers; Explain uses only the first file; disposables accumulate on re-resolve.
 
 ## 3. Not done (next tasks)
 
-- [ ] **Block 7a, nested folder.** Open `~/clineshield-sandbox/packages/app` as the VS Code folder (edit
+*Update 2026-11-12: 7a, 7b and 8 passed on `fix/extension-hardening` (see SPEC); Explain needed a model change to `gemini-3.5-flash-lite`.*
+
+- [x] **Block 7a, nested folder.** Open `~/clineshield-sandbox/packages/app` as the VS Code folder (edit
   `.vscode/launch.json` args or File > Open Folder in the dev window), run a Cline task from that folder, and
   confirm the sidebar and change map show it (the extension reads the git root's `.cline-shield/metrics.json`).
-- [ ] **Block 7b, Gemini Explain.** With no key: Settings shows "Explanations off · Set Gemini key" and Explain
+- [x] **Block 7b, Gemini Explain.** With no key: Settings shows "Explanations off · Set Gemini key" and Explain
   prompts for a key. Run "ClineShield: Set Gemini API Key" (owner supplies the key; never print or log it), click
   Explain on an ask/block card: loading → explanation; check the request carries the key only in the
   `x-goog-api-key` header and secrets are redacted. Then "Clear Gemini API Key" → off again.
-- [ ] **Block 8, hooks removed.** Confirm no `.clinerules/hooks/` exists in the repo or sandbox, Cline sessions
+- [x] **Block 8, hooks removed.** Confirm no `.clinerules/hooks/` exists in the repo or sandbox, Cline sessions
   run without hook errors (none seen during Blocks 1–6), and nothing references `CLINESHIELD_*` env vars.
-- [ ] Optional: interactive `cline --auto-approve false`, ask → yes (the one Block 4 gap).
-- [ ] Then tick SPEC's "Works the same with auto-approve…" and "Manual: sidebar, change map and explanations"
+- [ ] Optional: interactive `cline --auto-approve false`, ask → yes (the one Block 4 gap). Skipped by owner decision 2026-11-12.
+- [x] Then tick SPEC's "Works the same with auto-approve…" and "Manual: sidebar, change map and explanations"
   lines if they pass, and give the owner a short results table.
 
 **Cleanup for the owner (by hand):**

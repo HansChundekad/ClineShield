@@ -40,11 +40,13 @@ describe('metrics.json under concurrent writes from separate processes', () => {
   beforeAll(async () => {
     dir = await fs.mkdtemp(path.join(os.tmpdir(), 'clineshield-xproc-'));
     root = path.join(dir, 'workspace');
-    const writerTs = await fs.readFile(path.join(__dirname, '..', '..', 'metrics', 'writer.ts'), 'utf-8');
-    const { outputText } = ts.transpileModule(writerTs, {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true },
-    });
-    await fs.writeFile(path.join(dir, 'writer.js'), outputText);
+    for (const name of ['writer', 'tempSweep']) {
+      const source = await fs.readFile(path.join(__dirname, '..', '..', 'metrics', `${name}.ts`), 'utf-8');
+      const { outputText } = ts.transpileModule(source, {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true },
+      });
+      await fs.writeFile(path.join(dir, `${name}.js`), outputText);
+    }
     await fs.writeFile(path.join(dir, 'worker.js'), WORKER_SOURCE);
   });
 

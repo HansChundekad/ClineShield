@@ -16,6 +16,7 @@ import { randomUUID } from 'crypto';
 import type { AgentRuntimeStateSnapshot } from './types';
 import { flatten, isPlainYes, normalizeReply } from './rubric/approval';
 import { acquireLock } from '../metrics/writer';
+import { sweepStaleTemps } from '../metrics/tempSweep';
 
 export const ANSWERS_FILE = 'answers.json';
 export const MAX_ANSWERS = 200;
@@ -91,6 +92,7 @@ async function appendNow(root: string, entry: AnswerEntry): Promise<boolean> {
     const existing = (await readAnswers(root)).entries;
     if (existing.some(e => e.sessionId === entry.sessionId && e.toolCallId === entry.toolCallId)) return true;
     const next: Answers = { entries: [...existing, entry].slice(-MAX_ANSWERS) };
+    await sweepStaleTemps(target);
     await fs.writeFile(temp, JSON.stringify(next), 'utf-8');
     await fs.rename(temp, target);
     return true;

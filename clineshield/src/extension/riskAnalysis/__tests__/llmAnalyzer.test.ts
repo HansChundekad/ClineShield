@@ -22,6 +22,12 @@ describe('callGemini', () => {
     expect((init!.headers as Record<string, string>)['x-goog-api-key']).toBe(KEY);
   });
 
+  it('calls gemini-3.5-flash-lite (gemini-2.5-flash returned 404 in the 2026-11-12 manual test)', async () => {
+    const f = fakeFetch(200, okBody);
+    await callGemini(KEY, 'prompt', f as unknown as typeof fetch);
+    expect(f.mock.calls[0][0]).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent');
+  });
+
   it('reports HTTP errors by status', async () => {
     expect(await callGemini(KEY, 'p', fakeFetch(429, {}) as unknown as typeof fetch)).toEqual({ ok: false, error: 'HTTP 429' });
   });

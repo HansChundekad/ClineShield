@@ -5,7 +5,7 @@
  * in the URL, a log line or a file. Never throws.
  */
 
-export const GEMINI_MODEL = 'gemini-2.5-flash';
+export const GEMINI_MODEL = 'gemini-3.5-flash-lite';
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 export type GeminiResult = { ok: true; explanation: string } | { ok: false; error: string };

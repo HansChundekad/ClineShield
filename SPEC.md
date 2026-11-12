@@ -259,6 +259,7 @@ Approval is read from the conversation history (`rubric/approval.ts`), never fro
 - [x] Ask = skip with a reason telling Cline to ask the user in chat; after the user agrees, the identical action is allowed once
 - [ ] Works the same with auto-approve on or off, interactive and one-shot; headless with no user → stays refused
   - Manual (2026-11-11, CLI 3.0.74, plugin `2b3ab81`–`b539d4d`, macOS, model claude-haiku, disposable git repo ~/clineshield-sandbox): interactive auto-approve on: ask → yes → ran once; interactive off: ask → "no, run git stash instead" recorded as answered, `git stash` scored fresh (a changed action is never covered by an approval); one-shot on and off: ask, then `cline --id <session> "yes"` → ran once (with off, the CLI also shows its own `[y/N]`, the user's setting); `--yolo` with no input → stays refused. Not run: interactive auto-approve off followed by a yes (same approval code as one-shot off)
+  - Owner decision (2026-11-12): the interactive auto-approve off → yes run is skipped; left unticked until it is run
 - [x] Report upstream: a plugin's `autoApprove: false` should override auto-approve all ([cline/cline#15645](https://github.com/cline/cline/issues/15645), 2026-11-10, CLI 3.0.74)
 
 #### Terminal visibility (`/clineshield`)
@@ -279,14 +280,16 @@ Design: `docs/superpowers/specs/2026-11-10-extension-dashboard-design.md`.
   - Manual (2026-11-11, CLI 3.0.74, plugin `2b3ab81`–`b539d4d`, macOS, model claude-haiku, disposable git repo ~/clineshield-sandbox), owner confirmed by eye: no → declined; yes → ✓; "no, run git stash instead" → answered; block then "ok skip" → card cleared. A headless ask that nobody answers stays until ×
 - [x] Change map marks files with a blocked attempt: level is the worst of `risk-assessed`, asked (medium) and blocked (high)
 - [x] No longer sets env vars for hooks or writes to `metrics.json` at activation; works when no plugin has run yet (install / "watching this repo" empty states)
-- [x] Opt-in LLM explanation: on click only, key is the switch, own Gemini key in SecretStorage ("Set/Clear Gemini API Key", sent in a header, never the URL),
+- [x] Opt-in LLM explanation: on click only, key is the switch, own Gemini key in SecretStorage (model `gemini-3.5-flash-lite`; "Set/Clear Gemini API Key", sent in a header, never the URL),
   secrets stripped before sending, `gemini_api_key` in YAML ignored with a warning, plugin writes the diff sidecar (`.cline-shield/diff-context.json`, newest 50, redacted)
 - [x] Reads `~/.cline-shield.yml` read-only through the plugin's `ConfigStore`; watches it; "Reload Config" as fallback; "Create config" writes it only when missing, after confirming; the file lists every setting (active or as a commented example), checked by a test against the schema's `CONFIG_KEYS`
-- [ ] Manual: sidebar, change map and explanations checked by the owner in a real session
-  - Done (Manual (2026-11-11, CLI 3.0.74, plugin `2b3ab81`–`b539d4d`, macOS, model claude-haiku, disposable git repo ~/clineshield-sandbox), owner confirmed by eye): install empty state, then "Watching this repo" without Reload after `cline plugin install`; ask/block cards with categories; Recent ✓/✗/answered; totals; change map BLOCKED mark; Create config writes every setting. Still to do: a folder nested in the repo (`packages/app`), Gemini off by default then Explain working after a key is set
+- [x] Manual: sidebar, change map and explanations checked by the owner in a real session
+  - Done (Manual (2026-11-11, CLI 3.0.74, plugin `2b3ab81`–`b539d4d`, macOS, model claude-haiku, disposable git repo ~/clineshield-sandbox), owner confirmed by eye): install empty state, then "Watching this repo" without Reload after `cline plugin install`; ask/block cards with categories; Recent ✓/✗/answered; totals; change map BLOCKED mark; Create config writes every setting
+  - Manual (2026-11-12, CLI 3.0.74, plugin `fix/extension-hardening` @ `5fbe45a`/`a329fe1`, macOS, disposable git repo ~/clineshield-sandbox), owner confirmed by eye: with `packages/app` open, a session from that folder showed two allowed edits and the `.env` ask in the sidebar and three edits under `packages/app` in the change map. Explain first failed with HTTP 404 (`gemini-2.5-flash` gone); after switching to `gemini-3.5-flash-lite`, Explain on the `src/math.ts` ask (exports `add`, `sub` removed, 40) gave a correct, specific explanation. Not reported back: "Clear Gemini API Key" turning explanations off again (unit-tested)
 
 #### Retire 1.x hooks
 - [x] Remove `clineshield/hooks/`, root and `test-workspace/` `.clinerules/hooks/`, and hook-only env-var code in `configLoader.ts` (deleted with `test-workspace/`, the 1.x `rulesEngine.ts` and the phase-6 smoke test; `.vscode/launch.json` opens `~/clineshield-sandbox`)
+  - Manual (2026-11-12, CLI 3.0.74, plugin `fix/extension-hardening` @ `5fbe45a`/`a329fe1`, macOS, disposable git repo ~/clineshield-sandbox): no `.clinerules/hooks/` in the repo, the sandbox or `~`; no `CLINESHIELD_*` in code or the environment (only historical docs); real sessions logged every event with no hook errors
 
 #### Evaluation ⛔
 - [ ] 20–30 tasks in a purpose-built eval project, labelled safe/destructive in advance, approved by the owner with a budget

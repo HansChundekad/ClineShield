@@ -63,6 +63,8 @@ function validEvents(events: unknown, visible: Set<string>): Ev[] {
     const x = e as Record<string, unknown>;
     if (typeof x.sessionId !== 'string' || !visible.has(x.sessionId)) return;
     if (typeof x.type !== 'string' || typeof x.timestamp !== 'string') return;
+    // An unparseable time can't be ordered against answers or the 15 s clear: skip it.
+    if (!Number.isFinite(Date.parse(x.timestamp))) return;
     if (typeof x.data !== 'object' || x.data === null) return;
     out.push({ index, sessionId: x.sessionId, timestamp: x.timestamp, type: x.type, data: x.data as Data });
   });
@@ -87,13 +89,17 @@ function groupActions(evs: Ev[]): Ev[][] {
   return [...groups.values()];
 }
 
-function editItem(group: Ev[], risks: Ev[]): ActionItem {
+function editItem(group: Ev[], evs: Ev[]): ActionItem {
   const first = group[0];
   const tier = EDIT_TIER[first.type];
   const files = group.map(e => e.data.file as string);
   const sources = tier === 'allow'
-    ? files.flatMap(f => {
-      const r = risks.find(x => x.sessionId === first.sessionId && x.index > first.index && x.data.file === f);
+    ? group.flatMap(own => {
+      const f = own.data.file;
+      // risk-assessed is logged after its edit; the next edit event of the file ends the window.
+      const next = evs.find(x => x.index > own.index && x.sessionId === own.sessionId && x.data.file === f &&
+        (x.type === 'risk-assessed' || x.type.startsWith('edit-')));
+      const r = next?.type === 'risk-assessed' ? next : undefined;
       return r ? [{ score: num(r.data.rulesScore), reasons: reasonsOf(r.data), cutoffs: null }] : [];
     })
     : group.map(e => ({ score: num(e.data.score), reasons: reasonsOf(e.data), cutoffs: isCutoffs(e.data.cutoffs) ? e.data.cutoffs : null }));
@@ -101,7 +107,7 @@ function editItem(group: Ev[], risks: Ev[]): ActionItem {
   const reasonLists = sources.map(s => s.reasons).filter((r): r is RiskReason[] => r !== null);
   const reasonText = group.map(e => e.data.reason).find((r): r is string => typeof r === 'string') ?? null;
   return {
-    id: `${first.sessionId}|${first.timestamp}|edit`,
+    id: `${first.sessionId}|${first.timestamp}|edit|${first.index}`,
     sessionId: first.sessionId, timestamp: first.timestamp, kind: 'edit', tier,
     ...(tier === 'ask' ? { approved: false } : {}),
     target: files.join(', '), files,
@@ -115,7 +121,7 @@ function editItem(group: Ev[], risks: Ev[]): ActionItem {
 function commandItem(e: Ev): ActionItem {
   const tier = e.data.tier as ActionItem['tier'];
   return {
-    id: `${e.sessionId}|${e.timestamp}|command`,
+    id: `${e.sessionId}|${e.timestamp}|command|${e.index}`,
     sessionId: e.sessionId, timestamp: e.timestamp, kind: 'command', tier,
     ...(tier === 'ask' ? { approved: false } : {}),
     target: e.data.command as string, files: [],
@@ -127,7 +133,6 @@ function commandItem(e: Ev): ActionItem {
 const isApproval = (g: Ev[]) => g[0].data.approved === true && (g[0].type === 'edit-approval' || g[0].type === 'command-assessed');
 
 function buildItems(evs: Ev[]): ActionItem[] {
-  const risks = evs.filter(e => e.type === 'risk-assessed');
   const items: ActionItem[] = [];
   for (const group of groupActions(evs)) {
     if (isApproval(group)) {
@@ -138,7 +143,7 @@ function buildItems(evs: Ev[]): ActionItem[] {
       if (asked) asked.approved = true;
       continue;
     }
-    const item = group[0].type === 'command-assessed' ? commandItem(group[0]) : editItem(group, risks);
+    const item = group[0].type === 'command-assessed' ? commandItem(group[0]) : editItem(group, evs);
     // A repeat refusal of the same action (no approval in between) is the same ask, as /clineshield counts it.
     if (item.tier === 'ask') {
       const prev = items.findIndex(i => i.sessionId === item.sessionId && i.kind === item.kind && i.tier === 'ask' && !i.approved && i.target === item.target);

@@ -11,3 +11,6 @@ clineshield/dist/
 
 # Cline plugins installed for local testing (`cline plugin install ... --cwd .`)
 **/.cline/plugins/
+
+# ClineShield runtime files (metrics.json, answers.json, diff sidecar, temps, locks)
+.cline-shield/
