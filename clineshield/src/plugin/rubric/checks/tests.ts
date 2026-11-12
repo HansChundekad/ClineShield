@@ -5,7 +5,7 @@
  * (JS/TS, Python, Go, Java/Kotlin, Rust, Ruby).
  */
 
-import { languageOf } from '../paths';
+import { isTestPath, languageOf, testStem } from '../paths';
 import type { Language } from '../paths';
 import type { Check, FileChange, RawFinding } from '../types';
 
@@ -97,6 +97,9 @@ export const testsCheck: Check = {
   },
 };
 
+/** test_and_source after a failed test run: 2 × 15 = 30 by default (owner: noted, never asks alone on balanced). */
+export const FAILED_RUN_WEIGHT = 2;
+
 export const testAndSource: Check = {
   name: 'test_and_source',
   kind: 'signal',
@@ -104,6 +107,20 @@ export const testAndSource: Check = {
   run(_c, a) {
     const tests = a.changes.some(c => c.isTest);
     const source = a.changes.some(c => !c.isTest && languageOf(c.path) !== undefined);
-    return tests && source ? [{ category: 'test_and_source', weight: 1, detail: 'changes tests and source code in one action' }] : [];
+    const failed = a.session?.lastTestFailed === true;
+    const after = failed ? ', after a failed test run' : '';
+    // ④: one finding, bigger after a failed run, so the per-group rule can't drop the extra points on its own.
+    const hit = (detail: string): RawFinding[] => [{ category: 'test_and_source', weight: failed ? FAILED_RUN_WEIGHT : 1, detail: detail + after }];
+    if (tests && source) return hit('changes tests and source code in one action');
+    // ④: Cline's editor tool changes one file per call, so also pair with a matching file edited recently.
+    const recent = a.session?.recentEdits() ?? [];
+    for (const c of a.changes) {
+      if (languageOf(c.path) === undefined) continue;
+      const other = recent.find(p => p !== c.path && isTestPath(p) !== c.isTest && languageOf(p) !== undefined && testStem(p) === testStem(c.path));
+      if (!other) continue;
+      const [src, test] = c.isTest ? [other, c.path] : [c.path, other];
+      return hit(`changes ${src} and its test ${test} within 10 minutes`);
+    }
+    return [];
   },
 };

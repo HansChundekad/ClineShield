@@ -31,6 +31,11 @@ export function isTestPath(p: string): boolean {
   return TEST_PATTERNS.some(r => r.test(p));
 }
 
+/** Base name with test markers and extension removed, so `math.test.js`, `math_test.go`, `test_math.py`, `MathTest.java` and `math.js` all give `math`. */
+export function testStem(p: string): string {
+  return base(p).replace(/\.[^.]+$/, '').replace(/[._](test|spec)$/i, '').replace(/^test_/i, '').replace(/Tests?$/, '').toLowerCase();
+}
+
 export function isSecretsFile(p: string): boolean {
   const b = base(p);
   if (/^\.env(\..+)?$/.test(b)) return !/\.(example|sample|template|dist)$/.test(b);
