@@ -80,15 +80,16 @@ one Cline version. Everything below is evidence from real sessions plus log insp
 7. **Headless asks leave a card** until × (the session is technically still answerable via `--id`). Acceptable,
    but CI-style users may find it noisy.
 8. **Stray temp files.** `metrics.json.<n>.<id>.tmp` files were left in `.cline-shield/` (sandbox and main
-   checkout), likely from an interrupted write. Harmless, not cleaned up.
+   checkout). Both were complete JSON: the writer was killed between write and rename (Cline's 3 s hook limit).
+   Fixed on `fix/extension-hardening` (2026-11-12): every atomic writer removes its own temps older than 30 s.
 9. **Known limit (from SPEC):** 3 blocks in a row can end a one-shot run at the default `--retries 3`.
 10. Not exercised at all: VS Code forks (Cursor, Windsurf), JetBrains, Kanban, the Cline SDK directly,
     very large repos, non-English replies ("sí", "oui" are treated as "other", by design).
 
-### Deferred minors (from the extension's final review, still open)
-onMessage rejections unhandled; same-ms command id collision; risk pairing can borrow a later edit's score;
-a NaN timestamp leaves a waiting item stuck; no onDidDelete on metrics watchers; Explain uses only the first
-file; disposables accumulate on re-resolve.
+### Deferred minors (from the extension's final review)
+All fixed on `fix/extension-hardening` (2026-11-12), each with a test: onMessage rejections unhandled; same-ms
+command id collision; risk pairing can borrow a later edit's score; a NaN timestamp leaves a waiting item stuck;
+no onDidDelete on metrics watchers; Explain uses only the first file; disposables accumulate on re-resolve.
 
 ## 3. Not done (next tasks)
 
