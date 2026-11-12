@@ -179,3 +179,68 @@ describe('buildDashboard', () => {
       });
   });
 });
+
+describe('item ids', () => {
+  it('two commands in the same session and millisecond get distinct ids', () => {
+    const d = buildDashboard([command('rm -rf ../a', 0, 'ask'), command('rm -rf ../b', 0, 'ask')], ids(), none);
+    expect(d.recent).toHaveLength(2);
+    expect(d.recent[0].id).not.toBe(d.recent[1].id);
+  });
+
+  it('dismissing the first of two same-millisecond commands keeps the second waiting', () => {
+    const evs = [command('rm -rf ../a', 0, 'ask'), command('rm -rf ../b', 0, 'ask')];
+    const first = buildDashboard(evs, ids(), none).recent.find(i => i.target === 'rm -rf ../a')!;
+    const d = buildDashboard(evs, ids(), new Set([first.id]));
+    expect(d.waiting.map(i => i.target)).toEqual(['rm -rf ../b']);
+  });
+
+  it('an item id is unchanged after another event is appended', () => {
+    const before = buildDashboard([blocked('a.ts', 0)], ids(), none).recent[0].id;
+    const after = buildDashboard([blocked('a.ts', 0), allowed('b.ts', 30)], ids(), none).recent.find(i => i.target === 'a.ts')!.id;
+    expect(after).toBe(before);
+  });
+});
+
+describe('unparseable timestamps', () => {
+  it('an event with an unparseable timestamp is ignored and the rest of the session still works', () => {
+    const bad = { ...approval('b.ts', 0, false), timestamp: 'garbage' };
+    const evs = [approval('a.ts', 0, false), bad];
+    const d = buildDashboard(evs, ids(), none);
+    expect(d.recent.map(i => i.target)).toEqual(['a.ts']);
+    expect(d.waiting.map(i => i.target)).toEqual(['a.ts']);
+    const answered = buildDashboard(evs, ids(), none, [{ sessionId: 's1', toolCallId: 't', answeredAt: at(10), answer: 'yes' }]);
+    expect(answered.waiting).toEqual([]);
+  });
+});
+
+describe('risk pairing for allowed edits', () => {
+  it('an allowed edit pairs with the risk-assessed that follows it', () => {
+    const d = buildDashboard([allowed('a.ts', 0), risk('a.ts', 0, 15)], ids(), none);
+    expect(d.recent[0].score).toBe(15);
+  });
+
+  it('an allowed edit with no risk-assessed of its own does not borrow a later edit\'s score', () => {
+    const d = buildDashboard([allowed('a.ts', 0), allowed('a.ts', 3), risk('a.ts', 3, 25)], ids(), none);
+    const [latest, earliest] = d.recent;
+    expect(earliest.timestamp).toBe(at(0));
+    expect(earliest.score).toBeNull();
+    expect(latest.score).toBe(25);
+  });
+
+  it('a refused edit of the same file in between also ends the pairing window', () => {
+    const d = buildDashboard([allowed('a.ts', 0), blocked('a.ts', 2), risk('a.ts', 4, 25)], ids(), none);
+    expect(d.recent.find(i => i.tier === 'allow')!.score).toBeNull();
+  });
+
+  it('each file of a multi-file allowed edit pairs with its own risk-assessed', () => {
+    const d = buildDashboard([allowed('a.ts', 0), allowed('b.ts', 0), risk('a.ts', 0, 10), risk('b.ts', 0, 35)], ids(), none);
+    expect(d.recent).toHaveLength(1);
+    expect(d.recent[0].score).toBe(35);
+    expect(d.recent[0].reasons).toHaveLength(2);
+  });
+
+  it('risk-assessed for another file or session is not used', () => {
+    const d = buildDashboard([allowed('a.ts', 0), risk('b.ts', 0, 15), risk('a.ts', 0, 30, 's2')], ids('s1', 's2'), none);
+    expect(d.recent.find(i => i.target === 'a.ts')!.score).toBeNull();
+  });
+});
