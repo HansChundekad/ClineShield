@@ -57,6 +57,8 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
   private readonly explain: (item: ActionItem) => Promise<GeminiResult>;
   private readonly installWatch: InstallWatch;
   private readonly installWatchers: vscode.Disposable[] = [];
+  /** Listeners of the current webview; released when it is disposed or replaced. */
+  private viewDisposables: vscode.Disposable[] = [];
 
   constructor(private readonly opts: SidebarOptions) {
     this.explain = opts.metricsRoot
@@ -65,11 +67,13 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
     if (opts.metricsRoot) {
       // Atomic writes (temp + rename) fire onDidCreate on macOS, not onDidChange.
       // answers.json (the user's replies to asks and blocks) clears "Waiting on you".
+      // A deleted file empties the view.
       for (const file of ['metrics.json', ANSWERS_FILE]) {
         const watcher = vscode.workspace.createFileSystemWatcher(
           new vscode.RelativePattern(vscode.Uri.file(opts.metricsRoot), `.cline-shield/${file}`));
         watcher.onDidChange(() => this.refresh());
         watcher.onDidCreate(() => this.refresh());
+        watcher.onDidDelete(() => this.refresh());
         this.disposables.push(watcher);
       }
     }
@@ -97,12 +101,20 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
   }
 
   async resolveWebviewView(webviewView: vscode.WebviewView): Promise<void> {
+    this.releaseView();
     this.view = webviewView;
     webviewView.webview.options = { enableScripts: true, localResourceRoots: [] };
     webviewView.webview.html = await this.html(webviewView.webview);
-    this.disposables.push(webviewView.webview.onDidReceiveMessage(m => void this.onMessage(m)));
-    this.disposables.push(webviewView.onDidChangeVisibility(() => { if (webviewView.visible) this.installWatch.poke(); }));
-    webviewView.onDidDispose(() => { this.view = undefined; });
+    this.viewDisposables.push(
+      webviewView.webview.onDidReceiveMessage(m => this.onMessage(m).catch(error =>
+        console.error('[ClineShield] sidebar message failed:', (error as Error)?.message ?? error))),
+      webviewView.onDidChangeVisibility(() => { if (webviewView.visible) this.installWatch.poke(); }),
+      webviewView.onDidDispose(() => { if (this.view === webviewView) { this.view = undefined; this.releaseView(); } }),
+    );
+  }
+
+  private releaseView(): void {
+    for (const d of this.viewDisposables.splice(0)) d.dispose();
   }
 
   /** Debounced: a burst of metrics.json / answers.json writes triggers one read. */
@@ -211,6 +223,7 @@ export class MetricsSidebarProvider implements vscode.WebviewViewProvider, vscod
 
   dispose(): void {
     if (this.timer) clearTimeout(this.timer);
+    this.releaseView();
     for (const d of this.disposables) d.dispose();
   }
 }

@@ -110,12 +110,13 @@ export class ChangeMapProvider implements vscode.TreeDataProvider<ChangeMapItem>
     private readonly activationTime: number,
   ) {
     // Own watcher — isolated from extension.ts watcher and MetricsSidebarProvider watcher.
-    // Atomic writes (temp+rename) fire onDidCreate on macOS, not onDidChange.
+    // Atomic writes (temp+rename) fire onDidCreate on macOS, not onDidChange. A delete empties the map.
     this.watcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(vscode.Uri.file(workspaceRoot), '.cline-shield/metrics.json')
     );
     this.watcher.onDidChange(() => this._onDidChangeTreeData.fire());
     this.watcher.onDidCreate(() => this._onDidChangeTreeData.fire());
+    this.watcher.onDidDelete(() => this._onDidChangeTreeData.fire());
     this.disposables.push(this.watcher);
   }
 
