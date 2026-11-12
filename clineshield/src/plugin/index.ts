@@ -21,6 +21,7 @@ import { randomUUID } from 'crypto';
 import * as os from 'os';
 import * as path from 'path';
 import { appendEvent } from '../metrics/writer';
+import { ensureIgnoreFile } from './ignoreFile';
 import { readEvents } from '../metrics/reader';
 import { formatSummary, formatWhy, summarize, USAGE } from './visibility/report';
 import type { MetricsEvent } from '../types/metrics';
@@ -542,6 +543,12 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
         console.error('[ClineShield] setup failed to read host context:', error);
         workspaceRoot = workspaceRoot || process.cwd();
         sessionId = sessionId || randomUUID();
+      }
+
+      // Keep .cline-shield/ out of git so a Cline checkpoint restore can't rewind the logs (ignoreFile.ts).
+      if (workspaceRoot) {
+        const ignore = ensureIgnoreFile(workspaceRoot).finally(() => pending.delete(ignore));
+        pending.add(ignore);
       }
 
       // Same marker the VS Code extension writes on activation (extension.ts).
