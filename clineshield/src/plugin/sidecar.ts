@@ -14,6 +14,7 @@ import { randomUUID } from 'crypto';
 import type { FileOperation } from './patch';
 import { redactSecrets } from './rubric/redact';
 import { isSecretsFile } from './rubric/paths';
+import { sweepStaleTemps } from '../metrics/tempSweep';
 
 export const SIDECAR_FILE = 'diff-context.json';
 export const MAX_SIDECAR_ENTRIES = 50;
@@ -71,6 +72,7 @@ async function appendNow(root: string, entries: SidecarEntry[]): Promise<void> {
     await fs.mkdir(path.dirname(target), { recursive: true });
     const existing = (await readSidecar(root)).entries;
     const next: Sidecar = { entries: [...existing, ...entries].slice(-MAX_SIDECAR_ENTRIES) };
+    await sweepStaleTemps(target);
     await fs.writeFile(temp, JSON.stringify(next), 'utf-8');
     await fs.rename(temp, target);
   } catch (error) {
