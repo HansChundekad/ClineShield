@@ -34,6 +34,7 @@ import { createDependencyAssessor } from './rubric/deps/enrich';
 import { COMMAND_ITEM, RANK, scoreAction } from './rubric/engine';
 import { UNPARSED_COMMANDS, assessCommands } from './rubric/commands';
 import { isApproved } from './rubric/approval';
+import { SessionStore, readPaths, shellReadPaths, testOutcome } from './rubric/session';
 import type { Decision, FileScore } from './rubric/engine';
 import type { ActionContext } from './rubric/types';
 import { appendSidecar, sidecarEntry } from './sidecar';
@@ -54,6 +55,7 @@ export type { AgentToolResult } from './types';
 
 const EDIT_TOOLS = new Set(['apply_patch', 'editor']);
 const COMMAND_TOOL = 'run_commands';
+const READ_TOOL = 'read_files';
 const UNPARSED = (tool: string) => `(unparsed ${tool} input)`;
 
 /** The plugin's own install folder (repo root of clineshield/src/plugin). */
@@ -136,6 +138,11 @@ interface CommandApi { registerCommand?: (command: { name: string; description?:
 
 export interface PluginOptions { homeDir?: string; pluginDir?: string }
 
+/** What a successful edit adds to session memory, per file. */
+interface EditRecord { path: string; kind: FileOperation['type']; moveTo?: string; lines: number }
+const editsOf = (changes: ActionContext['changes']): EditRecord[] =>
+  changes.map(c => ({ path: c.path, kind: c.kind, moveTo: c.moveTo, lines: c.added.length + c.removed.length }));
+
 /**
  * Creates a plugin instance. Cline runs one worker copy of the plugin per
  * session (plugin-registry.ts startWorkerCopy), but state is kept per
@@ -155,7 +162,9 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
   const configWarnings: string[] = [];
   const pending = new Set<Promise<void>>();
   /** Decisions by toolCallId: ask entries await afterTool; all feed risk-assessed. */
-  const decided = new Map<string, { decision: Decision; asked: boolean; reason: string; observedTier?: 'ask' | 'block'; command?: string }>();
+  const decided = new Map<string, { decision: Decision; asked: boolean; reason: string; observedTier?: 'ask' | 'block'; command?: string; edits?: EditRecord[] }>();
+  /** Session memory (④): test outcome, edits, reads. In memory only. */
+  const session = new SessionStore();
   const blockCounts = new Map<string, number>();
 
   function record(event: MetricsEvent): void {
@@ -246,6 +255,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     codeowners ??= readCodeowners(workspaceRoot!);
     const action = await gatherAction(ops, { workspaceRoot: workspaceRoot!, homeDir, pluginDir, codeownersGlobs: await codeowners });
     await assessDependencies(action, config, startedAt);
+    action.session = session.view();
     return { decision: scoreAction(action, config), config, action };
   }
 
@@ -264,6 +274,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
       return { decision, config, command: r.command };
     }
     await assessDependencies(r.action, config, startedAt);
+    r.action.session = session.view();
     return { decision: scoreAction(r.action, config), config, command: r.command };
   }
 
@@ -336,7 +347,8 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
 
     // Observe mode logs asks/blocks instead of enforcing them, except hard rules, which always block.
     if (config?.mode === 'observe' && decision.tier !== 'allow' && !hasHardFinding(decision)) {
-      if (id !== undefined) decided.set(id, { decision, asked: false, reason: '', observedTier: decision.tier });
+      if (id !== undefined) decided.set(id, { decision, asked: false, reason: '', observedTier: decision.tier, edits: action && editsOf(action.changes) });
+      markPending(id, action);
       for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-allowed', data: editData(f) });
       diffs();
       return undefined;
@@ -356,7 +368,8 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     if (decision.tier === 'ask') {
       const reason = askMessage(decision);
       if (userApproved(ctx, reason)) {
-        decided.set(id!, { decision, asked: true, reason });
+        decided.set(id!, { decision, asked: true, reason, edits: action && editsOf(action.changes) });
+        markPending(id, action);
         return { policy: { autoApprove: true } };
       }
       for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-approval', data: { ...editData(f), reason, approved: false, ...scoreData(f) } });
@@ -364,7 +377,8 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
       return { skip: true, reason };
     }
 
-    if (id !== undefined) decided.set(id, { decision, asked: false, reason: '' });
+    if (id !== undefined) decided.set(id, { decision, asked: false, reason: '', edits: action && editsOf(action.changes) });
+    markPending(id, action);
     for (const f of decision.files) record({ timestamp, sessionId: sid(), type: 'edit-allowed', data: editData(f) });
     diffs();
     return undefined;
@@ -382,9 +396,42 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     }
   }
 
+  /** An edit that will run (allowed, approved or observed): visible to test_and_source pairing until afterTool. */
+  function markPending(id: string | undefined, action: ActionContext | undefined): void {
+    if (id === undefined || !action) return;
+    safely('pending', () => session.recordPending(id, action.changes.flatMap(c => (c.moveTo ? [c.path, c.moveTo] : [c.path]))));
+  }
+  /** Session memory updates never throw into the hook (SPEC "Failure and time": a session signal is skipped, never blocks). */
+  function safely(what: string, fn: () => void): void {
+    try { fn(); } catch (error) { console.error(`[ClineShield] session ${what} skipped:`, (error as Error)?.message ?? error); }
+  }
+  function recordReads(ctx: AgentAfterToolContext): void {
+    safely('read', () => { for (const p of readPaths(ctx.input, ctx.result)) session.recordRead(toDisplayPath(p, workspaceRoot)); });
+  }
+  function recordTestRun(ctx: AgentAfterToolContext): void {
+    const env = { cwd: workspaceRoot!, home: homeDir, tmpdir: process.env.TMPDIR ?? os.tmpdir() };
+    safely('test run', () => session.recordTestOutcome(testOutcome(ctx.input, ctx.result, env)));
+    safely('shell read', () => { for (const p of shellReadPaths(ctx.input, ctx.result, env)) session.recordRead(toDisplayPath(p, workspaceRoot)); });
+  }
+  /** Successful apply_patch / editor only (callers return earlier on isError). */
+  function recordEdits(edits: EditRecord[]): void {
+    safely('edit', () => {
+      for (const e of edits) {
+        if (e.kind === 'delete') session.recordDelete(e.path);
+        else if (e.moveTo) { session.recordMove(e.path, e.moveTo); session.recordEdit(e.moveTo, e.lines); }
+        else session.recordEdit(e.path, e.lines);
+      }
+    });
+  }
+
   async function afterTool(ctx: AgentAfterToolContext): Promise<AgentAfterToolResult | undefined> {
     const toolName = ctx.toolCall?.toolName ?? ctx.tool?.name;
+    if (toolName === READ_TOOL && workspaceRoot) {
+      recordReads(ctx);
+      return undefined;
+    }
     if (toolName === COMMAND_TOOL && workspaceRoot) {
+      recordTestRun(ctx);
       // Asked commands: one command-assessed with the user's answer. Shell-edited files get no edit or risk events.
       const id = ctx.toolCall?.toolCallId;
       const entry = id === undefined ? undefined : decided.get(id);
@@ -395,7 +442,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     if (!EDIT_TOOLS.has(toolName) || !workspaceRoot) return undefined;
     const id = ctx.toolCall?.toolCallId;
     const entry = id === undefined ? undefined : decided.get(id);
-    if (id !== undefined) decided.delete(id);
+    if (id !== undefined) { decided.delete(id); safely('pending', () => session.clearPending(id)); }
 
     if (entry?.asked) {
       const approved = !isApprovalDenied(ctx.result);
@@ -406,7 +453,11 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     }
     if (ctx.result?.isError) return undefined;
 
-    if (entry) { recordRisk(entry.decision, entry.observedTier); return undefined; }
+    if (entry) {
+      recordEdits(entry.edits ?? []);
+      recordRisk(entry.decision, entry.observedTier);
+      return undefined;
+    }
     // No beforeTool decision (e.g. hook added mid-session): patch-only re-score; the file has already changed.
     const ops = operationsFor(toolName, ctx.input);
     if (!ops) return undefined;
@@ -414,6 +465,7 @@ export function createClineShieldPlugin(options: PluginOptions = {}): ClineShiel
     const config = await loadConfig();
     const root = workspaceRoot;
     const changes = ops.map(op => buildChange(op, { binary: false, outsideWorkspace: false }, p => toDisplayPath(p, root), path.resolve(root, op.path)));
+    recordEdits(editsOf(changes));
     recordRisk(scoreAction({ workspaceRoot: root, homeDir, pluginDir, codeownersGlobs: [], changes }, config));
     return undefined;
   }

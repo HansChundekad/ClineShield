@@ -388,3 +388,53 @@ describe('command item (run_commands)', () => {
 });
 
 void OPTS;
+
+describe('session memory (④)', () => {
+  const view = (o: { failed?: boolean; prior?: number; known?: boolean } = {}) => ({
+    lastTestFailed: o.failed ?? false, churn: 0, priorEdits: () => o.prior ?? 0, known: () => o.known ?? true, recentEdits: () => [] as string[],
+  });
+  const pair = () => [change(update('src/a.test.ts', ['a'], ['b'])), change(update('src/a.ts', ['a'], ['b']))];
+  const tas = (d: ReturnType<typeof scoreAction>) => d.files.flatMap(f => f.findings).find(x => x.id === 'test_and_source')!;
+
+  it('test_and_source: 15, 30 after a failed run, back to 15 after a pass', () => {
+    expect(tas(scoreAction(action(pair(), { session: view() }), cfg())).points).toBe(15);
+    const failed = scoreAction(action(pair(), { session: view({ failed: true }) }), cfg());
+    expect(tas(failed).points).toBe(30);
+    expect(failed.tier).toBe('allow');
+    expect(tas(scoreAction(action(pair(), { session: view({ failed: false }) }), cfg())).points).toBe(15);
+  });
+
+  it('30 survives the group rule next to a smaller weakening finding; strict asks', () => {
+    const [t, s] = pair();
+    const src = change(update('src/a.ts', ['a'], ['// eslint-disable-next-line']));
+    const d = scoreAction(action([t, src], { session: view({ failed: true }) }), cfg());
+    const worst = d.files.find(f => f.findings.some(x => x.id === 'test_and_source'))!;
+    expect(worst.findings.find(x => x.id === 'test_and_source')!.points).toBe(30);
+    expect(worst.findings.find(x => x.id === 'checks_disabled')!.points).toBe(0);
+    expect(scoreAction(action([t, s], { session: view({ failed: true }) }), cfg({ preset: 'strict' })).tier).toBe('ask');
+  });
+
+  it('a points override scales the bump', () => {
+    expect(tas(scoreAction(action(pair(), { session: view({ failed: true }) }), cfg({ categories: { test_and_source: 20 } }))).points).toBe(40);
+  });
+
+  it('log-only session findings score 0 and can be turned off', () => {
+    const c = change(update('src/a.ts', ['a'], ['b']), { exists: true });
+    const d = scoreAction(action([c], { session: view({ prior: 4, known: false }) }), cfg());
+    const f = d.files[0].findings.filter(x => x.id === 'edit_loop' || x.id === 'unread_file');
+    expect(f.map(x => [x.id, x.points, x.logOnly])).toEqual([['edit_loop', 0, true], ['unread_file', 0, true]]);
+    expect(d.files[0].score).toBe(0);
+    const off = scoreAction(action([c], { session: view({ prior: 4, known: false }) }), cfg({ categories: { edit_loop: 'off' } }));
+    expect(off.files[0].findings.map(x => x.id)).not.toContain('edit_loop');
+    expect(off.files[0].findings.map(x => x.id)).toContain('unread_file');
+  });
+
+  it('a crashing session view is skipped, decision unchanged', () => {
+    const c = change(update('src/a.ts', ['a'], ['b']), { exists: true });
+    const bad = { lastTestFailed: false, churn: 0, priorEdits: () => { throw new Error('boom'); }, known: () => true, recentEdits: () => [] };
+    const d = scoreAction(action([c], { session: bad }), cfg());
+    expect(d.files[0].skipped).toContain('session: crashed');
+    expect(d.tier).toBe('allow');
+    expect(d.errored).toBe(false);
+  });
+});

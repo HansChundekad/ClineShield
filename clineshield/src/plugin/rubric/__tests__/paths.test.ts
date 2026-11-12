@@ -49,3 +49,12 @@ describe('path classifiers', () => {
     expect(toLines('')).toEqual([]);
   });
 });
+
+import { testStem } from '../paths';
+describe('testStem', () => {
+  it.each([
+    ['src/math.test.js', 'src/math.js'], ['src/__tests__/math.spec.ts', 'src/math.ts'], ['pkg/foo_test.go', 'pkg/foo.go'],
+    ['tests/test_util.py', 'lib/util.py'], ['src/FooTest.java', 'src/Foo.java'], ['spec/user_spec.rb', 'app/user.rb'],
+  ])('%s matches %s', (t, s) => expect(testStem(t)).toBe(testStem(s)));
+  it('different names differ', () => expect(testStem('src/math.test.js')).not.toBe(testStem('src/money.js')));
+});

@@ -29,6 +29,9 @@ describe('command categories', () => {
   it('points, kinds and groups match the spec table', () => {
     const view = (id: keyof typeof CATEGORIES) => [CATEGORIES[id].max, CATEGORIES[id].kind, CATEGORIES[id].group];
     expect(view('rm_recursive')).toEqual([20, 'critical', 'file_ops']);
+    expect(view('edit_loop')).toEqual([15, 'logOnly', null]);
+    expect(view('unread_file')).toEqual([10, 'logOnly', null]);
+    expect(view('session_churn')).toEqual([15, 'logOnly', null]);
     expect(view('shell_edit')).toEqual([15, 'signal', 'file_ops']);
     expect(view('unknown_target')).toEqual([40, 'critical', 'file_ops']);
     expect(view('discards_work')).toEqual([50, 'critical', 'unrecoverable']);

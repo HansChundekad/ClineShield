@@ -5,6 +5,7 @@
  */
 
 import type { FileOperation } from '../patch';
+import type { SessionView } from './session';
 
 export type Tier = 'allow' | 'ask' | 'block';
 
@@ -25,6 +26,7 @@ export type CategoryId =
   | 'security_weakened' | 'auth_removed' | 'validation_removed' | 'sql_string_built'
   | 'new_domain' | 'empty_catch' | 'commented_out_block'
   | 'functions_removed' | 'exports_removed' | 'signature_changed' | 'env_key_renamed'
+  | 'edit_loop' | 'unread_file' | 'session_churn'
   | 'rm_outside' | 'rm_recursive' | 'discards_work' | 'history_rewrite' | 'pipe_to_shell' | 'sudo'
   | 'destructive_sql' | 'publish' | 'chmod_broad' | 'secret_exfil' | 'shell_edit' | 'unknown_target'
   | 'dep_missing' | 'dep_typosquat' | 'dep_install_scripts' | 'dep_new_registry' | 'dep_unverified';
@@ -77,6 +79,8 @@ export interface ActionContext {
   changes: FileChange[];
   /** CODEOWNERS path patterns as globs. */
   codeownersGlobs: string[];
+  /** Session memory (④); undefined when the caller has none (patch-only fallback, tests). */
+  session?: SessionView;
   /** run_commands only: command-level findings, scored as one extra item (COMMAND_ITEM). */
   command?: CommandAssessment;
 }

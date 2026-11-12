@@ -5,10 +5,11 @@ import { placeholder, secretAdded, selfProtection } from './hard';
 import { contentCheck } from './content';
 import { structureCheck } from './structure';
 import { testAndSource, testsCheck } from './tests';
+import { sessionCheck } from './session';
 import type { Check } from '../types';
 
 /** Run order: critical checks first so a deadline never skips them. */
 export const ALL_CHECKS: Check[] = [
   selfProtection, placeholder, secretAdded, fileOpsCheck, sensitiveCheck, newRegistry,
-  sizeCheck, filesTouched, locationCheck, shellEditCheck, testsCheck, testAndSource, contentCheck, structureCheck, dependencySignals,
+  sizeCheck, filesTouched, locationCheck, shellEditCheck, testsCheck, testAndSource, contentCheck, structureCheck, dependencySignals, sessionCheck,
 ];
