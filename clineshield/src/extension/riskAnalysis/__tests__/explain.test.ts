@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
-import { GEMINI_MIN_INTERVAL_MS, buildExplainPrompt, createExplainer } from '../explain';
+import { GEMINI_MIN_INTERVAL_MS, MAX_FILE_CHARS, buildExplainPrompt, createExplainer } from '../explain';
 import type { ActionItem } from '../../../sidebar/dashboard';
 import { appendSidecar } from '../../../plugin/sidecar';
 
@@ -68,6 +68,57 @@ describe('createExplainer', () => {
     expect(readFile).not.toHaveBeenCalled();
   });
 
+  describe('multi-file edits', () => {
+    const two = () => item({ files: ['lib/a.ts', 'lib/b.ts'], target: 'lib/a.ts, lib/b.ts' });
+
+    it('sends every file\'s diff and contents in one request', async () => {
+      await fs.writeFile(path.join(root, 'lib', 'b.ts'), 'export const B_BODY = 1;\n');
+      await appendSidecar(root, [
+        { sessionId: 's1', timestamp: 't1', file: 'lib/a.ts', diff: '+A_DIFF' },
+        { sessionId: 's1', timestamp: 't1', file: 'lib/b.ts', diff: '+B_DIFF' },
+      ]);
+      await explainer()(two());
+      expect(caller).toHaveBeenCalledTimes(1);
+      expect(prompts[0]).toContain('File: lib/a.ts');
+      expect(prompts[0]).toContain('File: lib/b.ts');
+      expect(prompts[0]).toContain('+A_DIFF');
+      expect(prompts[0]).toContain('+B_DIFF');
+      expect(prompts[0]).toContain('export function f()');
+      expect(prompts[0]).toContain('B_BODY');
+    });
+
+    it('shares the contents cap evenly between files', async () => {
+      const big = (c: string) => c.repeat(MAX_FILE_CHARS);
+      await fs.writeFile(path.join(root, 'lib', 'a.ts'), big('a'));
+      await fs.writeFile(path.join(root, 'lib', 'b.ts'), big('b'));
+      await explainer()(two());
+      const half = MAX_FILE_CHARS / 2;
+      expect(prompts[0]).toContain('a'.repeat(half) + '\n... [truncated]');
+      expect(prompts[0]).not.toContain('a'.repeat(half + 1));
+      expect(prompts[0]).toContain('b'.repeat(half) + '\n... [truncated]');
+      expect(prompts[0]).not.toContain('b'.repeat(half + 1));
+    });
+
+    it('a secrets file contributes its redacted diff but not its contents', async () => {
+      await fs.writeFile(path.join(root, '.env'), 'ENV_BODY=1\n');
+      await appendSidecar(root, [{ sessionId: 's1', timestamp: 't1', file: '.env', diff: `+SECRET=${AWS}` }]);
+      await explainer()(item({ files: ['lib/a.ts', '.env'], target: 'lib/a.ts, .env' }));
+      expect(prompts[0]).toContain('File: .env');
+      expect(prompts[0]).not.toContain('ENV_BODY');
+      expect(prompts[0]).not.toContain(AWS);
+      expect(prompts[0]).toContain('export function f()');
+    });
+
+    it('an all-secrets edit still builds a prompt with diffs only', async () => {
+      await appendSidecar(root, [{ sessionId: 's1', timestamp: 't1', file: '.env', diff: '+X=1' }]);
+      await explainer()(item({ files: ['.env', '.env.local'], target: '.env, .env.local' }));
+      expect(caller).toHaveBeenCalledTimes(1);
+      expect(prompts[0]).toContain('File: .env');
+      expect(prompts[0]).toContain('File: .env.local');
+      expect(prompts[0]).toContain('+X=1');
+    });
+  });
+
   it('spaces calls at least 6 s apart', async () => {
     let now = 1_000_000;
     const waits: number[] = [];
@@ -81,13 +132,13 @@ describe('createExplainer', () => {
 
 describe('buildExplainPrompt', () => {
   it('says a blocked or asked edit did not run', () => {
-    expect(buildExplainPrompt(item(), '', 'body')).toMatch(/has not run/i);
-    expect(buildExplainPrompt(item({ tier: 'ask' }), '', 'body')).toMatch(/has not run/i);
-    expect(buildExplainPrompt(item({ tier: 'allow' }), '', 'body')).not.toMatch(/has not run/i);
+    expect(buildExplainPrompt(item(), [{ file: 'lib/a.ts', diff: '', contents: 'body' }])).toMatch(/has not run/i);
+    expect(buildExplainPrompt(item({ tier: 'ask' }), [{ file: 'lib/a.ts', diff: '', contents: 'body' }])).toMatch(/has not run/i);
+    expect(buildExplainPrompt(item({ tier: 'allow' }), [{ file: 'lib/a.ts', diff: '', contents: 'body' }])).not.toMatch(/has not run/i);
   });
 
   it('includes the categories, score and cut-offs', () => {
-    const p = buildExplainPrompt(item(), '', '');
+    const p = buildExplainPrompt(item(), [{ file: 'lib/a.ts', diff: '', contents: '' }]);
     expect(p).toContain('Rewrites 95% of the file (+80)');
     expect(p).toContain('80/100');
     expect(p).toContain('block at 70');
