@@ -50,7 +50,7 @@ Open the ClineShield view in the activity bar:
 - **Change map:** every file Cline touched, coloured by its worst risk; files with a blocked attempt are marked.
 
 **Explanations (opt-in):** run **ClineShield: Set Gemini API Key** and click **Explain** on an action to get a
-plain-English explanation from Gemini 2.5 Flash. Nothing is sent until you click. The key is kept in VS Code's
+plain-English explanation from Gemini 3.5 Flash-Lite. Nothing is sent until you click. The key is kept in VS Code's
 secret storage (never in a file), and secrets are stripped from code before it is sent. **ClineShield: Clear
 Gemini API Key** turns it off. A `gemini_api_key` in the YAML is ignored.
 
