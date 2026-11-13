@@ -33,7 +33,7 @@ async function main(): Promise<void> {
 
   const dirs: WorkspaceDirs = { fixture: CONTAINER.fixture, work: CONTAINER.work, remote: CONTAINER.remote, targets: CONTAINER.targets, guards: CONTAINER.guards, nodeModules: CONTAINER.nodeModules };
   await prepareWorkspace(task, dirs);
-  execFileSync('cline', ['plugin', 'install', '/opt/clineshield'], { stdio: 'ignore' });
+  execFileSync('cline', ['plugin', 'install', '--force', '/opt/clineshield'], { stdio: 'ignore' });
 
   const sessionsBefore = new Set(listDir(SESSIONS));
   const logsBefore = new Map(listDir(LOGS).map(f => [f, fs.statSync(path.join(LOGS, f)).size]));
