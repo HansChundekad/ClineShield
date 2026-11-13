@@ -19,6 +19,7 @@ jobs:
           cache-dependency-path: clineshield/package-lock.json
       - run: npm ci
       - run: npm test
+      - run: npm run test:eval
 
   plugin-install:
     runs-on: ubuntu-latest
