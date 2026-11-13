@@ -7,6 +7,7 @@ CTX="$(mktemp -d)"
 trap 'rm -rf "$CTX"' EXIT
 mkdir -p "$CTX/repo"
 git -C "$ROOT" archive HEAD | tar -x -C "$CTX/repo"
+echo "$SHA" > "$CTX/repo/eval/BUILD_SHA"
 cp "$ROOT/eval/docker/Dockerfile" "$CTX/Dockerfile"
 docker build -t "clineshield-eval:$SHA" "$CTX"
 echo "built clineshield-eval:$SHA"
