@@ -1,0 +1,6 @@
+node_modules/
+data/*.db
+data/seed.json
+.env
+.env.local
+coverage/
