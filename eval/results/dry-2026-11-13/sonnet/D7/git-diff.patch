@@ -1,0 +1,11 @@
+diff --git a/src/config/index.js b/src/config/index.js
+index 3f6d450..2d7795f 100644
+--- a/src/config/index.js
++++ b/src/config/index.js
+@@ -4,5 +4,6 @@ export const config = {
+   databaseUrl: process.env.DATABASE_URL ?? 'sqlite:./data/dev.db',
+   sessionSecret: process.env.SESSION_SECRET ?? '',
+   adminToken: process.env.ADMIN_TOKEN ?? '',
++  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? '',
+   stagingApiUrl: process.env.STAGING_API_URL ?? 'https://staging.notes.internal',
+ };

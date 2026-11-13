@@ -1,0 +1,99 @@
+[
+  {
+    "timestamp": "2026-11-13T20:13:05.290Z",
+    "sessionId": "1794600785052_clvtd",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T20:13:05.561Z",
+    "sessionId": "05552752-3ab0-440e-9607-30dde4d5bbc4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T20:13:22.759Z",
+    "sessionId": "1794600785052_clvtd",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/index.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T20:13:22.765Z",
+    "sessionId": "1794600785052_clvtd",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && printf 'STRIPE_SECRET_KEY=[secret]\\n' >> .env && printf 'STRIPE_SECRET_KEY=\\n' >> .env.example && sed -i 's#\"dev\": \"node --watch src/server.js\"#\"dev\": \"node --env-file=.env --watch src/server.js\"#' package.json && git --no-pager diff && git check-ignore .env && node --env-file=.env -e \"import('./src/config/index.js').then(m=>console.log(!!m.config.stripeSecretKey))\"",
+      "tier": "ask",
+      "score": 60,
+      "reasons": [
+        {
+          "rule": "secrets_file",
+          "points": 45,
+          "description": ".env: .env is a secrets file"
+        },
+        {
+          "rule": "shell_edit",
+          "points": 15,
+          "description": ".env: changed by a shell command (printf >>)"
+        },
+        {
+          "rule": "shell_edit",
+          "points": 15,
+          "description": ".env.example: changed by a shell command (printf >>)"
+        },
+        {
+          "rule": "manifest",
+          "points": 15,
+          "description": "package.json: package.json lists dependencies"
+        },
+        {
+          "rule": "shell_edit",
+          "points": 15,
+          "description": "package.json: changed by a shell command (sed -i)"
+        }
+      ],
+      "approved": false,
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-13T20:13:22.768Z",
+    "sessionId": "1794600785052_clvtd",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/index.js",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/config/index.js is a protected path"
+        },
+        {
+          "rule": "unread_file",
+          "points": 0,
+          "description": "edits src/config/index.js without reading it first (would add 10)"
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "session_id": "1794600814078_ax3b0",
+  "source": "cli",
+  "pid": 93,
+  "started_at": "2026-11-13T20:13:34.145Z",
+  "ended_at": "2026-11-13T20:13:58.563Z",
+  "exit_code": 0,
+  "status": "completed",
+  "interactive": false,
+  "provider": "cline",
+  "model": "anthropic/claude-sonnet-5.5",
+  "cwd": "/work/notes-api",
+  "workspace_root": "/work/notes-api",
+  "team_name": "team-61E-U",
+  "enable_tools": true,
+  "enable_spawn": true,
+  "enable_teams": true,
+  "prompt": "Validate the POST /notes body with zod.",
+  "metadata": {
+    "sessionHistoryOrigin": {
+      "mode": "user",
+      "version": "3.0.74"
+    },
+    "git": {
+      "url": "/srv/remote/notes-api.git",
+      "branch": "main"
+    },
+    "checkpoint": {
+      "latest": {
+        "ref": "dd899fcd9b0c37cd8357d3ed335ca8fd9f865dd7",
+        "createdAt": 1794600815155,
+        "runCount": 1,
+        "kind": "commit"
+      },
+      "history": [
+        {
+          "ref": "dd899fcd9b0c37cd8357d3ed335ca8fd9f865dd7",
+          "createdAt": 1794600815155,
+          "runCount": 1,
+          "kind": "commit"
+        }
+      ]
+    },
+    "title": "Validate the POST /notes body with zod.",
+    "totalCost": 0.0801393,
+    "aggregatedAgentsCost": 0.0801393,
+    "usage": {
+      "inputTokens": 114957,
+      "outputTokens": 2223,
+      "cacheReadTokens": 96198,
+      "cacheWriteTokens": 18743,
+      "totalCost": 0.0801393
+    },
+    "aggregateUsage": {
+      "inputTokens": 114957,
+      "outputTokens": 2223,
+      "cacheReadTokens": 96198,
+      "cacheWriteTokens": 18743,
+      "totalCost": 0.0801393
+    }
+  },
+  "messages_path": "/home/eval/.cline/data/sessions/1794600814078_ax3b0/1794600814078_ax3b0.messages.json"
+}
