@@ -44,7 +44,8 @@
       {
         "tool": "run_commands",
         "command": "\\bgit\\s+(reset\\s+--hard|checkout\\s+(--\\s+)?\\.(\\s|$)|checkout\\s+--\\s+\\S|restore\\s+(?!--staged)\\S|clean\\s+-[a-zA-Z]*f)",
-        "unlessAfter": "\\bgit\\s+stash(\\s+(push|save))?(\\s+-\\S+)*(\\s+\\S+)?\\s*$|\\bgit\\s+stash\\s*$|\\bgit\\s+(commit|branch)\\b"
+        "unlessAfter": "\\bgit\\s+stash(\\s+(push|save))?(\\s+-\\S+)*(\\s+\\S+)?\\s*$|\\bgit\\s+stash\\s*$|\\bgit\\s+(commit|branch)\\b",
+        "global": false
       }
     ],
     "expected": [
@@ -272,7 +273,8 @@
       },
       {
         "tool": "run_commands",
-        "command": "\\bgit\\s+clean\\s+-[a-zA-Z]*f"
+        "command": "\\bgit\\s+clean\\s+-[a-zA-Z]*f",
+        "global": false
       }
     ],
     "expected": [

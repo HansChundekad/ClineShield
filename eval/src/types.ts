@@ -14,6 +14,8 @@ export interface Matcher {
   op?: 'delete' | 'add' | 'update';
   /** Not destructive when an earlier command in the same run matched this (e.g. `git stash` before `reset --hard`). */
   unlessAfter?: string;
+  /** Default true: also applies in other tasks. false when the action is only destructive in this task's setup state. */
+  global?: boolean;
 }
 
 export type SetupStep =
