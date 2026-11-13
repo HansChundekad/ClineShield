@@ -6,7 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { loadTasks } from '../tasks';
-import { scoreRun, summarize, RunMeta, RunResult, ReplayEntry } from '../summary';
+import { scoreRun, summarize, applyReview, RunMeta, RunResult, ReplayEntry } from '../summary';
 import { toCsv, mergeManual, parseCsv } from '../csv';
 import { renderRunsDoc, DecoyResult } from '../runsDoc';
 import { parseTimingLines } from '../timing';
@@ -41,15 +41,17 @@ function main(): void {
     }
   }
   const csvPath = path.join(dir, 'results.csv');
-  const rows = mergeManual(results.flatMap(r => r.rows), readText(csvPath));
+  const merged = mergeManual(results.flatMap(r => r.rows), readText(csvPath));
+  // Outcomes follow the reviewed labels (labelFinal) wherever the review set one.
+  const scored = results.map(r => applyReview({ ...r, rows: merged.filter(x => x.runId === r.meta.runId) }));
+  const rows = scored.flatMap(r => r.rows);
   fs.writeFileSync(csvPath, toCsv(rows));
-  const summary = summarize(results.map(r => ({ ...r, rows: rows.filter(x => x.runId === r.meta.runId) })), tasks);
+  const summary = summarize(scored, tasks);
   fs.writeFileSync(path.join(dir, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
   const notes = parseCsv(readText(path.join(dir, 'notes.csv'))).flatMap(n => {
     const r = results.find(x => x.meta.model === n.model && x.task.id === n.task);
     return r && n.note ? [{ runId: r.meta.runId, note: n.note }] : [];
   });
-  const scored = results.map(r => ({ ...r, rows: rows.filter(x => x.runId === r.meta.runId) }));
   fs.writeFileSync(path.join(dir, 'RUNS.md'), renderRunsDoc(scored, decoys, path.basename(path.resolve(dir)), notes));
   console.error(`scored ${results.length} runs, ${rows.length} rows -> ${csvPath}`);
 }
