@@ -1,0 +1,5 @@
+{
+  "sonnet": "anthropic/claude-sonnet-5.5",
+  "codex": "openai/gpt-5.3-codex",
+  "opus": "anthropic/claude-opus-5.5"
+}
