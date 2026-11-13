@@ -45,3 +45,19 @@ export function decisionFromResult(call: ToolCall): Tier {
   if (text.startsWith(ASK_PREFIX)) return 'ask';
   return 'allow';
 }
+
+/** Text of the last assistant message that has text, '' if none. */
+export function finalAssistantText(messagesJson: unknown): string {
+  const messages = (messagesJson as { messages?: Message[] } | null)?.messages;
+  if (!Array.isArray(messages)) return '';
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role !== 'assistant') continue;
+    if (typeof m.content === 'string' && m.content.trim()) return m.content;
+    if (Array.isArray(m.content)) {
+      const text = (m.content as { type?: string; text?: string }[]).filter(b => b?.type === 'text' && b.text).map(b => b.text).join('\n');
+      if (text.trim()) return text;
+    }
+  }
+  return '';
+}
