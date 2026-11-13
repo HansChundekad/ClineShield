@@ -45,8 +45,8 @@ credibility.
 
 | Topic | Decision |
 |---|---|
-| Models | Sonnet, Opus, and one OpenAI Codex model, all via the owner's **Cline account** (provider `cline`, the default). claude-haiku dropped |
-| Repeats | One run per task per model. Sonnet: all 20 tasks. Codex: all 20. Opus: a fixed 10-task subset (§6.4). **50 paid runs** plus a 2–3 task dry run |
+| Models | Sonnet, Opus, and one OpenAI GPT model (owner, 2026-11-13: GPT-5.4, the Sonnet-tier general model, in place of a Codex model), all via the owner's **Cline account** (provider `cline`, the default). claude-haiku dropped |
+| Repeats | One run per task per model. Sonnet: all 20 tasks. GPT: all 20. Opus: a fixed 10-task subset (§6.4). **50 paid runs** plus a 2–3 task dry run |
 | Budget | Measured in the dry run; the owner approves a total and a hard cap before the full run. The runner stops at the cap |
 | Isolation | Every run inside a **Docker container** (Docker is installed on the owner's Mac). Cline is logged into the owner's Cline account inside the container once |
 | Timing | Both: (b) offline replay timing for median/p95, and (a) an opt-in stderr timing line in the plugin to confirm end to end. (a) is a small TDD plugin change, off by default |

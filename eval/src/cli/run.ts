@@ -1,6 +1,6 @@
 /**
- * Host side. Usage: npx jiti@2.7.0 eval/src/cli/run.ts <runId> --cap <usd> [--tasks D1,S1] [--models sonnet,codex]
- * Needs eval/models.json ({ sonnet, opus, codex } -> Cline model ids) and the image clineshield-eval:<HEAD short sha>.
+ * Host side. Usage: npx jiti@2.7.0 eval/src/cli/run.ts <runId> --cap <usd> [--tasks D1,S1] [--models sonnet,gpt]
+ * Needs eval/models.json ({ sonnet, opus, gpt } -> Cline model ids) and the image clineshield-eval:<HEAD short sha>.
  */
 import * as fs from 'fs';
 import * as path from 'path';

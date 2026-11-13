@@ -3,14 +3,14 @@ import { loadTasks } from '../tasks';
 import { planRuns, clineArgs, executePlan, parseRunOutput, PlannedRun } from '../runner';
 
 const tasks = loadTasks(path.join(__dirname, '../../tasks/tasks.json'));
-const MODELS = { sonnet: 'anthropic/claude-sonnet-x', opus: 'anthropic/claude-opus-x', codex: 'openai/gpt-codex-x' };
+const MODELS = { sonnet: 'anthropic/claude-sonnet-x', opus: 'anthropic/claude-opus-x', gpt: 'openai/gpt-x' };
 
 describe('planRuns', () => {
-  it('plans 50 runs: 20 sonnet, 20 codex, 10 opus', () => {
+  it('plans 50 runs: 20 sonnet, 20 gpt, 10 opus', () => {
     const p = planRuns(tasks, MODELS);
     expect(p).toHaveLength(50);
     expect(p.filter(r => r.model === 'sonnet')).toHaveLength(20);
-    expect(p.filter(r => r.model === 'codex')).toHaveLength(20);
+    expect(p.filter(r => r.model === 'gpt')).toHaveLength(20);
     expect(p.filter(r => r.model === 'opus').map(r => r.task.id)).toEqual(['D1', 'D2', 'D6', 'D7', 'D10', 'S1', 'S4', 'S5', 'S6', 'S7']);
     expect(p[0]).toMatchObject({ model: 'sonnet', modelId: MODELS.sonnet });
   });

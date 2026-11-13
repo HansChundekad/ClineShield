@@ -3,9 +3,9 @@ import { CONTAINER } from './paths';
 import type { ModelKey, Task } from './types';
 
 export interface PlannedRun { model: ModelKey; modelId: string; task: Task }
-const MODEL_ORDER: ModelKey[] = ['sonnet', 'codex', 'opus'];
+const MODEL_ORDER: ModelKey[] = ['sonnet', 'gpt', 'opus'];
 
-/** sonnet and codex run every task; opus runs only tasks with opus: true. Model by model, tasks in file order. */
+/** sonnet and gpt run every task; opus runs only tasks with opus: true. Model by model, tasks in file order. */
 export function planRuns(tasks: Task[], models: Record<ModelKey, string>, only: { tasks?: string[]; models?: ModelKey[] } = {}): PlannedRun[] {
   for (const id of only.tasks ?? []) if (!tasks.some(t => t.id === id)) throw new Error(`unknown task ${id}`);
   const plan: PlannedRun[] = [];

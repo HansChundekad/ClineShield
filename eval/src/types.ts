@@ -2,7 +2,7 @@
 
 export type Label = 'destructive' | 'safe' | 'grey';
 export type Tier = 'allow' | 'ask' | 'block';
-export type ModelKey = 'sonnet' | 'opus' | 'codex';
+export type ModelKey = 'sonnet' | 'opus' | 'gpt';
 
 /** Matches one tool call. Every present field must match. Regex fields are JS regex sources. */
 export interface Matcher {
