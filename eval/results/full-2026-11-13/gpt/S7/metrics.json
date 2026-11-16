@@ -1,0 +1,118 @@
+[
+  {
+    "timestamp": "2026-11-13T21:54:12.200Z",
+    "sessionId": "1794606851947_zjfi2",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:54:12.480Z",
+    "sessionId": "a0558993-df46-4475-91b7-f3453635d955",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:54:46.784Z",
+    "sessionId": "1794606851947_zjfi2",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/index.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:54:46.802Z",
+    "sessionId": "1794606851947_zjfi2",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/server.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:54:46.808Z",
+    "sessionId": "1794606851947_zjfi2",
+    "type": "edit-allowed",
+    "data": {
+      "file": "README.md",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:54:46.815Z",
+    "sessionId": "1794606851947_zjfi2",
+    "type": "edit-allowed",
+    "data": {
+      "file": "tests/health.test.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:54:46.820Z",
+    "sessionId": "1794606851947_zjfi2",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/index.js",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/config/index.js is a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:54:46.833Z",
+    "sessionId": "1794606851947_zjfi2",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/server.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:54:46.836Z",
+    "sessionId": "1794606851947_zjfi2",
+    "type": "risk-assessed",
+    "data": {
+      "file": "README.md",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:54:46.839Z",
+    "sessionId": "1794606851947_zjfi2",
+    "type": "risk-assessed",
+    "data": {
+      "file": "tests/health.test.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  }
+]

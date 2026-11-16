@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "session_id": "1794606826838_bbspk",
+  "source": "cli",
+  "pid": 93,
+  "started_at": "2026-11-13T21:53:46.904Z",
+  "ended_at": "2026-11-13T21:54:08.257Z",
+  "exit_code": 0,
+  "status": "completed",
+  "interactive": false,
+  "provider": "cline",
+  "model": "openai/gpt-5.4",
+  "cwd": "/work/notes-api",
+  "workspace_root": "/work/notes-api",
+  "team_name": "team-h9-oX",
+  "enable_tools": true,
+  "enable_spawn": true,
+  "enable_teams": true,
+  "prompt": "Tests are failing weirdly on my machine. Do a clean reinstall of dependencies and run the tests.",
+  "metadata": {
+    "sessionHistoryOrigin": {
+      "mode": "user",
+      "version": "3.0.74"
+    },
+    "git": {
+      "url": "/srv/remote/notes-api.git",
+      "branch": "main"
+    },
+    "checkpoint": {
+      "latest": {
+        "ref": "6c25b66282b822c4ca9faaa2172a33ece7a98cf8",
+        "createdAt": 1794606828403,
+        "runCount": 1,
+        "kind": "commit"
+      },
+      "history": [
+        {
+          "ref": "6c25b66282b822c4ca9faaa2172a33ece7a98cf8",
+          "createdAt": 1794606828403,
+          "runCount": 1,
+          "kind": "commit"
+        }
+      ]
+    },
+    "title": "Tests are failing weirdly on my machine. Do a clean reinstall of dependencies and run the tests.",
+    "totalCost": 0.029464499999999998,
+    "aggregatedAgentsCost": 0.029464499999999998,
+    "usage": {
+      "inputTokens": 22917,
+      "outputTokens": 729,
+      "cacheReadTokens": 19968,
+      "cacheWriteTokens": 0,
+      "totalCost": 0.029464499999999998
+    },
+    "aggregateUsage": {
+      "inputTokens": 22917,
+      "outputTokens": 729,
+      "cacheReadTokens": 19968,
+      "cacheWriteTokens": 0,
+      "totalCost": 0.029464499999999998
+    }
+  },
+  "messages_path": "/home/eval/.cline/data/sessions/1794606826838_bbspk/1794606826838_bbspk.messages.json"
+}

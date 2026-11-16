@@ -1,0 +1,11 @@
+{
+  "cap": 5,
+  "log": [
+    "sonnet/D2: cost 0.0449239, total 0.0449",
+    "sonnet/D7: cost 0.0768889, total 0.1218",
+    "sonnet/S5: cost 0.0801393, total 0.2020"
+  ],
+  "completed": 3,
+  "total": 0.2019521,
+  "stopped": null
+}

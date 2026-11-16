@@ -1,0 +1,561 @@
+diff --git a/src/legacy/report.js b/src/legacy/report.js
+index 1aa98c4..4c81892 100644
+--- a/src/legacy/report.js
++++ b/src/legacy/report.js
+@@ -6,416 +6,178 @@
+ 
+ import { normalizeWhitespace, truncate } from '../utils/strings.js';
+ 
+-var DAY_MS = 24 * 60 * 60 * 1000;
+-var DEFAULT_LOCALE = 'en-US';
+-var MAX_TOP = 10;
++const DAY_MS = 24 * 60 * 60 * 1000;
++const MAX_TOP = 10;
+ 
+-function pad2(n) {
+-  var s = String(n);
+-  if (s.length < 2) {
+-    s = "0" + s;
+-  }
+-  return s;
+-}
++const pad2 = (n) => String(n).padStart(2, '0');
+ 
+ function formatDate(d) {
+-  var date = new Date(d);
+-  if (isNaN(date.getTime())) {
+-    return "unknown";
+-  }
+-  return date.getFullYear() + "-" + pad2(date.getMonth() + 1) + "-" + pad2(date.getDate());
++  const date = new Date(d);
++  if (isNaN(date.getTime())) return 'unknown';
++  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+ }
+ 
+-function formatNumber(n) {
+-  if (n === null || n === undefined) {
+-    return "-";
+-  }
+-  var parts = String(Math.round(n)).split("");
+-  var result = "";
+-  var count = 0;
+-  for (var i = parts.length - 1; i >= 0; i--) {
+-    result = parts[i] + result;
+-    count++;
+-    if (count % 3 === 0 && i > 0) {
+-      result = "," + result;
+-    }
+-  }
+-  return result;
+-}
++const formatNumber = (n) =>
++  n == null ? '-' : String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+ 
+-function percent(part, total) {
+-  if (!total) {
+-    return "0%";
+-  }
+-  var p = (part / total) * 100;
+-  return (Math.round(p * 10) / 10) + "%";
+-}
++const percent = (part, total) => (total ? `${Math.round((part / total) * 1000) / 10}%` : '0%');
+ 
+-function withinDays(notes, days, now) {
+-  var cutoff = (now || Date.now()) - days * DAY_MS;
+-  var result = [];
+-  for (var i = 0; i < notes.length; i++) {
+-    var t = new Date(notes[i].createdAt).getTime();
+-    if (t >= cutoff) {
+-      result.push(notes[i]);
+-    }
+-  }
+-  return result;
+-}
++const bodyLength = (note) => (note.body || '').length;
+ 
+-function countByTag(notes) {
+-  var counts = {};
+-  for (var i = 0; i < notes.length; i++) {
+-    var tags = notes[i].tags || [];
+-    for (var j = 0; j < tags.length; j++) {
+-      var tag = tags[j];
+-      if (!counts[tag]) {
+-        counts[tag] = 0;
+-      }
+-      counts[tag] = counts[tag] + 1;
+-    }
+-  }
+-  return counts;
+-}
+-
+-function topEntries(counts, limit) {
+-  var entries = [];
+-  for (var key in counts) {
+-    if (Object.prototype.hasOwnProperty.call(counts, key)) {
+-      entries.push({ key: key, value: counts[key] });
+-    }
+-  }
+-  entries.sort(function (a, b) {
+-    if (b.value !== a.value) {
+-      return b.value - a.value;
+-    }
+-    return a.key < b.key ? -1 : 1;
+-  });
+-  return entries.slice(0, limit || MAX_TOP);
++function withinDays(notes, days, now) {
++  const cutoff = (now || Date.now()) - days * DAY_MS;
++  return notes.filter((n) => new Date(n.createdAt).getTime() >= cutoff);
+ }
+ 
+-function countByAuthor(notes) {
+-  var counts = {};
+-  for (var i = 0; i < notes.length; i++) {
+-    var author = notes[i].author || "unknown";
+-    counts[author] = (counts[author] || 0) + 1;
+-  }
++function tally(items) {
++  const counts = {};
++  for (const item of items) counts[item] = (counts[item] || 0) + 1;
+   return counts;
+ }
+ 
+-function averageLength(notes) {
+-  if (!notes.length) {
+-    return 0;
+-  }
+-  var total = 0;
+-  for (var i = 0; i < notes.length; i++) {
+-    total += (notes[i].body || "").length;
+-  }
+-  return total / notes.length;
+-}
+-
+-function longestNote(notes) {
+-  var best = null;
+-  for (var i = 0; i < notes.length; i++) {
+-    if (!best || (notes[i].body || "").length > (best.body || "").length) {
+-      best = notes[i];
+-    }
+-  }
+-  return best;
+-}
++const countByTag = (notes) => tally(notes.flatMap((n) => n.tags || []));
++const countByAuthor = (notes) => tally(notes.map((n) => n.author || 'unknown'));
+ 
+-function buildDailySection(notes, now) {
+-  var recent = withinDays(notes, 1, now);
+-  var tags = topEntries(countByTag(recent), 5);
+-  var authors = topEntries(countByAuthor(recent), 5);
+-  var lines = [];
+-  lines.push("== Daily (last 1 day) ==");
+-  lines.push("Notes created: " + formatNumber(recent.length));
+-  lines.push("Share of all notes: " + percent(recent.length, notes.length));
+-  lines.push("Average length: " + formatNumber(averageLength(recent)) + " chars");
+-  if (tags.length) {
+-    lines.push("Top tags:");
+-    for (var i = 0; i < tags.length; i++) {
+-      lines.push("  " + (i + 1) + ". " + tags[i].key + " (" + tags[i].value + ")");
+-    }
+-  } else {
+-    lines.push("Top tags: none");
+-  }
+-  if (authors.length) {
+-    lines.push("Most active:");
+-    for (var j = 0; j < authors.length; j++) {
+-      lines.push("  " + authors[j].key + ": " + authors[j].value);
+-    }
+-  }
+-  var longest = longestNote(recent);
+-  if (longest) {
+-    lines.push("Longest note: " + truncate(normalizeWhitespace(longest.title), 40) + " (" + formatDate(longest.createdAt) + ")");
+-  }
+-  return lines.join("\n");
+-}
+-
+-function buildWeeklySection(notes, now) {
+-  var recent = withinDays(notes, 7, now);
+-  var tags = topEntries(countByTag(recent), 5);
+-  var authors = topEntries(countByAuthor(recent), 5);
+-  var lines = [];
+-  lines.push("== Weekly (last 7 days) ==");
+-  lines.push("Notes created: " + formatNumber(recent.length));
+-  lines.push("Share of all notes: " + percent(recent.length, notes.length));
+-  lines.push("Average length: " + formatNumber(averageLength(recent)) + " chars");
+-  if (tags.length) {
+-    lines.push("Top tags:");
+-    for (var i = 0; i < tags.length; i++) {
+-      lines.push("  " + (i + 1) + ". " + tags[i].key + " (" + tags[i].value + ")");
+-    }
+-  } else {
+-    lines.push("Top tags: none");
+-  }
+-  if (authors.length) {
+-    lines.push("Most active:");
+-    for (var j = 0; j < authors.length; j++) {
+-      lines.push("  " + authors[j].key + ": " + authors[j].value);
+-    }
+-  }
+-  var longest = longestNote(recent);
+-  if (longest) {
+-    lines.push("Longest note: " + truncate(normalizeWhitespace(longest.title), 40) + " (" + formatDate(longest.createdAt) + ")");
+-  }
+-  return lines.join("\n");
+-}
+-
+-function buildMonthlySection(notes, now) {
+-  var recent = withinDays(notes, 30, now);
+-  var tags = topEntries(countByTag(recent), 5);
+-  var authors = topEntries(countByAuthor(recent), 5);
+-  var lines = [];
+-  lines.push("== Monthly (last 30 days) ==");
+-  lines.push("Notes created: " + formatNumber(recent.length));
+-  lines.push("Share of all notes: " + percent(recent.length, notes.length));
+-  lines.push("Average length: " + formatNumber(averageLength(recent)) + " chars");
+-  if (tags.length) {
+-    lines.push("Top tags:");
+-    for (var i = 0; i < tags.length; i++) {
+-      lines.push("  " + (i + 1) + ". " + tags[i].key + " (" + tags[i].value + ")");
+-    }
+-  } else {
+-    lines.push("Top tags: none");
+-  }
+-  if (authors.length) {
+-    lines.push("Most active:");
+-    for (var j = 0; j < authors.length; j++) {
+-      lines.push("  " + authors[j].key + ": " + authors[j].value);
+-    }
+-  }
+-  var longest = longestNote(recent);
+-  if (longest) {
+-    lines.push("Longest note: " + truncate(normalizeWhitespace(longest.title), 40) + " (" + formatDate(longest.createdAt) + ")");
+-  }
+-  return lines.join("\n");
+-}
+-
+-function buildQuarterlySection(notes, now) {
+-  var recent = withinDays(notes, 91, now);
+-  var tags = topEntries(countByTag(recent), 5);
+-  var authors = topEntries(countByAuthor(recent), 5);
+-  var lines = [];
+-  lines.push("== Quarterly (last 91 days) ==");
+-  lines.push("Notes created: " + formatNumber(recent.length));
+-  lines.push("Share of all notes: " + percent(recent.length, notes.length));
+-  lines.push("Average length: " + formatNumber(averageLength(recent)) + " chars");
+-  if (tags.length) {
+-    lines.push("Top tags:");
+-    for (var i = 0; i < tags.length; i++) {
+-      lines.push("  " + (i + 1) + ". " + tags[i].key + " (" + tags[i].value + ")");
+-    }
+-  } else {
+-    lines.push("Top tags: none");
+-  }
+-  if (authors.length) {
+-    lines.push("Most active:");
+-    for (var j = 0; j < authors.length; j++) {
+-      lines.push("  " + authors[j].key + ": " + authors[j].value);
+-    }
+-  }
+-  var longest = longestNote(recent);
+-  if (longest) {
+-    lines.push("Longest note: " + truncate(normalizeWhitespace(longest.title), 40) + " (" + formatDate(longest.createdAt) + ")");
+-  }
+-  return lines.join("\n");
+-}
+-
+-function buildHeader(title, now) {
+-  var lines = [];
+-  lines.push("=".repeat(60));
+-  lines.push(title);
+-  lines.push("Generated: " + formatDate(now || Date.now()));
+-  lines.push("=".repeat(60));
+-  return lines.join("\n");
+-}
+-
+-function buildFooter(notes) {
+-  var lines = [];
+-  lines.push("-".repeat(60));
+-  lines.push("Total notes: " + formatNumber(notes.length));
+-  lines.push("Distinct tags: " + Object.keys(countByTag(notes)).length);
+-  lines.push("Report format v3. Questions: #ops-reports");
+-  return lines.join("\n");
+-}
+-
+-function toCsvRow(values) {
+-  var cells = [];
+-  for (var i = 0; i < values.length; i++) {
+-    var v = values[i] === undefined || values[i] === null ? "" : String(values[i]);
+-    if (v.indexOf(",") !== -1 || v.indexOf("\"") !== -1) {
+-      v = "\"" + v.replace(/"/g, "\"\"") + "\"";
+-    }
+-    cells.push(v);
+-  }
+-  return cells.join(",");
+-}
+-
+-function buildCsv(notes) {
+-  var rows = [toCsvRow(["id", "title", "author", "tags", "created"])];
+-  for (var i = 0; i < notes.length; i++) {
+-    var n = notes[i];
+-    rows.push(toCsvRow([n.id, n.title, n.author, (n.tags || []).join(" "), formatDate(n.createdAt)]));
+-  }
+-  return rows.join("\n");
+-}
++function topEntries(counts, limit) {
++  return Object.entries(counts)
++    .map(([key, value]) => ({ key, value }))
++    .sort((a, b) => b.value - a.value || (a.key < b.key ? -1 : 1))
++    .slice(0, limit || MAX_TOP);
++}
++
++const averageLength = (notes) =>
++  notes.length ? notes.reduce((sum, n) => sum + bodyLength(n), 0) / notes.length : 0;
++
++const longestNote = (notes) =>
++  notes.reduce((best, n) => (!best || bodyLength(n) > bodyLength(best) ? n : best), null);
++
++const SECTIONS = {
++  daily: ['Daily (last 1 day)', 1],
++  weekly: ['Weekly (last 7 days)', 7],
++  monthly: ['Monthly (last 30 days)', 30],
++  quarterly: ['Quarterly (last 91 days)', 91],
++};
++
++function buildSection(name, notes, now) {
++  const [label, days] = SECTIONS[name];
++  const recent = withinDays(notes, days, now);
++  const tags = topEntries(countByTag(recent), 5);
++  const authors = topEntries(countByAuthor(recent), 5);
++  const longest = longestNote(recent);
++  return [
++    `== ${label} ==`,
++    `Notes created: ${formatNumber(recent.length)}`,
++    `Share of all notes: ${percent(recent.length, notes.length)}`,
++    `Average length: ${formatNumber(averageLength(recent))} chars`,
++    ...(tags.length
++      ? ['Top tags:', ...tags.map((t, i) => `  ${i + 1}. ${t.key} (${t.value})`)]
++      : ['Top tags: none']),
++    ...(authors.length ? ['Most active:', ...authors.map((a) => `  ${a.key}: ${a.value}`)] : []),
++    ...(longest
++      ? [`Longest note: ${truncate(normalizeWhitespace(longest.title), 40)} (${formatDate(longest.createdAt)})`]
++      : []),
++  ].join('\n');
++}
++
++const buildHeader = (title, now) =>
++  ['='.repeat(60), title, `Generated: ${formatDate(now || Date.now())}`, '='.repeat(60)].join('\n');
++
++const buildFooter = (notes) =>
++  [
++    '-'.repeat(60),
++    `Total notes: ${formatNumber(notes.length)}`,
++    `Distinct tags: ${Object.keys(countByTag(notes)).length}`,
++    'Report format v3. Questions: #ops-reports',
++  ].join('\n');
++
++const toCsvRow = (values) =>
++  values
++    .map((v) => {
++      const s = v == null ? '' : String(v);
++      return /[,"]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
++    })
++    .join(',');
++
++const buildCsv = (notes) =>
++  [
++    toCsvRow(['id', 'title', 'author', 'tags', 'created']),
++    ...notes.map((n) =>
++      toCsvRow([n.id, n.title, n.author, (n.tags || []).join(' '), formatDate(n.createdAt)])),
++  ].join('\n');
+ 
+ function validateOptions(options) {
+-  var opts = options || {};
+-  var result = { sections: ["daily", "weekly", "monthly"], format: "text", now: Date.now() };
+-  if (opts.sections) {
+-    if (!Array.isArray(opts.sections)) {
+-      throw new Error("sections must be an array");
+-    }
+-    result.sections = opts.sections;
+-  }
+-  if (opts.format) {
+-    if (opts.format !== "text" && opts.format !== "csv") {
+-      throw new Error("unknown format: " + opts.format);
+-    }
+-    result.format = opts.format;
+-  }
+-  if (opts.now) {
+-    result.now = opts.now;
+-  }
+-  return result;
++  const { sections, format, now } = options || {};
++  if (sections && !Array.isArray(sections)) throw new Error('sections must be an array');
++  if (format && format !== 'text' && format !== 'csv') throw new Error(`unknown format: ${format}`);
++  return {
++    sections: sections || ['daily', 'weekly', 'monthly'],
++    format: format || 'text',
++    now: now || Date.now(),
++  };
+ }
+ 
+ function buildReport(notes, options) {
+-  var opts = validateOptions(options);
+-  if (opts.format === "csv") {
+-    return buildCsv(notes);
+-  }
+-  var parts = [buildHeader("Notes usage report", opts.now)];
+-  for (var i = 0; i < opts.sections.length; i++) {
+-    var s = opts.sections[i];
+-    if (s === "daily") {
+-      parts.push(buildDailySection(notes, opts.now));
+-    } else if (s === "weekly") {
+-      parts.push(buildWeeklySection(notes, opts.now));
+-    } else if (s === "monthly") {
+-      parts.push(buildMonthlySection(notes, opts.now));
+-    } else if (s === "quarterly") {
+-      parts.push(buildQuarterlySection(notes, opts.now));
+-    } else {
+-      parts.push("(unknown section: " + s + ")");
+-    }
+-  }
+-  parts.push(buildFooter(notes));
+-  return parts.join("\n\n");
++  const opts = validateOptions(options);
++  if (opts.format === 'csv') return buildCsv(notes);
++  return [
++    buildHeader('Notes usage report', opts.now),
++    ...opts.sections.map((s) =>
++      Object.hasOwn(SECTIONS, s) ? buildSection(s, notes, opts.now) : `(unknown section: ${s})`),
++    buildFooter(notes),
++  ].join('\n\n');
+ }
+ 
+-function escapeHtml(s) {
+-  return String(s)
+-    .replace(/&/g, "&amp;")
+-    .replace(/</g, "&lt;")
+-    .replace(/>/g, "&gt;")
+-    .replace(/"/g, "&quot;");
+-}
+-
+-function weekdayName(d) {
+-  var names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+-  return names[new Date(d).getDay()];
+-}
+-
+-function countByWeekday(notes) {
+-  var counts = {};
+-  for (var i = 0; i < notes.length; i++) {
+-    var day = weekdayName(notes[i].createdAt);
+-    counts[day] = (counts[day] || 0) + 1;
+-  }
+-  return counts;
+-}
++const WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
++const weekdayName = (d) => WEEK[(new Date(d).getDay() + 6) % 7];
++const countByWeekday = (notes) => tally(notes.map((n) => weekdayName(n.createdAt)));
+ 
+ function buildWeekdaySection(notes) {
+-  var counts = countByWeekday(notes);
+-  var order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+-  var lines = ["== By weekday =="];
+-  var max = 0;
+-  for (var k in counts) {
+-    if (counts[k] > max) {
+-      max = counts[k];
+-    }
+-  }
+-  for (var i = 0; i < order.length; i++) {
+-    var n = counts[order[i]] || 0;
+-    var bar = max ? "#".repeat(Math.round((n / max) * 30)) : "";
+-    lines.push((order[i] + "          ").slice(0, 10) + " " + bar + " " + n);
+-  }
+-  return lines.join("\n");
+-}
+-
+-function buildHtml(notes, options) {
+-  var text = buildReport(notes, options);
+-  var lines = text.split("\n");
+-  var html = ["<!doctype html>", "<html>", "<head>", "<meta charset=\"utf-8\">", "<title>Notes usage report</title>", "</head>", "<body>", "<pre>"];
+-  for (var i = 0; i < lines.length; i++) {
+-    html.push(escapeHtml(lines[i]));
+-  }
+-  html.push("</pre>");
+-  html.push("</body>");
+-  html.push("</html>");
+-  return html.join("\n");
+-}
+-
+-function summarize(notes) {
+-  return {
+-    total: notes.length,
+-    tags: Object.keys(countByTag(notes)).length,
+-    averageLength: Math.round(averageLength(notes)),
+-    busiestDay: topEntries(countByWeekday(notes), 1).map(function (e) { return e.key; })[0] || null,
+-  };
+-}
++  const counts = countByWeekday(notes);
++  const max = Math.max(0, ...Object.values(counts));
++  return [
++    '== By weekday ==',
++    ...WEEK.map((day) => {
++      const n = counts[day] || 0;
++      return `${day.padEnd(10)} ${max ? '#'.repeat(Math.round((n / max) * 30)) : ''} ${n}`;
++    }),
++  ].join('\n');
++}
++
++const escapeHtml = (s) =>
++  String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
++
++const buildHtml = (notes, options) =>
++  [
++    '<!doctype html>', '<html>', '<head>', '<meta charset="utf-8">',
++    '<title>Notes usage report</title>', '</head>', '<body>', '<pre>',
++    ...buildReport(notes, options).split('\n').map(escapeHtml),
++    '</pre>', '</body>', '</html>',
++  ].join('\n');
++
++const summarize = (notes) => ({
++  total: notes.length,
++  tags: Object.keys(countByTag(notes)).length,
++  averageLength: Math.round(averageLength(notes)),
++  busiestDay: topEntries(countByWeekday(notes), 1)[0]?.key ?? null,
++});
+ 
+ function compareSummaries(before, after) {
+-  var diff = {};
+-  var keys = ["total", "tags", "averageLength"];
+-  for (var i = 0; i < keys.length; i++) {
+-    var k = keys[i];
+-    diff[k] = (after[k] || 0) - (before[k] || 0);
+-  }
++  const diff = {};
++  for (const k of ['total', 'tags', 'averageLength']) diff[k] = (after[k] || 0) - (before[k] || 0);
+   diff.busiestDayChanged = before.busiestDay !== after.busiestDay;
+   return diff;
+ }
+ 
+ function describeChange(diff) {
+-  var parts = [];
+-  if (diff.total) {
+-    parts.push((diff.total > 0 ? "+" : "") + formatNumber(diff.total) + " notes");
+-  }
+-  if (diff.tags) {
+-    parts.push((diff.tags > 0 ? "+" : "") + diff.tags + " tags");
+-  }
++  const sign = (n) => (n > 0 ? '+' : '');
++  const parts = [];
++  if (diff.total) parts.push(`${sign(diff.total)}${formatNumber(diff.total)} notes`);
++  if (diff.tags) parts.push(`${sign(diff.tags)}${diff.tags} tags`);
+   if (diff.averageLength) {
+-    parts.push("average length " + (diff.averageLength > 0 ? "up " : "down ") + Math.abs(diff.averageLength) + " chars");
+-  }
+-  if (diff.busiestDayChanged) {
+-    parts.push("busiest day changed");
++    parts.push(`average length ${diff.averageLength > 0 ? 'up' : 'down'} ${Math.abs(diff.averageLength)} chars`);
+   }
+-  return parts.length ? parts.join(", ") : "no change";
++  if (diff.busiestDayChanged) parts.push('busiest day changed');
++  return parts.length ? parts.join(', ') : 'no change';
+ }
+ 
+ export { buildHtml, buildWeekdaySection, summarize, compareSummaries, describeChange, buildReport, buildCsv, formatDate, formatNumber, percent, countByTag, topEntries };

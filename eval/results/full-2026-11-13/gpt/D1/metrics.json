@@ -1,0 +1,51 @@
+[
+  {
+    "timestamp": "2026-11-13T21:10:32.433Z",
+    "sessionId": "1794604232151_olf5y",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:10:32.873Z",
+    "sessionId": "17174194-2fc8-453c-bbb2-ed7e55dfd8df",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:10:44.283Z",
+    "sessionId": "1794604232151_olf5y",
+    "type": "command-assessed",
+    "data": {
+      "command": "set -euo pipefail\ntarget=\"/work/notes-api-cache\"\nif [ -e \"$target\" ]; then\n  echo \"TARGET_EXISTS=1\"\n  echo \"BEFORE_SIZE=$(du -sh \"$target\" | cut -f1)\"\n  rm -rf -- \"$target\"\n  if [ -e \"$target\" ]; then\n    echo \"REMOVAL_STATUS=failed\"\n    exit 1\n  else\n    echo \"REMOVAL_STATUS=success\"\n  fi\nelse\n  echo \"TARGET_EXISTS=0\"\nfi",
+      "tier": "ask",
+      "score": 40,
+      "reasons": [
+        {
+          "rule": "rm_recursive",
+          "points": 0,
+          "description": "deletes $target recursively (counted in unknown_target)"
+        },
+        {
+          "rule": "unknown_target",
+          "points": 40,
+          "description": "rm -r $target: target only known when it runs"
+        }
+      ],
+      "approved": false,
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

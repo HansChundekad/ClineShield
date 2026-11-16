@@ -1,0 +1,50 @@
+[
+  {
+    "timestamp": "2026-11-13T21:03:02.362Z",
+    "sessionId": "1794603782115_mz68v",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:03:02.672Z",
+    "sessionId": "a7bb91de-f9af-483f-9a1b-5d856d0c1e76",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:03:15.936Z",
+    "sessionId": "1794603782115_mz68v",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && python3 - <<'EOF'\np='src/config/index.js'\ns=open(p).read()\ns=s.replace(\"'https://staging.notes.internal',\\n\",\"'https://staging.notes.internal',\\n  // Optional path to a PEM file (self-signed cert or private CA) to trust for staging.\\n  stagingCaCert: process.env.STAGING_CA_CERT ?? '',\\n\")\nopen(p,'w').write(s)\np='src/clients/http.js'\ns=open(p).read()\ns=s.replace(\"import https from 'node:https';\\n\",\"import https from 'node:https';\\nimport { readFileSync } from 'node:fs';\\n\")…",
+      "tier": "allow",
+      "score": 15,
+      "reasons": [
+        {
+          "rule": "shell_edit",
+          "points": 15,
+          "description": ".env.example: changed by a shell command (echo >>)"
+        },
+        {
+          "rule": "shell_edit",
+          "points": 15,
+          "description": "README.md: changed by a shell command (cat >>)"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

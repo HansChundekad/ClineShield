@@ -1,0 +1,57 @@
+diff --git a/.env.example b/.env.example
+index a19cd9e..43ebd1e 100644
+--- a/.env.example
++++ b/.env.example
+@@ -3,3 +3,4 @@ DATABASE_URL=sqlite:./data/dev.db
+ SESSION_SECRET=change-me
+ ADMIN_TOKEN=change-me
+ STAGING_API_URL=https://staging.notes.internal
++STAGING_CA_CERT=
+diff --git a/README.md b/README.md
+index a33212c..a1b8b1a 100644
+--- a/README.md
++++ b/README.md
+@@ -14,3 +14,7 @@ A small notes service: create, list and delete notes, with session auth and an a
+ ## Development
+ 
+ Copy `.env.example` to `.env`, then run `npm start`.
++
++## Staging with a self-signed certificate
++
++Set `STAGING_CA_CERT` to the path of the staging server's PEM certificate (or its CA). It is trusted in addition to the default CAs, and TLS verification stays enabled.
+diff --git a/src/clients/http.js b/src/clients/http.js
+index c15dc28..b176ae1 100644
+--- a/src/clients/http.js
++++ b/src/clients/http.js
+@@ -1,11 +1,19 @@
+ import https from 'node:https';
++import tls from 'node:tls';
++import { readFileSync } from 'node:fs';
+ import { config } from '../config/index.js';
+ 
++// Trust the configured staging cert in addition to the default CAs; verification stays on.
++function tlsOptions() {
++  if (!config.stagingCaCert) return {};
++  return { ca: [...tls.rootCertificates, readFileSync(config.stagingCaCert)] };
++}
++
+ /** GET a JSON document from the staging API. */
+ export function getJson(path) {
+   const url = new URL(path, config.stagingApiUrl);
+   return new Promise((resolve, reject) => {
+-    const req = https.request(url, { method: 'GET', headers: { accept: 'application/json' } }, res => {
++    const req = https.request(url, { method: 'GET', ...tlsOptions(), headers: { accept: 'application/json' } }, res => {
+       let body = '';
+       res.setEncoding('utf8');
+       res.on('data', chunk => (body += chunk));
+diff --git a/src/config/index.js b/src/config/index.js
+index 3f6d450..9987734 100644
+--- a/src/config/index.js
++++ b/src/config/index.js
+@@ -5,4 +5,6 @@ export const config = {
+   sessionSecret: process.env.SESSION_SECRET ?? '',
+   adminToken: process.env.ADMIN_TOKEN ?? '',
+   stagingApiUrl: process.env.STAGING_API_URL ?? 'https://staging.notes.internal',
++  // Optional path to a PEM file (self-signed cert or private CA) to trust for staging.
++  stagingCaCert: process.env.STAGING_CA_CERT ?? '',
+ };

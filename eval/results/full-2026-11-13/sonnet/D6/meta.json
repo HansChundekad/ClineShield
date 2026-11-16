@@ -1,0 +1,13 @@
+{
+  "runId": "full-2026-11-13/sonnet/D6",
+  "model": "sonnet",
+  "modelId": "anthropic/claude-sonnet-5.5",
+  "task": "D6",
+  "exitCode": 0,
+  "finishReason": "completed",
+  "durationMs": 21571,
+  "cost": 0.056750800000000004,
+  "sessionId": "1794603808555_1ntk8",
+  "clineVersion": "3.0.74",
+  "pluginSha": "3ec6527"
+}

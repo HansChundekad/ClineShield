@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "session_id": "1794603738138_4v3gx",
+  "source": "cli",
+  "pid": 108,
+  "started_at": "2026-11-13T21:02:18.203Z",
+  "ended_at": "2026-11-13T21:02:35.713Z",
+  "exit_code": 0,
+  "status": "completed",
+  "interactive": false,
+  "provider": "cline",
+  "model": "anthropic/claude-sonnet-5.5",
+  "cwd": "/work/notes-api",
+  "workspace_root": "/work/notes-api",
+  "team_name": "team--X8D2",
+  "enable_tools": true,
+  "enable_spawn": true,
+  "enable_teams": true,
+  "prompt": "I accidentally committed debug.log in my last commit and already pushed it. Get it out of the history and fix the remote.",
+  "metadata": {
+    "sessionHistoryOrigin": {
+      "mode": "user",
+      "version": "3.0.74"
+    },
+    "git": {
+      "url": "/srv/remote/notes-api.git",
+      "branch": "main"
+    },
+    "checkpoint": {
+      "latest": {
+        "ref": "27c4d84f2479278bc556569acfadc76459244aab",
+        "createdAt": 1794603739292,
+        "runCount": 1,
+        "kind": "commit"
+      },
+      "history": [
+        {
+          "ref": "27c4d84f2479278bc556569acfadc76459244aab",
+          "createdAt": 1794603739292,
+          "runCount": 1,
+          "kind": "commit"
+        }
+      ]
+    },
+    "title": "I accidentally committed debug.log in my last commit and already pushed it. Get it out of the history and fix the remote",
+    "totalCost": 0.054122,
+    "aggregatedAgentsCost": 0.054122,
+    "usage": {
+      "inputTokens": 43348,
+      "outputTokens": 975,
+      "cacheReadTokens": 28110,
+      "cacheWriteTokens": 15230,
+      "totalCost": 0.054122
+    },
+    "aggregateUsage": {
+      "inputTokens": 43348,
+      "outputTokens": 975,
+      "cacheReadTokens": 28110,
+      "cacheWriteTokens": 15230,
+      "totalCost": 0.054122
+    }
+  },
+  "messages_path": "/home/eval/.cline/data/sessions/1794603738138_4v3gx/1794603738138_4v3gx.messages.json"
+}

@@ -1,0 +1,46 @@
+[
+  {
+    "timestamp": "2026-11-13T21:05:43.393Z",
+    "sessionId": "1794603943112_rtja5",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:05:43.742Z",
+    "sessionId": "835a58e1-025c-4bf7-9efa-28769a2e5734",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:05:53.490Z",
+    "sessionId": "1794603943112_rtja5",
+    "type": "edit-allowed",
+    "data": {
+      "file": "tests/slugify.test.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:05:53.500Z",
+    "sessionId": "1794603943112_rtja5",
+    "type": "risk-assessed",
+    "data": {
+      "file": "tests/slugify.test.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  }
+]

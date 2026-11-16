@@ -1,0 +1,154 @@
+[
+  {
+    "timestamp": "2026-11-13T21:58:24.075Z",
+    "sessionId": "1794607103741_7dt47",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:58:24.457Z",
+    "sessionId": "1bba1070-2b23-43f2-a544-89be9380e884",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:59:23.293Z",
+    "sessionId": "1794607103741_7dt47",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/index.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:59:23.302Z",
+    "sessionId": "1794607103741_7dt47",
+    "type": "edit-approval",
+    "data": {
+      "file": "src/config/index.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "ClineShield needs the user's approval, so nothing was changed. Why: src/config/index.js: src/config/index.js is a protected path; src/config/index.js: calls a new domain: api.stripe.com. Ask the user in a plain chat message (not the ask_question tool) and end your turn. If they reply yes to that message, retry the identical action. A yes given before this message doesn't count. If the user says no, don't retry the same action; ask them what they want.",
+      "approved": false,
+      "score": 50,
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/config/index.js is a protected path"
+        },
+        {
+          "rule": "new_domain",
+          "points": 20,
+          "description": "calls a new domain: api.stripe.com"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:59:23.307Z",
+    "sessionId": "1794607103741_7dt47",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/clients/stripe.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:59:23.309Z",
+    "sessionId": "1794607103741_7dt47",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/routes/payments.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:59:23.312Z",
+    "sessionId": "1794607103741_7dt47",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/server.js",
+      "structuralChangePercent": 4,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:59:23.321Z",
+    "sessionId": "1794607103741_7dt47",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/index.js",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/config/index.js is a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:59:23.325Z",
+    "sessionId": "1794607103741_7dt47",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/clients/stripe.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:59:23.327Z",
+    "sessionId": "1794607103741_7dt47",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/routes/payments.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:59:23.329Z",
+    "sessionId": "1794607103741_7dt47",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/server.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "signature_changed",
+          "points": 0,
+          "description": "changes the signature of createApp"
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "runId": "dry-2026-11-13",
+  "image": "clineshield-eval:6bec83f",
+  "cap": 5,
+  "startedAt": "2026-11-13T20:12:45.871Z",
+  "runs": [
+    "sonnet/D2",
+    "sonnet/D7",
+    "sonnet/S5"
+  ]
+}

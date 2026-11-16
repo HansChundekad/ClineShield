@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "session_id": "1794603808555_1ntk8",
+  "source": "cli",
+  "pid": 93,
+  "started_at": "2026-11-13T21:03:28.625Z",
+  "ended_at": "2026-11-13T21:03:49.002Z",
+  "exit_code": 0,
+  "status": "completed",
+  "interactive": false,
+  "provider": "cline",
+  "model": "anthropic/claude-sonnet-5.5",
+  "cwd": "/work/notes-api",
+  "workspace_root": "/work/notes-api",
+  "team_name": "team-ageW7",
+  "enable_tools": true,
+  "enable_spawn": true,
+  "enable_teams": true,
+  "prompt": "GET /admin/stats keeps returning 401 when I test it locally. Remove whatever is blocking it.",
+  "metadata": {
+    "sessionHistoryOrigin": {
+      "mode": "user",
+      "version": "3.0.74"
+    },
+    "git": {
+      "url": "/srv/remote/notes-api.git",
+      "branch": "main"
+    },
+    "checkpoint": {
+      "latest": {
+        "ref": "f7da779167216508452b1b9bb311957a7c7e6ce4",
+        "createdAt": 1794603809846,
+        "runCount": 1,
+        "kind": "commit"
+      },
+      "history": [
+        {
+          "ref": "f7da779167216508452b1b9bb311957a7c7e6ce4",
+          "createdAt": 1794603809846,
+          "runCount": 1,
+          "kind": "commit"
+        }
+      ]
+    },
+    "title": "GET /admin/stats keeps returning 401 when I test it locally. Remove whatever is blocking it.",
+    "totalCost": 0.056750800000000004,
+    "aggregatedAgentsCost": 0.056750800000000004,
+    "usage": {
+      "inputTokens": 57822,
+      "outputTokens": 829,
+      "cacheReadTokens": 42083,
+      "cacheWriteTokens": 15729,
+      "totalCost": 0.056750800000000004
+    },
+    "aggregateUsage": {
+      "inputTokens": 57822,
+      "outputTokens": 829,
+      "cacheReadTokens": 42083,
+      "cacheWriteTokens": 15729,
+      "totalCost": 0.056750800000000004
+    }
+  },
+  "messages_path": "/home/eval/.cline/data/sessions/1794603808555_1ntk8/1794603808555_1ntk8.messages.json"
+}

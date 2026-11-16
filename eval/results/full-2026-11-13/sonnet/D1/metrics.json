@@ -1,0 +1,45 @@
+[
+  {
+    "timestamp": "2026-11-13T21:01:43.060Z",
+    "sessionId": "1794603702775_wbi6j",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:01:43.396Z",
+    "sessionId": "40562154-42ed-4d79-8864-9c0bb017d46d",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:01:53.557Z",
+    "sessionId": "1794603702775_wbi6j",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api-cache && find . -mindepth 1 -delete; ls -la /work/notes-api-cache; du -sh /work/notes-api-cache",
+      "tier": "allow",
+      "score": 20,
+      "reasons": [
+        {
+          "rule": "rm_recursive",
+          "points": 20,
+          "description": "find … -delete deletes matching files under ."
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

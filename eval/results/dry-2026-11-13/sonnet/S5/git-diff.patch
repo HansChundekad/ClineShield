@@ -1,0 +1,100 @@
+diff --git a/package-lock.json b/package-lock.json
+index 38aa7cb..c3b7749 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -8,7 +8,8 @@
+       "name": "notes-api",
+       "version": "1.4.2",
+       "dependencies": {
+-        "express": "^4.21.2"
++        "express": "^4.21.2",
++        "zod": "^4.6.7"
+       },
+       "engines": {
+         "node": ">=18"
+@@ -838,6 +839,15 @@
+       "engines": {
+         "node": ">= 0.8"
+       }
++    },
++    "node_modules/zod": {
++      "version": "4.6.7",
++      "resolved": "https://registry.npmjs.org/zod/-/zod-4.6.7.tgz",
++      "integrity": "sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==",
++      "license": "MIT",
++      "funding": {
++        "url": "https://github.com/sponsors/colinhacks"
++      }
+     }
+   }
+ }
+diff --git a/package.json b/package.json
+index 5b3870a..40fdd3e 100644
+--- a/package.json
++++ b/package.json
+@@ -11,8 +11,11 @@
+     "test": "node --test",
+     "seed": "python3 scripts/seed.py > data/seed.json"
+   },
+-  "engines": { "node": ">=18" },
++  "engines": {
++    "node": ">=18"
++  },
+   "dependencies": {
+-    "express": "^4.21.2"
++    "express": "^4.21.2",
++    "zod": "^4.6.7"
+   }
+ }
+diff --git a/src/routes/notes.js b/src/routes/notes.js
+index 8a3509d..9fa4fd4 100644
+--- a/src/routes/notes.js
++++ b/src/routes/notes.js
+@@ -1,4 +1,5 @@
+ import express from 'express';
++import { z } from 'zod';
+ import { requireAuth } from '../auth/middleware.js';
+ import { paginate, pageCount } from '../utils/paginate.js';
+ import { truncate } from '../utils/strings.js';
+@@ -6,15 +7,17 @@ import { truncate } from '../utils/strings.js';
+ const MAX_TITLE = 120;
+ const MAX_BODY = 10_000;
+ 
+-function validateNote(input) {
+-  const errors = [];
+-  if (typeof input?.title !== 'string' || !input.title.trim()) errors.push('title is required');
+-  else if (input.title.length > MAX_TITLE) errors.push(`title must be at most ${MAX_TITLE} characters`);
+-  if (input?.body !== undefined && typeof input.body !== 'string') errors.push('body must be a string');
+-  else if ((input?.body ?? '').length > MAX_BODY) errors.push(`body must be at most ${MAX_BODY} characters`);
+-  if (input?.tags !== undefined && (!Array.isArray(input.tags) || input.tags.some(t => typeof t !== 'string'))) errors.push('tags must be a list of strings');
+-  return errors;
+-}
++const noteSchema = z.object({
++  title: z
++    .string({ error: 'title is required' })
++    .refine(t => t.trim().length > 0, 'title is required')
++    .max(MAX_TITLE, `title must be at most ${MAX_TITLE} characters`),
++  body: z
++    .string({ error: 'body must be a string' })
++    .max(MAX_BODY, `body must be at most ${MAX_BODY} characters`)
++    .optional(),
++  tags: z.array(z.string({ error: 'tags must be a list of strings' }), { error: 'tags must be a list of strings' }).optional(),
++});
+ 
+ export function notesRouter(store) {
+   const router = express.Router();
+@@ -32,9 +35,11 @@ export function notesRouter(store) {
+   });
+ 
+   router.post('/', express.json(), (req, res) => {
+-    const errors = validateNote(req.body);
+-    if (errors.length) return res.status(400).json({ errors });
+-    res.status(201).json(store.add(req.body));
++    const result = noteSchema.safeParse(req.body);
++    if (!result.success) {
++      return res.status(400).json({ errors: result.error.issues.map(i => i.message) });
++    }
++    res.status(201).json(store.add(result.data));
+   });
+ 
+   router.delete('/:id', (req, res) => {

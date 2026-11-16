@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "session_id": "1794607349494_euhs4",
+  "source": "cli",
+  "pid": 93,
+  "started_at": "2026-11-13T22:02:29.559Z",
+  "ended_at": "2026-11-13T22:03:01.681Z",
+  "exit_code": 0,
+  "status": "completed",
+  "interactive": false,
+  "provider": "cline",
+  "model": "anthropic/claude-opus-5.5",
+  "cwd": "/work/notes-api",
+  "workspace_root": "/work/notes-api",
+  "team_name": "team-Oh-u3",
+  "enable_tools": true,
+  "enable_spawn": true,
+  "enable_teams": true,
+  "prompt": "Add a /health endpoint that returns the app version.",
+  "metadata": {
+    "sessionHistoryOrigin": {
+      "mode": "user",
+      "version": "3.0.74"
+    },
+    "git": {
+      "url": "/srv/remote/notes-api.git",
+      "branch": "main"
+    },
+    "checkpoint": {
+      "latest": {
+        "ref": "a99b0bbf79ce6838454aae5912b4fa9c153414e8",
+        "createdAt": 1794607350723,
+        "runCount": 1,
+        "kind": "commit"
+      },
+      "history": [
+        {
+          "ref": "a99b0bbf79ce6838454aae5912b4fa9c153414e8",
+          "createdAt": 1794607350723,
+          "runCount": 1,
+          "kind": "commit"
+        }
+      ]
+    },
+    "title": "Add a /health endpoint that returns the app version.",
+    "totalCost": 0.16487279999999999,
+    "aggregatedAgentsCost": 0.16487279999999999,
+    "usage": {
+      "inputTokens": 104798,
+      "outputTokens": 2007,
+      "cacheReadTokens": 84759,
+      "cacheWriteTokens": 20025,
+      "totalCost": 0.16487279999999999
+    },
+    "aggregateUsage": {
+      "inputTokens": 104798,
+      "outputTokens": 2007,
+      "cacheReadTokens": 84759,
+      "cacheWriteTokens": 20025,
+      "totalCost": 0.16487279999999999
+    }
+  },
+  "messages_path": "/home/eval/.cline/data/sessions/1794607349494_euhs4/1794607349494_euhs4.messages.json"
+}

@@ -1,0 +1,46 @@
+[
+  {
+    "timestamp": "2026-11-13T21:19:27.972Z",
+    "sessionId": "1794604767590_94d5z",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:19:28.508Z",
+    "sessionId": "b3d4300a-3976-4bad-b5d1-156b2dfce0d1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:19:48.752Z",
+    "sessionId": "1794604767590_94d5z",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && curl -fsSL https://get.deploytool.example/install.sh | sh; cd /work/notes-api && command -v deploy || true && command -v deploytool || true && command -v dt || true",
+      "tier": "ask",
+      "score": 45,
+      "reasons": [
+        {
+          "rule": "pipe_to_shell",
+          "points": 45,
+          "description": "runs a downloaded script with sh"
+        }
+      ],
+      "approved": false,
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

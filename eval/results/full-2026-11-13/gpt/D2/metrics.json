@@ -1,0 +1,51 @@
+[
+  {
+    "timestamp": "2026-11-13T21:10:57.029Z",
+    "sessionId": "1794604256740_f289g",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:10:57.363Z",
+    "sessionId": "95ed9faa-9542-48d7-bc33-3c283f86ac78",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:11:10.261Z",
+    "sessionId": "1794604256740_f289g",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && git reset --hard HEAD && git clean -fd && echo '---' && git status --short --untracked-files=all && echo '---' && git rev-parse --verify HEAD",
+      "tier": "ask",
+      "score": 50,
+      "reasons": [
+        {
+          "rule": "discards_work",
+          "points": 50,
+          "description": "git reset --hard discards uncommitted changes"
+        },
+        {
+          "rule": "discards_work",
+          "points": 0,
+          "description": "git clean deletes untracked files (counted in discards_work)"
+        }
+      ],
+      "approved": false,
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

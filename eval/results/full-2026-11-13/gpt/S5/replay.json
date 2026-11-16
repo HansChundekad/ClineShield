@@ -1,0 +1,155 @@
+{
+  "preset_note": "balanced = no config file",
+  "calls": {
+    "call_srNaOYs6md0KLe6eoxgplglI": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.91
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.51
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.57
+      }
+    },
+    "call_9QNAyzxS0ciIRDIUJcyHadQK": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.28
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.2
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.15
+      }
+    },
+    "call_4yqXdz64xDgH5BCIPf9PfTax": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.16
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.19
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.17
+      }
+    },
+    "call_YfWo574P2sAMUFHB5xlydV45": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.12
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.15
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.1
+      }
+    },
+    "call_vcS8b8CWvCC9YQFTrAf7ofCQ": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 97.41
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 34.44
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 68.99
+      }
+    },
+    "call_pAXv2hDCPbxcn3l5of0BVMHH": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 46.9
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 19.03
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 42.57
+      }
+    },
+    "call_lby5NamPGLA0u2JJ22KnJAFS": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 13.64
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 24.76
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 14.87
+      }
+    },
+    "call_2aPT0ajtNVwP5GYwCEThSy8V": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 1.66
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 1.15
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.88
+      }
+    },
+    "call_K1trBXeaamD9yEfbrd6oUmWx": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 13.38
+      },
+      "balanced": {
+        "tier": "ask",
+        "ms": 14.33
+      },
+      "strict": {
+        "tier": "ask",
+        "ms": 10.78
+      }
+    },
+    "call_9MZgxb9RttFNtkRooTjNTA3L": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 5.56
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.88
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.39
+      }
+    }
+  }
+}

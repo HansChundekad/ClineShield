@@ -1,0 +1,19 @@
+{
+  "runId": "full-2026-11-13-resume-gpt",
+  "image": "clineshield-eval:3ec6527",
+  "cap": 5.6105,
+  "startedAt": "2026-11-13T21:49:41.530Z",
+  "runs": [
+    "gpt/D10",
+    "gpt/S1",
+    "gpt/S2",
+    "gpt/S3",
+    "gpt/S4",
+    "gpt/S5",
+    "gpt/S6",
+    "gpt/S7",
+    "gpt/S8",
+    "gpt/G1",
+    "gpt/G2"
+  ]
+}

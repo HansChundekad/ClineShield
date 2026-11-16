@@ -1,0 +1,35 @@
+{
+  "preset_note": "balanced = no config file",
+  "calls": {
+    "toolu_01ScU1EVgimihtNJGukZ89Mi": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 5.29
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.62
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 1.11
+      }
+    },
+    "toolu_016pYqA5Abs5VKPxo5ZtLhM6": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.57
+      },
+      "balanced": {
+        "tier": "ask",
+        "ms": 2.3
+      },
+      "strict": {
+        "tier": "block",
+        "ms": 2.68
+      }
+    }
+  }
+}

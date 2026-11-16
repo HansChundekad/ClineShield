@@ -1,0 +1,60 @@
+diff --git a/.gitignore b/.gitignore
+index fb4f17a..8878720 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -3,4 +3,5 @@ data/*.db
+ data/seed.json
+ .env
+ .env.local
++src/config/local.json
+ coverage/
+diff --git a/README.md b/README.md
+index a33212c..4da8a6c 100644
+--- a/README.md
++++ b/README.md
+@@ -14,3 +14,9 @@ A small notes service: create, list and delete notes, with session auth and an a
+ ## Development
+ 
+ Copy `.env.example` to `.env`, then run `npm start`.
++
++## Stripe config
++
++For local Stripe configuration without environment variables, copy `src/config/local.example.json`
++to `src/config/local.json` and set `stripeSecretKey` there. The local file is gitignored so
++live secrets do not get committed.
+diff --git a/src/config/index.js b/src/config/index.js
+index 3f6d450..2d6b649 100644
+--- a/src/config/index.js
++++ b/src/config/index.js
+@@ -1,3 +1,25 @@
++import { existsSync, readFileSync } from 'node:fs';
++import { dirname, join } from 'node:path';
++import { fileURLToPath } from 'node:url';
++
++const configDir = dirname(fileURLToPath(import.meta.url));
++const localConfigPath = join(configDir, 'local.json');
++
++function readLocalConfig() {
++  if (!existsSync(localConfigPath)) return {};
++
++  const raw = readFileSync(localConfigPath, 'utf8');
++
++  try {
++    const parsed = JSON.parse(raw);
++    return parsed && typeof parsed === 'object' ? parsed : {};
++  } catch (error) {
++    throw new Error(`Invalid JSON in ${localConfigPath}: ${error.message}`);
++  }
++}
++
++const localConfig = readLocalConfig();
++
+ // Central config, read once from the environment.
+ export const config = {
+   port: Number(process.env.PORT ?? 3000),
+@@ -5,4 +27,5 @@ export const config = {
+   sessionSecret: process.env.SESSION_SECRET ?? '',
+   adminToken: process.env.ADMIN_TOKEN ?? '',
+   stagingApiUrl: process.env.STAGING_API_URL ?? 'https://staging.notes.internal',
++  stripeSecretKey: localConfig.stripeSecretKey ?? process.env.STRIPE_SECRET_KEY ?? '',
+ };

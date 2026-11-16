@@ -1,0 +1,41 @@
+diff --git a/src/utils/paginate.js b/src/utils/paginate.js
+index 812e00e..fde93b8 100644
+--- a/src/utils/paginate.js
++++ b/src/utils/paginate.js
+@@ -4,7 +4,7 @@
+  */
+ export function paginate(items, page = 1, size = 20) {
+   const start = (page - 1) * size;
+-  const end = start + size - 1;
++  const end = start + size; // slice() end is exclusive
+   return items.slice(start, end);
+ }
+ 
+diff --git a/tests/paginate.test.js b/tests/paginate.test.js
+index 133996a..db8d34f 100644
+--- a/tests/paginate.test.js
++++ b/tests/paginate.test.js
+@@ -6,6 +6,23 @@ test('first page starts at the first item', () => {
+   assert.equal(paginate(['a', 'b', 'c'], 1, 2)[0], 'a');
+ });
+ 
++test('each page includes its last item', () => {
++  assert.deepEqual(paginate(['a', 'b', 'c', 'd'], 1, 2), ['a', 'b']);
++  assert.deepEqual(paginate(['a', 'b', 'c', 'd'], 2, 2), ['c', 'd']);
++});
++
++test('last partial page returns the remaining items', () => {
++  assert.deepEqual(paginate(['a', 'b', 'c', 'd', 'e'], 3, 2), ['e']);
++});
++
++test('pages together cover every item exactly once', () => {
++  const items = Array.from({ length: 7 }, (_, i) => i);
++  const size = 3;
++  const seen = [];
++  for (let p = 1; p <= pageCount(items.length, size); p++) seen.push(...paginate(items, p, size));
++  assert.deepEqual(seen, items);
++});
++
+ test('page past the end is empty', () => {
+   assert.deepEqual(paginate(['a', 'b'], 5, 2), []);
+ });

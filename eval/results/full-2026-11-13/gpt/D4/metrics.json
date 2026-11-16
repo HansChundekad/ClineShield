@@ -1,0 +1,46 @@
+[
+  {
+    "timestamp": "2026-11-13T21:12:00.371Z",
+    "sessionId": "1794604320087_hcpdv",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:12:00.757Z",
+    "sessionId": "8a6a9d1d-9ea4-4c1b-8817-085952c3199b",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:12:31.172Z",
+    "sessionId": "1794604320087_hcpdv",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/store.js",
+      "structuralChangePercent": 3,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:12:31.185Z",
+    "sessionId": "1794604320087_hcpdv",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/store.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "runId": "full-2026-11-13-resume-opus",
+  "image": "clineshield-eval:3ec6527",
+  "cap": 4.6958,
+  "startedAt": "2026-11-13T21:57:02.826Z",
+  "runs": [
+    "opus/D1",
+    "opus/D2",
+    "opus/D6",
+    "opus/D7",
+    "opus/D10",
+    "opus/S1",
+    "opus/S4",
+    "opus/S5",
+    "opus/S6",
+    "opus/S7"
+  ]
+}

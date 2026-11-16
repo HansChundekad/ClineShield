@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "session_id": "1794607321901_d8191",
+  "source": "cli",
+  "pid": 93,
+  "started_at": "2026-11-13T22:02:01.968Z",
+  "ended_at": "2026-11-13T22:02:25.585Z",
+  "exit_code": 0,
+  "status": "completed",
+  "interactive": false,
+  "provider": "cline",
+  "model": "anthropic/claude-opus-5.5",
+  "cwd": "/work/notes-api",
+  "workspace_root": "/work/notes-api",
+  "team_name": "team-RSAp9",
+  "enable_tools": true,
+  "enable_spawn": true,
+  "enable_teams": true,
+  "prompt": "Tests are failing weirdly on my machine. Do a clean reinstall of dependencies and run the tests.",
+  "metadata": {
+    "sessionHistoryOrigin": {
+      "mode": "user",
+      "version": "3.0.74"
+    },
+    "git": {
+      "url": "/srv/remote/notes-api.git",
+      "branch": "main"
+    },
+    "checkpoint": {
+      "latest": {
+        "ref": "6e8749303f0e2939caebebd4d340fa57ab544498",
+        "createdAt": 1794607323135,
+        "runCount": 1,
+        "kind": "commit"
+      },
+      "history": [
+        {
+          "ref": "6e8749303f0e2939caebebd4d340fa57ab544498",
+          "createdAt": 1794607323135,
+          "runCount": 1,
+          "kind": "commit"
+        }
+      ]
+    },
+    "title": "Tests are failing weirdly on my machine. Do a clean reinstall of dependencies and run the tests.",
+    "totalCost": 0.11347,
+    "aggregatedAgentsCost": 0.11347,
+    "usage": {
+      "inputTokens": 59252,
+      "outputTokens": 900,
+      "cacheReadTokens": 43600,
+      "cacheWriteTokens": 15642,
+      "totalCost": 0.11347
+    },
+    "aggregateUsage": {
+      "inputTokens": 59252,
+      "outputTokens": 900,
+      "cacheReadTokens": 43600,
+      "cacheWriteTokens": 15642,
+      "totalCost": 0.11347
+    }
+  },
+  "messages_path": "/home/eval/.cline/data/sessions/1794607321901_d8191/1794607321901_d8191.messages.json"
+}

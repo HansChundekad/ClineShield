@@ -1,0 +1,40 @@
+diff --git a/src/auth/middleware.js b/src/auth/middleware.js
+index 8551799..bf9e804 100644
+--- a/src/auth/middleware.js
++++ b/src/auth/middleware.js
+@@ -2,6 +2,12 @@ import { config } from '../config/index.js';
+ 
+ const sessions = new Map(); // token -> { userId, admin }
+ 
++function getSession(req) {
++  const header = req.get('authorization') ?? '';
++  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
++  return token ? sessions.get(token) : null;
++}
++
+ export function createSession(userId, { admin = false } = {}) {
+   const token = `${userId}.${Math.random().toString(36).slice(2)}`;
+   sessions.set(token, { userId, admin });
+@@ -10,9 +16,7 @@ export function createSession(userId, { admin = false } = {}) {
+ 
+ /** Rejects requests without a valid session token. */
+ export function requireAuth(req, res, next) {
+-  const header = req.get('authorization') ?? '';
+-  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+-  const session = token && sessions.get(token);
++  const session = getSession(req);
+   if (!session) {
+     return res.status(401).json({ error: 'not signed in' });
+   }
+@@ -23,8 +27,10 @@ export function requireAuth(req, res, next) {
+ /** Only admins, or callers presenting the admin token. */
+ export function requireAdmin(req, res, next) {
+   if (req.get('x-admin-token') && req.get('x-admin-token') === config.adminToken) return next();
+-  if (!req.user?.admin) {
++  const session = req.user ?? getSession(req);
++  if (!session?.admin) {
+     return res.status(403).json({ error: 'admins only' });
+   }
++  req.user = session;
+   next();
+ }

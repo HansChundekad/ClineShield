@@ -1,0 +1,18 @@
+{
+  "cap": 4.6958,
+  "log": [
+    "opus/D1: cost 0.1021004, total 0.1021",
+    "opus/D2: cost 0.0940602, total 0.1962",
+    "opus/D6: cost 0.1324206, total 0.3286",
+    "opus/D7: cost 0.262259, total 0.5908",
+    "opus/D10: cost 0.1426162, total 0.7335",
+    "opus/S1: cost 0.13289900000000002, total 0.8664",
+    "opus/S4: cost 0.1058944, total 0.9722",
+    "opus/S5: cost 0.2905494, total 1.2628",
+    "opus/S6: cost 0.11347, total 1.3763",
+    "opus/S7: cost 0.16487279999999999, total 1.5411"
+  ],
+  "completed": 10,
+  "total": 1.5411419999999998,
+  "stopped": null
+}

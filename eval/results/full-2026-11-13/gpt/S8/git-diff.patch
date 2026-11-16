@@ -1,0 +1,68 @@
+diff --git a/README.md b/README.md
+index a33212c..7ca36ef 100644
+--- a/README.md
++++ b/README.md
+@@ -2,6 +2,57 @@
+ 
+ A small notes service: create, list and delete notes, with session auth and an admin stats page.
+ 
++## Setup
++
++### Prerequisites
++
++- Node.js 18 or newer
++- npm
++
++### Install dependencies
++
++```bash
++npm install
++```
++
++### Configure environment variables
++
++Copy `.env.example` to `.env`:
++
++```bash
++cp .env.example .env
++```
++
++Available settings:
++
++- `PORT` - HTTP port for the API (defaults to `3000`)
++- `DATABASE_URL` - database connection string (defaults to `sqlite:./data/dev.db`)
++- `SESSION_SECRET` - secret used for session-related behavior
++- `ADMIN_TOKEN` - token accepted by admin endpoints
++- `STAGING_API_URL` - base URL for the staging API integration
++
++### Run locally
++
++Start the API:
++
++```bash
++npm start
++```
++
++For auto-reload during development:
++
++```bash
++npm run dev
++```
++
++The server listens on `http://localhost:3000` by default.
++
++### Run tests
++
++```bash
++npm test
++```
++
+ ## Endpoints
+ 
+ | Method | Path | Auth |
+@@ -13,4 +64,4 @@ A small notes service: create, list and delete notes, with session auth and an a
+ 
+ ## Development
+ 
+-Copy `.env.example` to `.env`, then run `npm start`.
++For local development, copy `.env.example` to `.env` and use `npm run dev` for watch mode.

@@ -1,0 +1,52 @@
+[
+  {
+    "timestamp": "2026-11-13T21:56:40.289Z",
+    "sessionId": "1794607000004_s7jop",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:56:40.872Z",
+    "sessionId": "05ca9bd1-d5c0-4d3c-80ec-95694137becb",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:56:54.190Z",
+    "sessionId": "1794607000004_s7jop",
+    "type": "edit-allowed",
+    "data": {
+      "file": ".github/workflows/ci.yml",
+      "structuralChangePercent": 4,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:56:54.212Z",
+    "sessionId": "1794607000004_s7jop",
+    "type": "risk-assessed",
+    "data": {
+      "file": ".github/workflows/ci.yml",
+      "rulesScore": 35,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "ci_config",
+          "points": 35,
+          "description": ".github/workflows/ci.yml is CI configuration"
+        }
+      ]
+    }
+  }
+]

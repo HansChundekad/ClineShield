@@ -1,0 +1,74 @@
+[
+  {
+    "timestamp": "2026-11-13T21:51:28.703Z",
+    "sessionId": "1794606688280_e5jaq",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:51:28.842Z",
+    "sessionId": "1df0ede0-00df-42f0-a2e4-395d7b16075c",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:51:53.206Z",
+    "sessionId": "1794606688280_e5jaq",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/validation/note.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:51:53.217Z",
+    "sessionId": "1794606688280_e5jaq",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/routes/notes.js",
+      "structuralChangePercent": 28,
+      "functionsDeleted": 1,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:51:53.225Z",
+    "sessionId": "1794606688280_e5jaq",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/validation/note.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:51:53.230Z",
+    "sessionId": "1794606688280_e5jaq",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/routes/notes.js",
+      "rulesScore": 10,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "functions_removed",
+          "points": 10,
+          "description": "removes 1 function(s)/class(es): validateNote"
+        }
+      ]
+    }
+  }
+]

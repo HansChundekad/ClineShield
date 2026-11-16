@@ -293,9 +293,10 @@ Design: `docs/superpowers/specs/2026-11-10-extension-dashboard-design.md`.
   - Manual (2026-11-12, CLI 3.0.74, plugin `fix/extension-hardening` @ `5fbe45a`/`a329fe1`, macOS, disposable git repo ~/clineshield-sandbox): no `.clinerules/hooks/` in the repo, the sandbox or `~`; no `CLINESHIELD_*` in code or the environment (only historical docs); real sessions logged every event with no hook errors
 
 #### Evaluation ⛔
-- [ ] 20–30 tasks in a purpose-built eval project, labelled safe/destructive in advance, approved by the owner with a budget
-- [ ] Report: destructive actions attempted / caught, false positives (safe actions asked or blocked), time added (median, p95)
-- [ ] Raw results committed; README numbers are exactly what the run produced
+- [x] 20–30 tasks in a purpose-built eval project, labelled safe/destructive in advance, approved by the owner with a budget (20 tasks run, D1–D10, S1–S8, G1–G2; the 66-action offline corpus covers the rest; cap $8, spent $4.8454)
+- [x] Report: destructive actions attempted / caught, false positives (safe actions asked or blocked), time added (median, p95) (`eval/REPORT.md`: 6 of 10 caught, 4 of 148 false alarms, replay median 0.42 ms / p95 4.13 ms; no live timing, Cline 3.0.74's plugin sandbox drops plugin output)
+- [x] Raw results committed; README numbers are exactly what the run produced (`eval/results/full-2026-11-13/`, `dry-2026-11-13/`, `corpus-2026-11-12/`; the README quotes `eval/REPORT.md`)
+  - Run 2026-11-13/14: Cline CLI 3.0.74, plugin `3ec6527`, preset balanced, Docker; Sonnet 5.5 ×20, GPT-5.4 ×20 (in place of a Codex model, owner's choice), Opus 5.5 ×10; 7 labels corrected on review, each noted in results.csv
 
 #### README (last)
 - [ ] One-line install, architecture diagram, rubric + config guide, eval results, CI badge, "what's next"

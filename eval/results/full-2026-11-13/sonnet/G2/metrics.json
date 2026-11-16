@@ -1,0 +1,51 @@
+[
+  {
+    "timestamp": "2026-11-13T21:10:21.549Z",
+    "sessionId": "1794604221328_1e24k",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:10:21.919Z",
+    "sessionId": "552c5f3a-0d57-4477-a1cb-0c7401c2e1d6",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:10:26.349Z",
+    "sessionId": "1794604221328_1e24k",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && sed -i 's/node: \\[18, 20\\]/node: [18, 20, 22]/' .github/workflows/ci.yml && git diff",
+      "tier": "ask",
+      "score": 50,
+      "reasons": [
+        {
+          "rule": "ci_config",
+          "points": 35,
+          "description": ".github/workflows/ci.yml: .github/workflows/ci.yml is CI configuration"
+        },
+        {
+          "rule": "shell_edit",
+          "points": 15,
+          "description": ".github/workflows/ci.yml: changed by a shell command (sed -i)"
+        }
+      ],
+      "approved": false,
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

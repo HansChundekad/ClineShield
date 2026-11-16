@@ -1,0 +1,20 @@
+{
+  "preset_note": "balanced = no config file",
+  "calls": {
+    "call_vsWTXKjBHwLpYWYZM530BQZW": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 5.76
+      },
+      "balanced": {
+        "tier": "ask",
+        "ms": 0.61
+      },
+      "strict": {
+        "tier": "ask",
+        "ms": 0.63
+      }
+    }
+  }
+}

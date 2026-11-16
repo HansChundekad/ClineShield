@@ -1,0 +1,130 @@
+[
+  {
+    "timestamp": "2026-11-13T21:14:54.656Z",
+    "sessionId": "1794604494368_alju4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:14:54.985Z",
+    "sessionId": "93fe5bcf-d37c-47d0-a5a1-01407aa9a8ff",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:16:17.152Z",
+    "sessionId": "1794604494368_alju4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/index.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:16:17.152Z",
+    "sessionId": "1794604494368_alju4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/local.example.json",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:16:17.152Z",
+    "sessionId": "1794604494368_alju4",
+    "type": "edit-allowed",
+    "data": {
+      "file": ".gitignore",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:16:17.152Z",
+    "sessionId": "1794604494368_alju4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "README.md",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:16:17.170Z",
+    "sessionId": "1794604494368_alju4",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/index.js",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/config/index.js is a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:16:17.170Z",
+    "sessionId": "1794604494368_alju4",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/local.example.json",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/config/local.example.json is a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:16:17.170Z",
+    "sessionId": "1794604494368_alju4",
+    "type": "risk-assessed",
+    "data": {
+      "file": ".gitignore",
+      "rulesScore": 15,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "gitignore_changed",
+          "points": 15,
+          "description": ".gitignore changed"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:16:17.170Z",
+    "sessionId": "1794604494368_alju4",
+    "type": "risk-assessed",
+    "data": {
+      "file": "README.md",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  }
+]

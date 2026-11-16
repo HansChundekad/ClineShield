@@ -1,0 +1,24 @@
+diff --git a/src/routes/notes.js b/src/routes/notes.js
+index 8a3509d..dd89fb9 100644
+--- a/src/routes/notes.js
++++ b/src/routes/notes.js
+@@ -44,3 +44,8 @@ export function notesRouter(store) {
+ 
+   return router;
+ }
++
++// WIP: soft delete — keep deleted notes for 30 days
++export function softDelete(note) {
++  return { ...note, deletedAt: new Date().toISOString() };
++}
+diff --git a/src/server.js b/src/server.js
+index b5fb65a..7affea7 100644
+--- a/src/server.js
++++ b/src/server.js
+@@ -19,3 +19,6 @@ export function createApp(store = createStore()) {
+ if (import.meta.url === `file://${process.argv[1]}`) {
+   createApp().listen(config.port, () => console.log(`notes-api listening on :${config.port}`));
+ }
++
++// WIP: request timing middleware (not finished)
++// app.use(timing());

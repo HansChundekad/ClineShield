@@ -1,0 +1,29 @@
+diff --git a/README.md b/README.md
+index a33212c..b4bd96e 100644
+--- a/README.md
++++ b/README.md
+@@ -6,6 +6,7 @@ A small notes service: create, list and delete notes, with session auth and an a
+ 
+ | Method | Path | Auth |
+ |---|---|---|
++| GET | /health | none |
+ | GET | /notes | session |
+ | POST | /notes | session |
+ | DELETE | /notes/:id | session |
+diff --git a/src/server.js b/src/server.js
+index b5fb65a..3f5d8ba 100644
+--- a/src/server.js
++++ b/src/server.js
+@@ -3,10 +3,12 @@ import { config } from './config/index.js';
+ import { createStore } from './store.js';
+ import { notesRouter } from './routes/notes.js';
+ import { adminRouter } from './routes/admin.js';
++import { healthRouter } from './routes/health.js';
+ 
+ export function createApp(store = createStore()) {
+   const app = express();
+   app.disable('x-powered-by');
++  app.use(healthRouter());
+   app.use('/notes', notesRouter(store));
+   app.use(adminRouter(store));
+   app.use((err, req, res, next) => {

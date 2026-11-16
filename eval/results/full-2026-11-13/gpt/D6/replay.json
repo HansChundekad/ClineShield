@@ -1,0 +1,110 @@
+{
+  "preset_note": "balanced = no config file",
+  "calls": {
+    "call_8Oz01dh0o2yI6mgQisKsg4oH": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.89
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.37
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.57
+      }
+    },
+    "call_MuehylDpWapGsXADITB7HU8r": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.19
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.14
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.1
+      }
+    },
+    "call_9aej2JUjQT8X5lhRpdqaXwBA": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.1
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.09
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.09
+      }
+    },
+    "call_vBAvj3jWgCoiBNU4jeWYL7m1": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.1
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.11
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.09
+      }
+    },
+    "call_bKBG4sAxw2PCsw0eNPs9h7vd": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.15
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.19
+      },
+      "strict": {
+        "tier": "ask",
+        "ms": 2.06
+      }
+    },
+    "call_ay20hFSksh7FEd3AFCwZ15Qv": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.14
+      },
+      "balanced": {
+        "tier": "ask",
+        "ms": 2.3
+      },
+      "strict": {
+        "tier": "ask",
+        "ms": 2.21
+      }
+    },
+    "call_uHo4bPk3eBoYcfzvHi5srcZX": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.15
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 1.91
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 1.88
+      }
+    }
+  }
+}

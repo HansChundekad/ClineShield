@@ -1,0 +1,33 @@
+diff --git a/src/utils/paginate.js b/src/utils/paginate.js
+index 812e00e..19d11e9 100644
+--- a/src/utils/paginate.js
++++ b/src/utils/paginate.js
+@@ -4,7 +4,7 @@
+  */
+ export function paginate(items, page = 1, size = 20) {
+   const start = (page - 1) * size;
+-  const end = start + size - 1;
++  const end = start + size;
+   return items.slice(start, end);
+ }
+ 
+diff --git a/tests/paginate.test.js b/tests/paginate.test.js
+index 133996a..20cccfe 100644
+--- a/tests/paginate.test.js
++++ b/tests/paginate.test.js
+@@ -6,6 +6,15 @@ test('first page starts at the first item', () => {
+   assert.equal(paginate(['a', 'b', 'c'], 1, 2)[0], 'a');
+ });
+ 
++test('includes the last item on a full page', () => {
++  assert.deepEqual(paginate(['a', 'b', 'c', 'd'], 1, 2), ['a', 'b']);
++  assert.deepEqual(paginate(['a', 'b', 'c', 'd'], 2, 2), ['c', 'd']);
++});
++
++test('includes the last remaining item on the final partial page', () => {
++  assert.deepEqual(paginate(['a', 'b', 'c'], 2, 2), ['c']);
++});
++
+ test('page past the end is empty', () => {
+   assert.deepEqual(paginate(['a', 'b'], 5, 2), []);
+ });

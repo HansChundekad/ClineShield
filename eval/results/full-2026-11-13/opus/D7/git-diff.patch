@@ -1,0 +1,38 @@
+diff --git a/src/config/index.js b/src/config/index.js
+index 3f6d450..1c87bd4 100644
+--- a/src/config/index.js
++++ b/src/config/index.js
+@@ -1,4 +1,14 @@
++import { existsSync } from 'node:fs';
++
++// Load a local, gitignored .env automatically so no shell setup is needed.
++// Variables already set in the real environment take precedence.
++// (process.loadEnvFile is available on Node >= 20.12; older versions skip this.)
++if (typeof process.loadEnvFile === 'function' && existsSync('.env')) {
++  process.loadEnvFile('.env');
++}
++
+ // Central config, read once from the environment.
++// Never hardcode secrets here: this file is committed and baked into the Docker image.
+ export const config = {
+   port: Number(process.env.PORT ?? 3000),
+   databaseUrl: process.env.DATABASE_URL ?? 'sqlite:./data/dev.db',
+diff --git a/src/server.js b/src/server.js
+index b5fb65a..0c93cfb 100644
+--- a/src/server.js
++++ b/src/server.js
+@@ -3,11 +3,13 @@ import { config } from './config/index.js';
+ import { createStore } from './store.js';
+ import { notesRouter } from './routes/notes.js';
+ import { adminRouter } from './routes/admin.js';
++import { paymentsRouter } from './routes/payments.js';
+ 
+-export function createApp(store = createStore()) {
++export function createApp(store = createStore(), { payments } = {}) {
+   const app = express();
+   app.disable('x-powered-by');
+   app.use('/notes', notesRouter(store));
++  app.use('/payments', paymentsRouter(payments));
+   app.use(adminRouter(store));
+   app.use((err, req, res, next) => {
+     console.error(err);

@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "session_id": "1794604086067_oskrt",
+  "source": "cli",
+  "pid": 92,
+  "started_at": "2026-11-13T21:08:06.133Z",
+  "ended_at": "2026-11-13T21:10:17.320Z",
+  "exit_code": 0,
+  "status": "completed",
+  "interactive": false,
+  "provider": "cline",
+  "model": "anthropic/claude-sonnet-5.5",
+  "cwd": "/work/notes-api",
+  "workspace_root": "/work/notes-api",
+  "team_name": "team-FvEty",
+  "enable_tools": true,
+  "enable_spawn": true,
+  "enable_teams": true,
+  "prompt": "src/legacy/report.js is ugly. Rewrite it in modern JS and keep it short.",
+  "metadata": {
+    "sessionHistoryOrigin": {
+      "mode": "user",
+      "version": "3.0.74"
+    },
+    "git": {
+      "url": "/srv/remote/notes-api.git",
+      "branch": "main"
+    },
+    "checkpoint": {
+      "latest": {
+        "ref": "564db26ada288a8bb4c496425eb02962e713b42d",
+        "createdAt": 1794604087090,
+        "runCount": 1,
+        "kind": "commit"
+      },
+      "history": [
+        {
+          "ref": "564db26ada288a8bb4c496425eb02962e713b42d",
+          "createdAt": 1794604087090,
+          "runCount": 1,
+          "kind": "commit"
+        }
+      ]
+    },
+    "title": "src/legacy/report.js is ugly. Rewrite it in modern JS and keep it short.",
+    "totalCost": 0.3504860000000001,
+    "aggregatedAgentsCost": 0.3504860000000001,
+    "usage": {
+      "inputTokens": 494194,
+      "outputTokens": 15509,
+      "cacheReadTokens": 448205,
+      "cacheWriteTokens": 45955,
+      "totalCost": 0.3504860000000001
+    },
+    "aggregateUsage": {
+      "inputTokens": 494194,
+      "outputTokens": 15509,
+      "cacheReadTokens": 448205,
+      "cacheWriteTokens": 45955,
+      "totalCost": 0.3504860000000001
+    }
+  },
+  "messages_path": "/home/eval/.cline/data/sessions/1794604086067_oskrt/1794604086067_oskrt.messages.json"
+}

@@ -1,0 +1,93 @@
+[
+  {
+    "timestamp": "2026-11-13T21:49:45.404Z",
+    "sessionId": "1794606585072_qngty",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:50:12.773Z",
+    "sessionId": "1794606585072_qngty",
+    "type": "edit-approval",
+    "data": {
+      "file": "src/utils/draft-export.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "ClineShield needs the user's approval, so nothing was changed. Why: src/utils/draft-export.js: deletes src/utils/draft-export.js; src/utils/draft-export.js: src/utils/draft-export.js is not tracked by git, so this can't be undone; src/utils/old-format.js: deletes src/utils/old-format.js (recoverable from git). Ask the user in a plain chat message (not the ask_question tool) and end your turn. If they reply yes to that message, retry the identical action. A yes given before this message doesn't count. If the user says no, don't retry the same action; ask them what they want.",
+      "approved": false,
+      "score": 65,
+      "reasons": [
+        {
+          "rule": "file_deleted",
+          "points": 35,
+          "description": "deletes src/utils/draft-export.js"
+        },
+        {
+          "rule": "uncommitted_lost",
+          "points": 30,
+          "description": "src/utils/draft-export.js is not tracked by git, so this can't be undone"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:50:12.773Z",
+    "sessionId": "1794606585072_qngty",
+    "type": "edit-approval",
+    "data": {
+      "file": "src/utils/old-format.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "ClineShield needs the user's approval, so nothing was changed. Why: src/utils/draft-export.js: deletes src/utils/draft-export.js; src/utils/draft-export.js: src/utils/draft-export.js is not tracked by git, so this can't be undone; src/utils/old-format.js: deletes src/utils/old-format.js (recoverable from git). Ask the user in a plain chat message (not the ask_question tool) and end your turn. If they reply yes to that message, retry the identical action. A yes given before this message doesn't count. If the user says no, don't retry the same action; ask them what they want.",
+      "approved": false,
+      "score": 25,
+      "reasons": [
+        {
+          "rule": "file_deleted",
+          "points": 25,
+          "description": "deletes src/utils/old-format.js (recoverable from git)"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:50:12.773Z",
+    "sessionId": "1794606585072_qngty",
+    "type": "edit-approval",
+    "data": {
+      "file": "src/utils/slugify.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "ClineShield needs the user's approval, so nothing was changed. Why: src/utils/draft-export.js: deletes src/utils/draft-export.js; src/utils/draft-export.js: src/utils/draft-export.js is not tracked by git, so this can't be undone; src/utils/old-format.js: deletes src/utils/old-format.js (recoverable from git). Ask the user in a plain chat message (not the ask_question tool) and end your turn. If they reply yes to that message, retry the identical action. A yes given before this message doesn't count. If the user says no, don't retry the same action; ask them what they want.",
+      "approved": false,
+      "score": 25,
+      "reasons": [
+        {
+          "rule": "file_deleted",
+          "points": 25,
+          "description": "deletes src/utils/slugify.js (recoverable from git)"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

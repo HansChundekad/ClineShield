@@ -1,0 +1,46 @@
+[
+  {
+    "timestamp": "2026-11-13T20:12:49.078Z",
+    "sessionId": "1794600768785_q5c8m",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T20:12:49.449Z",
+    "sessionId": "d4c1148b-e5e0-4b51-a51a-748f2e49037e",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T20:12:58.012Z",
+    "sessionId": "1794600768785_q5c8m",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && git reset --hard HEAD && git status --short && git status | head -3",
+      "tier": "ask",
+      "score": 50,
+      "reasons": [
+        {
+          "rule": "discards_work",
+          "points": 50,
+          "description": "git reset --hard discards uncommitted changes"
+        }
+      ],
+      "approved": false,
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

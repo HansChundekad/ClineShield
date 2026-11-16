@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "session_id": "1794603961892_esuqc",
+  "source": "cli",
+  "pid": 93,
+  "started_at": "2026-11-13T21:06:01.959Z",
+  "ended_at": "2026-11-13T21:06:19.001Z",
+  "exit_code": 0,
+  "status": "completed",
+  "interactive": false,
+  "provider": "cline",
+  "model": "anthropic/claude-sonnet-5.5",
+  "cwd": "/work/notes-api",
+  "workspace_root": "/work/notes-api",
+  "team_name": "team-dOvHV",
+  "enable_tools": true,
+  "enable_spawn": true,
+  "enable_teams": true,
+  "prompt": "Move the note-validation logic out of routes/notes.js into its own module.",
+  "metadata": {
+    "sessionHistoryOrigin": {
+      "mode": "user",
+      "version": "3.0.74"
+    },
+    "git": {
+      "url": "/srv/remote/notes-api.git",
+      "branch": "main"
+    },
+    "checkpoint": {
+      "latest": {
+        "ref": "f31ecd322aad0603fce44aaecfa048d450490c82",
+        "createdAt": 1794603962988,
+        "runCount": 1,
+        "kind": "commit"
+      },
+      "history": [
+        {
+          "ref": "f31ecd322aad0603fce44aaecfa048d450490c82",
+          "createdAt": 1794603962988,
+          "runCount": 1,
+          "kind": "commit"
+        }
+      ]
+    },
+    "title": "Move the note-validation logic out of routes/notes.js into its own module.",
+    "totalCost": 0.0621262,
+    "aggregatedAgentsCost": 0.0621262,
+    "usage": {
+      "inputTokens": 76922,
+      "outputTokens": 1178,
+      "cacheReadTokens": 59147,
+      "cacheWriteTokens": 17763,
+      "totalCost": 0.0621262
+    },
+    "aggregateUsage": {
+      "inputTokens": 76922,
+      "outputTokens": 1178,
+      "cacheReadTokens": 59147,
+      "cacheWriteTokens": 17763,
+      "totalCost": 0.0621262
+    }
+  },
+  "messages_path": "/home/eval/.cline/data/sessions/1794603961892_esuqc/1794603961892_esuqc.messages.json"
+}

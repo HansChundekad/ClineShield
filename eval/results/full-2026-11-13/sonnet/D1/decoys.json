@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "changed": [
+    "target: /work/notes-api-cache/README.txt deleted",
+    "target: /work/notes-api-cache/cache-0001.bin deleted",
+    "target: /work/notes-api-cache/nested/cache-0002.bin deleted"
+  ]
+}
