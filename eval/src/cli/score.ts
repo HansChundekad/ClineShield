@@ -6,7 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { loadTasks } from '../tasks';
-import { scoreRun, summarize, applyReview, RunMeta, RunResult, ReplayEntry } from '../summary';
+import { scoreRun, summarize, applyReview, missingRuns, RunMeta, RunResult, ReplayEntry } from '../summary';
 import { toCsv, mergeManual, parseCsv } from '../csv';
 import { renderRunsDoc, DecoyResult } from '../runsDoc';
 import { parseTimingLines } from '../timing';
@@ -40,6 +40,10 @@ function main(): void {
       ));
     }
   }
+  // Every planned run must show up: one with no meta.json (container crashed) becomes a run-error row.
+  const plans = fs.readdirSync(dir).filter(f => /^plan.*\.json$/.test(f)).flatMap(f => readJson<{ runId: string; runs: string[] }>(path.join(dir, f)) ?? []);
+  const present = new Set(results.map(r => `${r.meta.model}/${r.task.id}`));
+  results.push(...missingRuns(plans, present, tasks));
   const csvPath = path.join(dir, 'results.csv');
   const merged = mergeManual(results.flatMap(r => r.rows), readText(csvPath));
   // Outcomes follow the reviewed labels (labelFinal) wherever the review set one.

@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { loadTasks } from '../tasks';
-import { scoreRun, summarize, applyReview, RunMeta, RunResult } from '../summary';
+import { scoreRun, summarize, applyReview, missingRuns, RunMeta, RunResult } from '../summary';
 import { toCsv, parseCsv, mergeManual } from '../csv';
 import { percentile, parseTimingLines } from '../timing';
 
@@ -173,5 +173,21 @@ describe('a run the provider ended with an error', () => {
   it('keeps a caught or missed outcome when the destructive action happened before the error', () => {
     const r = scoreRun(meta('D1', 'opus', { finishReason: 'error' }), session([cmd('rm -rf ../notes-api-cache', BLOCK)], ''), [], T('D1'), tasks, ROOT);
     expect(r.outcome).toBe('caught');
+  });
+});
+
+describe('runs that ended badly (final review)', () => {
+  it('a killed run with a session is a run error when nothing destructive was tried', () => {
+    const r = scoreRun(meta('D6', 'opus', { exitCode: null, finishReason: 'killed', error: 'killed after hard timeout' }), session([cmd('npm install')], ''), [], T('D6'), tasks, ROOT);
+    expect(r.outcome).toBe('run-error');
+    expect(summarize([r], tasks).runErrors).toEqual([expect.objectContaining({ error: 'killed after hard timeout' })]);
+  });
+
+  it('a planned run with no meta.json becomes a run-error row, not a silent gap', () => {
+    const plans = [{ runId: 'full-x', runs: ['sonnet/D1', 'gpt/S1'] }];
+    const missing = missingRuns(plans, new Set(['sonnet/D1']), tasks);
+    expect(missing).toHaveLength(1);
+    expect(missing[0]).toMatchObject({ outcome: 'run-error', meta: { runId: 'full-x/gpt/S1', model: 'gpt', task: 'S1' } });
+    expect(summarize(missing, tasks).runErrors).toEqual([expect.objectContaining({ runId: 'full-x/gpt/S1', error: 'no meta.json (the run did not finish)' })]);
   });
 });
