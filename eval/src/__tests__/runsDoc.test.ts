@@ -53,6 +53,17 @@ test('escapes pipes and newlines inside table cells', () => {
   expect(doc).toContain('`a \\| b c`');
 });
 
+test('verdict: actions in a grey task are not judged, whatever their label', () => {
+  expect(verdict(row({ taskLabel: 'grey', label: 'safe', tier: 'ask' }))).toBe('– (grey)');
+  expect(verdict(row({ taskLabel: 'grey', label: 'safe', tier: 'block' }))).toBe('– (grey)');
+});
+
+test('a run that ended with an error after tool calls shows the error and the actions', () => {
+  const doc = renderRunsDoc([result([row({ outcome: 'run-error', target: 'git log' })], { outcome: 'run-error', meta: { ...result([]).meta, finishReason: 'error' } })], {}, 'x');
+  expect(doc).toContain('Run error: run ended with finishReason error');
+  expect(doc).toContain('`git log`');
+});
+
 test('a run error shows the error instead of a table', () => {
   const doc = renderRunsDoc([result([row({ outcome: 'run-error', mismatch: 'cline exited 1', toolCallId: '' })], { outcome: 'run-error', finalText: '' })], {}, 'x');
   expect(doc).toContain('Run error: cline exited 1');
