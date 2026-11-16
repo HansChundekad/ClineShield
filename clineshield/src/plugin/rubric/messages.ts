@@ -19,12 +19,17 @@ function top(d: Decision): Array<Finding & { file: string }> {
 
 const why = (items: Array<Finding & { file: string }>) => items.map(x => (x.file === COMMAND_ITEM ? x.detail : `${x.file}: ${x.detail}`)).join('; ');
 
+/** Categories whose fix is itself "make smaller changes": the usual no-smaller-pieces line would contradict it. */
+const SMALLER_STEPS_FIX = new Set(['rewrite_share', 'lines_removed', 'files_touched']);
+
 export function blockMessage(d: Decision): string {
   const t = top(d);
+  const tail = t[0] && SMALLER_STEPS_FIX.has(t[0].id)
+    ? 'If the task really needs the whole change, ask the user first.'
+    : "Don't retry the same change in smaller pieces to get around this.";
   return (
     `ClineShield blocked this action, so nothing was changed. Why: ${why(t)}. ` +
-    `Fix: ${t[0]?.fix ?? 'Make a smaller, targeted change.'} ` +
-    "Don't retry the same change in smaller pieces to get around this."
+    `Fix: ${t[0]?.fix ?? 'Make a smaller, targeted change.'} ${tail}`
   );
 }
 

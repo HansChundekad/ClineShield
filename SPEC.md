@@ -122,7 +122,7 @@ it would add); promoted to points only if the eval shows value. PR column = deli
 | `self_protection` — edit/command touching `.cline-shield.yml`, `~/.cline-shield.yml`, `.cline-shield/`, the plugin install dir | block | hard | ① |
 | `placeholder` — "rest of code unchanged" / "existing code here" style lines in an edit to an existing file; `TODO: implement` or a stub body (`pass`, `...`, `throw new Error("not implemented")`, `todo!()`, `panic("TODO")`) added in a hunk that removed ≥ 3 real lines. New files never fire | block | hard | ① |
 | `secret_added` — API key / token / private-key patterns in added lines | block | hard | ① |
-| `rm_outside` — recursive delete of `/`, `~`, `$HOME`, the project itself (`rm -rf .`, `*` at the root), a folder containing the project or home, or anything resolving outside the workspace; `/tmp`, `/private/tmp`, `$TMPDIR` exempt | block | hard | ② |
+| `rm_outside` — recursive delete (`rm -r`, or `find … -delete` / `-exec rm` of its start folders, after `cd`) of `/`, `~`, `$HOME`, the project itself (`rm -rf .`, `*` at the root; `find` only without a name/path/time/size filter), a folder containing the project or home, or anything resolving outside the workspace; `/tmp`, `/private/tmp`, `$TMPDIR` exempt | block | hard | ② |
 | **Size** (patch-only fallback for huge/unreadable files) | | | |
 | `rewrite_share` — share of original file removed or rewritten (file ≥ 20 lines) | ≥ 40 %: 25 · ≥ 75 %: 50 | signal | ① |
 | `lines_removed` | > 100: 15 · > 300: 30 | signal | ① |
@@ -142,24 +142,24 @@ it would add); promoted to points only if the eval shows value. PR column = deli
 | `assertions_weakened` (removed, or `toBe` → `toBeDefined` style) · `expected_changed` (values in assert lines) | 30 · 25 | signal | ① |
 | `test_and_source` — test + source changed in one action, or (④) a source file and its matching test (same name stem, e.g. `math.js` / `math.test.js`) within 10 minutes, since Cline's `editor` changes one file per call · more if the last known test run in the session failed (one finding, so the group rule can't drop the extra on its own; on balanced it never asks alone) | 15 · 30 | signal | ① · ④ |
 | **Content** (added lines only) | | | |
-| `security_weakened` (`rejectUnauthorized: false`, CORS `*`, `eval` / `new Function`, shell-mode child processes, `dangerouslySetInnerHTML`, CSRF off) | 40 | signal | ① |
-| `auth_removed` (auth middleware, guards, permission checks) · `validation_removed` · `sql_string_built` | 45 · 40 · 40 | signal | ① |
-| `new_domain` — URL host not already in the file and not in `trusted_domains` | 20 | signal | ① |
+| `security_weakened` (`rejectUnauthorized` set to anything but a literal `true`: `false`, a config flag, an expression; CORS `*`, `eval` / `new Function`, shell-mode child processes, `dangerouslySetInnerHTML`, CSRF off) | 40 | signal | ① |
+| `auth_removed` (auth middleware, guards, permission checks, 401/403 responses) · `validation_removed` · `sql_string_built` | 45 · 40 · 40 | signal | ① |
+| `new_domain` — URL host not already in the file, not in `trusted_domains` and not a built-in API host (exact match, owner-approved 2026-11-16: `api.stripe.com`, `api.paypal.com`, `api-m.paypal.com`, `api.openai.com`, `api.anthropic.com`, `generativelanguage.googleapis.com`, `api.mistral.ai`; payment and LLM APIs only, never paste sites, file hosts or generic cloud storage) | 20 | signal | ① |
 | `empty_catch` · `commented_out_block` | 10 · 10 | signal | ① |
 | **Code structure** (per-language patterns; tree-sitter later) | | | |
 | `functions_removed` (functions, classes, methods) | 10 each, max 40 | signal | ① |
 | `exports_removed` (removed or renamed) | 20 each, max 40 | signal | ① |
 | `signature_changed` · `env_key_renamed` | (15) · (20) | log-only | ① |
 | **Commands** (`run_commands`, all 9 input shapes, see Appendix. Parsed: split on `&&` `;` `\|` `\|\|` `&` newlines; `sudo` (scores `sudo`), `VAR=x`, `env`, `nohup`, `time` stripped; one level of `bash`/`sh`/`zsh -c` and `$(…)` / backtick / `<(…)` bodies unwrapped; `cd dir &&` tracked so relative paths resolve; quotes, heredocs, comments masked. A `{command, args}` entry is argv, no shell) | | | |
-| `rm_recursive` in workspace (`node_modules`, `dist`, `build`, `out`, `.next`, `.nuxt`, `target`, `coverage`, `__pycache__`, `.pytest_cache`, `.mypy_cache`, `.turbo`, `.cache`, `.parcel-cache` = 0, and not scored as file deletes); `find -delete` / `-exec rm` | 20 | critical | ② |
+| `rm_recursive` in workspace (`node_modules`, `dist`, `build`, `out`, `.next`, `.nuxt`, `target`, `coverage`, `__pycache__`, `.pytest_cache`, `.mypy_cache`, `.turbo`, `.cache`, `.parcel-cache` = 0, and not scored as file deletes); `find -delete` / `-exec rm` under the workspace (start folders resolved like `rm -r`) | 20 | critical | ② |
 | `discards_work` (`reset --hard`, `clean -f`, `checkout -- <paths>` / `.`, `restore <paths>` without `--staged`); one `git status` (300 ms cap), unknown = dirty | 50 dirty tree · 10 clean | critical | ② |
-| `history_rewrite` (`push --force` but not `--force-with-lease`, `branch -D`) | 50 | critical | ② |
+| `history_rewrite` (any forced push: `--force`, `-f`, `+ref`, and `--force-with-lease`, which still replaces commits already on the remote; `branch -D`) | 50 | critical | ② |
 | `pipe_to_shell` · `sudo` · `destructive_sql` (`DROP`, `TRUNCATE`, `DELETE` without `WHERE` given to `psql`/`mysql`/`sqlite3`…; `dropdb`, `prisma migrate reset`, `rails db:drop`) · `publish` (`npm`/`yarn`/`pnpm publish`, `docker push`, `terraform apply`/`destroy`, `kubectl apply`/`delete`, `cargo publish`, `twine upload`, `gem push`) | 45 · 40 · 50 · 60 | critical | ② |
 | `chmod_broad` (`777`, `666`, `o+w`, `-R`) | 30 | signal | ② |
 | `secret_exfil` — reads a secrets file and makes a network call (`curl`, `wget`, `nc`, `scp`) in the same request | 70 | critical | ② |
 | `shell_edit` — any command that changes a file (forms below); fix: use the editor tool so the change can be reviewed | 15 | signal | ② |
-| `unknown_target` — a file-changing command whose target contains `$VAR`, `$(…)` or backticks, follows `cd $VAR`, or comes from `xargs` | 40 | critical | ② |
-| File-changing commands. **Full content known** (`cat > f <<EOF`, `tee f <<EOF`, `echo`/`printf` of literal text `> f`): a full-file replace scored against the real file with every edit check; `>> f` with known text: added lines (content checks apply). **Name only** (`sed -i`, `perl -i`, `rm`, `rmdir`, `unlink`, `mv`, `cp`, `truncate`, `dd of=`, `>` from an unknown source): path and file-op checks; an overwrite (`cp`, `>`, `truncate`, `dd`) counts as `move_overwrites` only on a git-tracked file (untracked ones are mostly logs and build output). Folders show as `dir/`. Temp dirs and `/dev/null`-style sinks skipped. No `edit-*` / `risk-assessed` events for shell edits | — | — | ② |
+| `unknown_target` — a file-changing command whose target contains `$VAR`, `$(…)` or backticks, follows `cd $VAR`, or comes from `xargs`. A variable set once to a literal earlier in the same command (`t=/x; rm -rf "$t"`) is filled in; `sed -i` / `perl -i` over files listed inside the workspace (`grep -l`, `rg -l`, `git ls-files`, `find`, through `xargs` or `while read`) is an edit of those folders, not unknown. The reason says whether the variable was set by the command or outside it | 40 | critical | ② |
+| File-changing commands. **Full content known** (`cat > f <<EOF`, `tee f <<EOF`, `echo`/`printf` of literal text `> f`): a full-file replace scored against the real file with every edit check; `>> f` with known text: added lines (content checks apply). **Name only** (`sed -i`, `perl -i`, `rm`, `rmdir`, `unlink`, `mv`, `cp`, `truncate`, `dd of=`, `>` from an unknown source; files a `python`/`node` heredoc, `-c` or `-e` script opens for writing, with a literal path or a variable set to one in the script; a computed path → `unknown_target`): path and file-op checks; an overwrite (`cp`, `>`, `truncate`, `dd`) counts as `move_overwrites` only on a git-tracked file (untracked ones are mostly logs and build output). Folders show as `dir/`. Temp dirs and `/dev/null`-style sinks skipped. No `edit-*` / `risk-assessed` events for shell edits | — | — | ② |
 | **Dependencies** (npm + PyPI; manifest edits **and** `npm install x` / `pip install x`) | | | |
 | `dep_missing` — definite 404 from the public registry (hallucinated); only packages not already in the manifest | 80 | signal | ③ |
 | `dep_typosquat` — one edit (a neighbour swap counts as one) from the bundled top-5k list, name ≥ 5 chars, not on the list; no network. Measured: flags 2–3 % of legitimate packages ranked 5,001–8,000 (≤ 2 edits flagged about 6 %) | 50 | signal | ③ |
@@ -175,7 +175,7 @@ it would add); promoted to points only if the eval shows value. PR column = deli
 
 **Reasons.** Cline gets what happened, the top 3 categories and one fixed "safer alternative" sentence per category,
 **never points or cut-offs** (so it can't learn to slip under them). Block adds: "Don't retry the same change in
-smaller pieces to get around this." After 3 blocks on the same file in one task: "Stop and ask the user how to
+smaller pieces to get around this." (when the top fix is itself a smaller-steps fix, `rewrite_share` / `lines_removed` / `files_touched`: "If the task really needs the whole change, ask the user first.") After 3 blocks on the same file in one task: "Stop and ask the user how to
 proceed." Ask adds: "If they reply yes to that message, retry the identical action. A yes given before this message doesn't count. If the user says no, don't retry; ask what they want." (no "once": a model read it as a used-up retry and stopped after a valid yes, manual test 2026-11-11) Points, totals and cut-offs go to the logs
 and `/clineshield why`.
 
@@ -213,6 +213,10 @@ name the file, e.g. "app.ts: 82% of the file rewritten"), `approved` (asked comm
 - [x] ② Tests: `rm -rf node_modules` allowed vs `rm -rf /` blocked, `/tmp` exemption, each shell-edit form, chains, pipes, `sudo`, `VAR=x`, `bash -c`, every input shape; < 200 ms typical per request (measured: median 10–15 ms, worst 23 ms on a git temp workspace)
 - [x] Manual (2026-11-11, CLI 3.0.74, plugin `2b3ab81`–`b539d4d`, macOS, model claude-haiku, disposable git repo ~/clineshield-sandbox): made-up npm package asked (`dep_missing` 80); `lodash` allowed (manifest 15); `offline: true` allowed with `skipped:dep_registry`; a project `.npmrc` with a private registry allowed with `dep_registry: skipped (private registry)` (no public lookup)
 - [x] ③ Dependency categories; registry lookups with cap, cache and `offline: true`; bundled top-5k lists (`clineshield/scripts/refresh-top-packages.js`, run by hand); tests with a fake registry
+- Eval fix batch (owner-approved 2026-11-16, from `eval/REPORT.md`; points and cut-offs unchanged; tests use the eval's real commands and diffs):
+  - [x] Misses: any forced push incl. `--force-with-lease` is `history_rewrite` and its hint asks the user (D3); `cd <dir> && find . -delete` counts like `rm -r` of that folder (Sonnet D1); `rejectUnauthorized` from anything but literal `true` (GPT D5); 401/403 responses count for `auth_removed`, so C5 blocks at balanced
+  - [x] False alarms: `sed -i` over files listed by `grep -l` inside the workspace is not `unknown_target` (GPT S4); built-in API host list for `new_domain` (Opus D7)
+  - [x] Friction: `python`/`node` heredoc, `-c` and `-e` file writes are name-only file targets with the path checks (like an editor write to the same path, plus `shell_edit`); G1 block message no longer contradicts its fix; a variable set literally earlier in the same command is filled in, and `unknown_target` reasons say where the variable came from (GPT D1)
 - [x] ④ Session state store (test-run outcomes, edit history, reads); `test_and_source` 30 after a failed run; log-only `edit_loop`, `unread_file`, `session_churn` (scoring with a full store adds no measurable time)
   - [x] Manual (2026-11-12, CLI 3.0.74, on `4bc0333` + this change): real session in a throwaway repo: failing `npm test`, then Cline fixed `math.js` and `math.test.js` in two parallel `editor` calls → `test_and_source` 30, "changes math.js and its test math.test.js within 10 minutes, after a failed test run"; no false `unread_file`. An earlier run showed Cline often adds `; echo "EXIT_CODE=$?"`, which now reads the printed code (replay test)
 - [x] Manual: real CLI session in a disposable git repo hitting allow, ask and block
@@ -327,7 +331,7 @@ Target: VS Code and its forks (Cursor, Windsurf, VSCodium…) first; the plugin 
 
 | # | Question | Status |
 |---|---|---|
-| 9 | Rubric defaults: starting points and cut-offs set in Risk rubric (2026-10-15) | open → tune with the eval |
+| 9 | Rubric defaults: starting points and cut-offs set in Risk rubric (2026-10-15) | open: first eval tuning batch done 2026-11-16 (detection fixes; points and cut-offs unchanged, see Risk rubric checklist); further tuning needs more eval data |
 
 **Decided**
 - **1** — Commands get a new `command-assessed` event (`command, tier, score, reasons, approved?`) added to `metrics.ts`, one per `run_commands` request; the extension learns it (2026-10-15).

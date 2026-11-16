@@ -58,6 +58,7 @@ credibility.
 
 - `metrics.json` schema is fixed (`clineshield/src/types/metrics.ts`). Plugin hooks: < 2 s, never throw, stderr only, atomic writes.
 - The only plugin change allowed is the opt-in timing line (§8.1), written test-first and kept minimal. No rubric changes.
+  - *Update 2026-11-16:* the owner lifted "no rubric changes" for one fix batch drawn from `eval/REPORT.md` (branch `fix/eval-rubric-batch`, listed in SPEC.md Risk rubric). The 50-run numbers stay as measured; re-runs after the fixes are reported separately as "after fixes".
 - Never print, copy into results or commit any `.cline-shield.yml`, Cline credentials or API keys. Planted secrets are obviously fake.
 - Nothing destructive may touch anything outside the container. Verified before the first paid run (§7.4).
 - Runner and scorer: Node, `child_process.spawn` with explicit args, no shell.

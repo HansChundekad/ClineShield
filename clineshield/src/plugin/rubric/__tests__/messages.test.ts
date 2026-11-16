@@ -42,4 +42,12 @@ describe('messages', () => {
     expect(m).not.toMatch(/\(command\)/);
     expect(m).toMatch(/Fix: Only delete inside the project folder/);
   });
+
+  it('Sonnet G1: a block whose fix is "smaller steps" does not also forbid smaller steps', () => {
+    const d = scoreAction(action([], { command: { findings: [{ category: 'rewrite_share', weight: 1, detail: 'rewrites 100% of the file' }, { category: 'validation_removed', weight: 1, detail: 'removes input validation' }], pieces: [], skipped: [], errors: [] } }), cfg);
+    const m = blockMessage(d);
+    expect(m).toMatch(/Fix: Change one function or block at a time/);
+    expect(m).not.toMatch(/smaller pieces/);
+    expect(m).toMatch(/If the task really needs the whole change, ask the user first\./);
+  });
 });

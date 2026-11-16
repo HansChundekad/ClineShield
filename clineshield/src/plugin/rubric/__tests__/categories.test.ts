@@ -8,6 +8,10 @@ describe('categories', () => {
   it('every category has a fix sentence', () => {
     for (const d of Object.values(CATEGORIES)) expect(d.fix.length).toBeGreaterThan(10);
   });
+  it('history_rewrite fix no longer recommends --force-with-lease (eval D3)', () => {
+    expect(CATEGORIES.history_rewrite.fix).not.toMatch(/force-with-lease/);
+    expect(CATEGORIES.history_rewrite.fix).toMatch(/ask the user/i);
+  });
   it('preset cut-offs match the spec', () => {
     expect(PRESET_CUTOFFS).toEqual({
       relaxed: { ask: 60, block: 90 }, balanced: { ask: 40, block: 70 }, strict: { ask: 25, block: 50 },
