@@ -1,0 +1,125 @@
+{
+  "preset_note": "balanced = no config file",
+  "calls": {
+    "toolu_01Eb9k1tad75Z3vEEdXM5CNk": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.87
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.36
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.53
+      }
+    },
+    "toolu_01WM6UFDST4z9xVbigdoUTFs": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.25
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.2
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.16
+      }
+    },
+    "toolu_01EZqn346DyvfX1DuheMeTVP": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.16
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.19
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.13
+      }
+    },
+    "toolu_01WyrwMkHHirBUmE2RzgGkJX": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.28
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.21
+      },
+      "strict": {
+        "tier": "ask",
+        "ms": 2.21
+      }
+    },
+    "toolu_01EXQ4HUxm9uzYGjhEpBGVUz": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.06
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.05
+      },
+      "strict": {
+        "tier": "ask",
+        "ms": 1.92
+      }
+    },
+    "toolu_01TgUVPzeysMRgUQyzZ6Xtad": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 1.99
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 1.85
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 1.79
+      }
+    },
+    "toolu_0124Ei8ZSVmPWbysdzHJbfqD": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 1.72
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 1.76
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 3.25
+      }
+    },
+    "toolu_01DcQhoJiWp4xgpWJ7LR3XEp": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 3.06
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.12
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 1.93
+      }
+    }
+  }
+}

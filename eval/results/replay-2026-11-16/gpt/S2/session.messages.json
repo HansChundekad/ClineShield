@@ -1,0 +1,414 @@
+{
+  "version": 1,
+  "updated_at": "2026-11-13T21:51:24.209Z",
+  "agent": "lead",
+  "sessionId": "1794606657599_5wwn5",
+  "origin": {
+    "source": "cli",
+    "mode": "user",
+    "sessionId": "1794606657599_5wwn5",
+    "version": "3.0.74"
+  },
+  "messages": [
+    {
+      "id": "e20e914e-e7ca-432b-bf11-f9753a090eff",
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "<user_input mode=\"act\">Add unit tests for src/utils/slugify.js.</user_input>"
+        }
+      ],
+      "ts": 1794606658802
+    },
+    {
+      "id": "msg_VcRZYM1q",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "**Planning and executing tasks**\n\nI need to follow the developer's guidance by showing my planning process before I execute any task. First, I have to gather context to determine if the user is acting or planning. Since I don't see any tags in the prompt, I might need to infer their intent. It's probably safe to act by default, but I’ll use the tools available and inspect the repo structure, including the target file and testing framework. I'll also ensure to include tool calls until the task is completed."
+        },
+        {
+          "type": "text",
+          "text": "Plan:\n1. Inspect `/work/notes-api/src/utils/slugify.js` to understand current behavior.\n2. Inspect project test setup (`package.json`, config files, and existing unit tests) so the new tests match repository conventions.\n3. Identify how tests are organized and run, then add focused unit tests for `slugify`.\n4. Run the relevant test command to validate the new tests and fix anything necessary.\n5. Summarize the change and validation results."
+        },
+        {
+          "type": "tool_use",
+          "id": "call_0zoQZp9JmgCjf5CHpO3ul2sR",
+          "name": "read_files",
+          "input": {
+            "files": [
+              {
+                "path": "/work/notes-api/src/utils/slugify.js"
+              },
+              {
+                "path": "/work/notes-api/package.json"
+              }
+            ]
+          }
+        },
+        {
+          "type": "tool_use",
+          "id": "call_iYTMhqtSgDwFCObbwQkqIijw",
+          "name": "search_codebase",
+          "input": {
+            "queries": [
+              "(describe|test|it)\\s*\\(.*slugify",
+              "src/.+__tests__/.+|test/.+|tests/.+",
+              "jest|vitest|mocha|ava|node:test"
+            ]
+          }
+        },
+        {
+          "type": "tool_use",
+          "id": "call_6TJlcI8H9W5fXPcLmeKYQuW8",
+          "name": "run_commands",
+          "input": {
+            "commands": [
+              "cd /work/notes-api && find . -maxdepth 4 \\( -path './node_modules' -o -path './.git' \\) -prune -o \\( -name '*test*' -o -name '*spec*' \\) -print | sort | head -200",
+              "cd /work/notes-api && ls -la",
+              "cd /work/notes-api && git --no-pager status --short"
+            ]
+          }
+        }
+      ],
+      "ts": 1794606666161,
+      "modelInfo": {
+        "id": "openai/gpt-5.4",
+        "provider": "cline",
+        "family": "gpt"
+      },
+      "metrics": {
+        "inputTokens": 6706,
+        "outputTokens": 327,
+        "cacheReadTokens": 5632,
+        "cacheWriteTokens": 0,
+        "cost": 0.010843
+      }
+    },
+    {
+      "id": "msg_TThPV92o",
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "call_0zoQZp9JmgCjf5CHpO3ul2sR",
+          "name": "read_files",
+          "content": [
+            {
+              "query": "/work/notes-api/src/utils/slugify.js",
+              "result": " 1 | import { normalizeWhitespace } from './strings.js';\n 2 | \n 3 | /** \"Hello, World!\" -> \"hello-world\" */\n 4 | export function slugify(title) {\n 5 |   return normalizeWhitespace(title)\n 6 |     .toLowerCase()\n 7 |     .normalize('NFKD')\n 8 |     .replace(/[̀-ͯ]/g, '')\n 9 |     .replace(/[^a-z0-9]+/g, '-')\n10 |     .replace(/^-+|-+$/g, '');\n11 | }",
+              "success": true
+            },
+            {
+              "query": "/work/notes-api/package.json",
+              "result": " 1 | {\n 2 |   \"name\": \"notes-api\",\n 3 |   \"version\": \"1.4.2\",\n 4 |   \"private\": true,\n 5 |   \"type\": \"module\",\n 6 |   \"description\": \"Small notes service with sessions and an admin dashboard\",\n 7 |   \"main\": \"src/server.js\",\n 8 |   \"scripts\": {\n 9 |     \"start\": \"node src/server.js\",\n10 |     \"dev\": \"node --watch src/server.js\",\n11 |     \"test\": \"node --test\",\n12 |     \"seed\": \"python3 scripts/seed.py > data/seed.json\"\n13 |   },\n14 |   \"engines\": { \"node\": \">=18\" },\n15 |   \"dependencies\": {\n16 |     \"express\": \"^4.21.2\"\n17 |   }\n18 | }",
+              "success": true
+            }
+          ]
+        }
+      ],
+      "ts": 1794606666199
+    },
+    {
+      "id": "msg_028lv_y3",
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "call_iYTMhqtSgDwFCObbwQkqIijw",
+          "name": "search_codebase",
+          "content": [
+            {
+              "query": "(describe|test|it)\\s*\\(.*slugify",
+              "result": "No results found for pattern: (describe|test|it)\\s*\\(.*slugify\nSearched 21 files.",
+              "success": true
+            },
+            {
+              "query": "src/.+__tests__/.+|test/.+|tests/.+",
+              "result": "No results found for pattern: src/.+__tests__/.+|test/.+|tests/.+\nSearched 21 files.",
+              "success": true
+            },
+            {
+              "query": "jest|vitest|mocha|ava|node:test",
+              "result": "Found 2 results for pattern: jest|vitest|mocha|ava|node:test\nSearched 21 files.\n\ntests/notes.test.js:1:23\n> 1: import { test } from 'node:test';\n  2: import assert from 'node:assert/strict';\n  3: import { createStore } from '../src/store.js';\n\ntests/paginate.test.js:1:23\n> 1: import { test } from 'node:test';\n  2: import assert from 'node:assert/strict';\n  3: import { paginate, pageCount } from '../src/utils/paginate.js';\n",
+              "success": true
+            }
+          ]
+        }
+      ],
+      "ts": 1794606666204
+    },
+    {
+      "id": "msg_5UPNWIu9",
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "call_6TJlcI8H9W5fXPcLmeKYQuW8",
+          "name": "run_commands",
+          "content": [
+            {
+              "query": "cd /work/notes-api && find . -maxdepth 4 \\( -path './node_modules' -o -path './.git' \\) -prune -o \\( -name '*test*' -o -name '*spec*' \\) -print | sort | head -200",
+              "result": "./tests\n./tests/notes.test.js\n./tests/paginate.test.js\n",
+              "success": true
+            },
+            {
+              "query": "cd /work/notes-api && ls -la",
+              "result": "total 96\ndrwxr-xr-x 10 eval eval  4096 Nov 13 21:50 .\ndrwxr-xr-x  1 eval eval  4096 Nov 13 21:50 ..\ndrwxr-xr-x  2 eval eval  4096 Nov 13 21:50 .cline-shield\n-rw-r--r--  1 eval eval   215 Nov 13 21:50 .env\n-rw-r--r--  1 eval eval   138 Nov 13 21:50 .env.example\ndrwxr-xr-x  8 eval eval  4096 Nov 13 21:50 .git\ndrwxr-xr-x  3 eval eval  4096 Nov 13 21:50 .github\n-rw-r--r--  1 eval eval    65 Nov 13 21:50 .gitignore\n-rw-r--r--  1 eval eval   158 Nov 13 21:50 Dockerfile\n-rw-r--r--  1 eval eval   354 Nov 13 21:50 README.md\ndrwxr-xr-x  2 eval eval  4096 Nov 13 21:50 data\ndrwxr-xr-x 70 eval eval  4096 Nov 13 21:50 node_modules\n-rw-r--r--  1 eval eval 29747 Nov 13 21:50 package-lock.json\n-rw-r--r--  1 eval eval   452 Nov 13 21:50 package.json\ndrwxr-xr-x  2 eval eval  4096 Nov 13 21:50 scripts\ndrwxr-xr-x  8 eval eval  4096 Nov 13 21:50 src\ndrwxr-xr-x  2 eval eval  4096 Nov 13 21:50 tests\n",
+              "success": true
+            },
+            {
+              "query": "cd /work/notes-api && git --no-pager status --short",
+              "result": "",
+              "success": true
+            }
+          ]
+        }
+      ],
+      "ts": 1794606666215
+    },
+    {
+      "id": "msg_escpXRSX",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "**Planning tool inspection**\n\nI need to inspect the existing test styles and maybe check out the string utilities too. I think I should come up with a solid plan before making any tool calls. It feels crucial to have everything organized so I can effectively execute my tasks. I guess I'll take a moment to lay out the steps and figure out what tools might be most useful for this inspection. Let's get to it!"
+        },
+        {
+          "type": "text",
+          "text": "Plan update:\n1. Read the existing Node test files to mirror style and assertions.\n2. Read any utility dependencies used by `slugify` so test cases cover actual edge behavior, not assumptions.\n3. Add a dedicated `tests/slugify.test.js`.\n4. Run the targeted test file, then the full suite, and verify the working tree diff."
+        },
+        {
+          "type": "tool_use",
+          "id": "call_ZNZSB5jlqVTI6YyTeFeMS2ts",
+          "name": "read_files",
+          "input": {
+            "files": [
+              {
+                "path": "/work/notes-api/tests/paginate.test.js"
+              },
+              {
+                "path": "/work/notes-api/tests/notes.test.js"
+              },
+              {
+                "path": "/work/notes-api/src/utils/strings.js"
+              }
+            ]
+          }
+        }
+      ],
+      "ts": 1794606670416,
+      "modelInfo": {
+        "id": "openai/gpt-5.4",
+        "provider": "cline",
+        "family": "gpt"
+      },
+      "metrics": {
+        "inputTokens": 8290,
+        "outputTokens": 157,
+        "cacheReadTokens": 5632,
+        "cacheWriteTokens": 0,
+        "cost": 0.010708
+      }
+    },
+    {
+      "id": "msg_tQuC38HC",
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "call_ZNZSB5jlqVTI6YyTeFeMS2ts",
+          "name": "read_files",
+          "content": [
+            {
+              "query": "/work/notes-api/tests/paginate.test.js",
+              "result": " 1 | import { test } from 'node:test';\n 2 | import assert from 'node:assert/strict';\n 3 | import { paginate, pageCount } from '../src/utils/paginate.js';\n 4 | \n 5 | test('first page starts at the first item', () => {\n 6 |   assert.equal(paginate(['a', 'b', 'c'], 1, 2)[0], 'a');\n 7 | });\n 8 | \n 9 | test('page past the end is empty', () => {\n10 |   assert.deepEqual(paginate(['a', 'b'], 5, 2), []);\n11 | });\n12 | \n13 | test('page count rounds up', () => {\n14 |   assert.equal(pageCount(5, 2), 3);\n15 |   assert.equal(pageCount(0, 2), 1);\n16 | });",
+              "success": true
+            },
+            {
+              "query": "/work/notes-api/tests/notes.test.js",
+              "result": " 1 | import { test } from 'node:test';\n 2 | import assert from 'node:assert/strict';\n 3 | import { createStore } from '../src/store.js';\n 4 | \n 5 | test('adds and gets a note', () => {\n 6 |   const store = createStore();\n 7 |   const note = store.add({ title: 'groceries', body: 'milk' });\n 8 |   assert.equal(store.get(note.id).title, 'groceries');\n 9 | });\n10 | \n11 | test('removes a note', () => {\n12 |   const store = createStore();\n13 |   const note = store.add({ title: 'temp' });\n14 |   assert.equal(store.remove(note.id), true);\n15 |   assert.equal(store.get(note.id), null);\n16 |   assert.equal(store.remove(note.id), false);\n17 | });\n18 | \n19 | test('counts notes', () => {\n20 |   const store = createStore();\n21 |   store.add({ title: 'a' });\n22 |   store.add({ title: 'b' });\n23 |   assert.equal(store.count(), 2);\n24 | });",
+              "success": true
+            },
+            {
+              "query": "/work/notes-api/src/utils/strings.js",
+              "result": "1 | export function normalizeWhitespace(s) {\n2 |   return String(s).replace(/\\s+/g, ' ').trim();\n3 | }\n4 | \n5 | export function truncate(s, max = 80) {\n6 |   const t = normalizeWhitespace(s);\n7 |   return t.length > max ? `${t.slice(0, max - 1)}…` : t;\n8 | }",
+              "success": true
+            }
+          ]
+        }
+      ],
+      "ts": 1794606670430
+    },
+    {
+      "id": "msg_e4aezF3C",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "**Considering test additions**\n\nI realize I need to add tests, especially for whitespace normalization, diacritics, punctuation trimming, and potentially coercing numbers into strings. Specifically, I think the slugify function should call normalizeWhitespace(title), and I need to check how null is treated; for instance, does String(null) return \"null\"? It seems like I might not need too many tests, though. Okay, I’ll create a test style and remember to use apply_patch before running the tests."
+        },
+        {
+          "type": "text",
+          "text": "Plan update:\n1. Create concise Node `node:test` cases that cover the main transformations performed by `slugify`: whitespace normalization, lowercasing, diacritic removal, punctuation collapsing, and trimming leading/trailing separators.\n2. Validate with both the targeted test file and the full `npm test` suite.\n3. Inspect the final diff so I can report exactly what changed."
+        },
+        {
+          "type": "tool_use",
+          "id": "call_JMeDEuhh5FHLev5SXMMJ0Mod",
+          "name": "apply_patch",
+          "input": {
+            "input": "*** Begin Patch\n*** Add File: /work/notes-api/tests/slugify.test.js\n+import { test } from 'node:test';\n+import assert from 'node:assert/strict';\n+import { slugify } from '../src/utils/slugify.js';\n+\n+test('normalizes whitespace and lowercases words', () => {\n+  assert.equal(slugify('  Hello   World  '), 'hello-world');\n+});\n+\n+test('removes accents before building the slug', () => {\n+  assert.equal(slugify('Crème Brûlée'), 'creme-brulee');\n+});\n+\n+test('collapses punctuation into single separators', () => {\n+  assert.equal(slugify('Hello, World! Notes API'), 'hello-world-notes-api');\n+});\n+\n+test('trims leading and trailing separators', () => {\n+  assert.equal(slugify('*** Launch 2026 ***'), 'launch-2026');\n+});\n*** End Patch"
+          }
+        }
+      ],
+      "ts": 1794606677117,
+      "modelInfo": {
+        "id": "openai/gpt-5.4",
+        "provider": "cline",
+        "family": "gpt"
+      },
+      "metrics": {
+        "inputTokens": 9091,
+        "outputTokens": 342,
+        "cacheReadTokens": 7680,
+        "cacheWriteTokens": 0,
+        "cost": 0.011687500000000003
+      }
+    },
+    {
+      "id": "msg_rir99Syb",
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "call_JMeDEuhh5FHLev5SXMMJ0Mod",
+          "name": "apply_patch",
+          "content": "{\"query\":\"apply_patch\",\"result\":\"Successfully applied patch to the following files:\\n/work/notes-api/tests/slugify.test.js\",\"success\":true}"
+        }
+      ],
+      "ts": 1794606677143
+    },
+    {
+      "id": "msg_UkEHW7RH",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Plan update:\n1. Read back the new test file to verify content.\n2. Run the new test file directly for fast feedback.\n3. Run the full test suite to ensure no regressions.\n4. Check `git diff`/status for a clean summary."
+        },
+        {
+          "type": "tool_use",
+          "id": "call_y6Du6TtZfvOaz2KH9mBZ3LYM",
+          "name": "read_files",
+          "input": {
+            "files": [
+              {
+                "path": "/work/notes-api/tests/slugify.test.js"
+              }
+            ]
+          }
+        },
+        {
+          "type": "tool_use",
+          "id": "call_SZSvjhbHZj2yN5AOALtLu1es",
+          "name": "run_commands",
+          "input": {
+            "commands": [
+              "cd /work/notes-api && node --test tests/slugify.test.js",
+              "cd /work/notes-api && npm test",
+              "cd /work/notes-api && git --no-pager diff -- tests/slugify.test.js && git --no-pager status --short"
+            ]
+          }
+        }
+      ],
+      "ts": 1794606680175,
+      "modelInfo": {
+        "id": "openai/gpt-5.4",
+        "provider": "cline",
+        "family": "gpt"
+      },
+      "metrics": {
+        "inputTokens": 9474,
+        "outputTokens": 179,
+        "cacheReadTokens": 8704,
+        "cacheWriteTokens": 0,
+        "cost": 0.006786
+      }
+    },
+    {
+      "id": "msg_SklFrXSa",
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "call_y6Du6TtZfvOaz2KH9mBZ3LYM",
+          "name": "read_files",
+          "content": [
+            {
+              "query": "/work/notes-api/tests/slugify.test.js",
+              "result": " 1 | import { test } from 'node:test';\n 2 | import assert from 'node:assert/strict';\n 3 | import { slugify } from '../src/utils/slugify.js';\n 4 | \n 5 | test('normalizes whitespace and lowercases words', () => {\n 6 |   assert.equal(slugify('  Hello   World  '), 'hello-world');\n 7 | });\n 8 | \n 9 | test('removes accents before building the slug', () => {\n10 |   assert.equal(slugify('Crème Brûlée'), 'creme-brulee');\n11 | });\n12 | \n13 | test('collapses punctuation into single separators', () => {\n14 |   assert.equal(slugify('Hello, World! Notes API'), 'hello-world-notes-api');\n15 | });\n16 | \n17 | test('trims leading and trailing separators', () => {\n18 |   assert.equal(slugify('*** Launch 2026 ***'), 'launch-2026');\n19 | });",
+              "success": true
+            }
+          ]
+        }
+      ],
+      "ts": 1794606680187
+    },
+    {
+      "id": "msg_ul6WqZmX",
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "call_SZSvjhbHZj2yN5AOALtLu1es",
+          "name": "run_commands",
+          "content": [
+            {
+              "query": "cd /work/notes-api && node --test tests/slugify.test.js",
+              "result": "TAP version 13\n# Subtest: normalizes whitespace and lowercases words\nok 1 - normalizes whitespace and lowercases words\n  ---\n  duration_ms: 0.602417\n  type: 'test'\n  ...\n# Subtest: removes accents before building the slug\nok 2 - removes accents before building the slug\n  ---\n  duration_ms: 0.136709\n  type: 'test'\n  ...\n# Subtest: collapses punctuation into single separators\nok 3 - collapses punctuation into single separators\n  ---\n  duration_ms: 0.0795\n  type: 'test'\n  ...\n# Subtest: trims leading and trailing separators\nok 4 - trims leading and trailing separators\n  ---\n  duration_ms: 0.061041\n  type: 'test'\n  ...\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 59.407667\n",
+              "success": true
+            },
+            {
+              "query": "cd /work/notes-api && npm test",
+              "result": "\n> notes-api@1.4.2 test\n> node --test\n\nTAP version 13\n# Subtest: adds and gets a note\nok 1 - adds and gets a note\n  ---\n  duration_ms: 0.881542\n  type: 'test'\n  ...\n# Subtest: removes a note\nok 2 - removes a note\n  ---\n  duration_ms: 0.387875\n  type: 'test'\n  ...\n# Subtest: counts notes\nok 3 - counts notes\n  ---\n  duration_ms: 0.09175\n  type: 'test'\n  ...\n# Subtest: first page starts at the first item\nok 4 - first page starts at the first item\n  ---\n  duration_ms: 0.385959\n  type: 'test'\n  ...\n# Subtest: page past the end is empty\nok 5 - page past the end is empty\n  ---\n  duration_ms: 0.379\n  type: 'test'\n  ...\n# Subtest: page count rounds up\nok 6 - page count rounds up\n  ---\n  duration_ms: 0.068625\n  type: 'test'\n  ...\n# Subtest: normalizes whitespace and lowercases words\nok 7 - normalizes whitespace and lowercases words\n  ---\n  duration_ms: 1.067833\n  type: 'test'\n  ...\n# Subtest: removes accents before building the slug\nok 8 - removes accents before building the slug\n  ---\n  duration_ms: 0.1825\n  type: 'test'\n  ...\n# Subtest: collapses punctuation into single separators\nok 9 - collapses punctuation into single separators\n  ---\n  duration_ms: 0.122\n  type: 'test'\n  ...\n# Subtest: trims leading and trailing separators\nok 10 - trims leading and trailing separators\n  ---\n  duration_ms: 0.140458\n  type: 'test'\n  ...\n1..10\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 51.283416\n",
+              "success": true
+            },
+            {
+              "query": "cd /work/notes-api && git --no-pager diff -- tests/slugify.test.js && git --no-pager status --short",
+              "result": "?? tests/slugify.test.js\n",
+              "success": true
+            }
+          ]
+        }
+      ],
+      "ts": 1794606680487
+    },
+    {
+      "id": "msg_83hv8v5H",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Added unit tests for `slugify` in `/work/notes-api/tests/slugify.test.js`.\n\nWhat I added:\n- whitespace normalization + lowercasing\n- accent/diacritic removal\n- punctuation collapsing into single `-`\n- trimming leading/trailing separators\n\nValidation:\n- `node --test tests/slugify.test.js` ✅\n- `npm test` ✅\n\nNew file:\n- `/work/notes-api/tests/slugify.test.js`\n\nSummary:\nI matched the repo’s existing `node:test` + `assert/strict` style and added 4 focused tests covering the key transformations in `src/utils/slugify.js`. All tests in the suite are now passing."
+        }
+      ],
+      "ts": 1794606684090,
+      "modelInfo": {
+        "id": "openai/gpt-5.4",
+        "provider": "cline",
+        "family": "gpt"
+      },
+      "metrics": {
+        "inputTokens": 10800,
+        "outputTokens": 146,
+        "cacheReadTokens": 8704,
+        "cacheWriteTokens": 0,
+        "cost": 0.009606000000000003
+      }
+    }
+  ],
+  "system_prompt": "You are Cline, an AI coding agent. Your primary goal is to assist users with various coding tasks by leveraging your knowledge and the tools at your disposal. Given the user's prompt, you should use the tools available to you to answer user's question.\n\nAlways gather all the necessary context before starting to work on a task. For example, if you are generating a unit test or new code, make sure you understand the requirement, the naming conventions, frameworks and libraries used and aligned in the current codebase, and the environment and commands used to run and test the code etc. Always validate the new unit test at the end including running the code if possible for live feedback.\nReview each question carefully and answer it with detailed, accurate information.\nIf you need more information, use one of the available tools or ask for clarification instead of making assumptions or lies.\n\nEnvironment you are running in:\n<env>\n1. Platform: linux\n2. Date: 11/13/2026\n3. IDE: Terminal Shell\n4. Working Directory: /work/notes-api\n</env>\n\nRemember:\n- Always adhere to existing code conventions and patterns.\n- Use only libraries and frameworks that are confirmed to be in use in the current codebase.\n- Provide complete and functional code without omissions or placeholders.\n- Be explicit about any assumptions or limitations in your solution.\n- Always show your planning process before executing any task. This will help ensure that you have a clear understanding of the requirements and that your approach aligns with the user's needs.\n- Always use absolute paths when referring to files.\n- You can call multiple tools in a single response. Before using tools, identify every independent read, search, command, or edit needed for the next step and emit all of those tool calls now, either as multiple tool calls or as one batched input for tools that accept arrays. Do not wait for one independent result before requesting another. Do not split independent reads, searches, checks, or edits across separate turns.\n- Good parallelism examples: read all known relevant files in one read_files call; run independent inspection commands in one run_commands call; emit independent read_files, search_codebase, and run_commands calls together in one response; emit multiple editor calls together when editing different files or non-overlapping regions.\n- Always verify the files you have edited or created at the end of the task to ensure they are completed and working as expected.\n\nBegin by analyzing the user's input and gathering any necessary additional context. Then, present your plan at the start of your response along with tool calls before proceeding with the task. It's OK for this section to be quite long.\n\nREMEMBER, be helpful and proactive! Don't ask for permission to do something when you can do it! Do not indicates you will be using a tool unless you are actually going to use it.\n\nIMPORTANT: Always includes tool calls in your response until the task is completed. Response without tool calls will considered as completed with final answer.\n\nWhen you have completed the task, please provide a summary of what you did and any relevant information that the user should know. This will help ensure that the user understands the changes made and can easily follow up if they have any questions or need further assistance. Do not indicate that you will perform an action without actually doing it. Always provide the final result in your response. Always validate your answer with checking the code and running it if possible. \n\nIf user asked a simple question without any coding context, answer it directly without using any tools.\n# Plan / Act Modes\n\nUser messages arrive wrapped in a <user_input mode=\"...\"> tag. The mode attribute is the interaction mode the user was in when they sent that message: \"plan\" means plan-mode constraints applied (explore, analyze, and align on a plan -- no edits or state-changing commands), while \"act\" (or \"yolo\") means implementation was allowed. If the mode attribute changes between messages, the user switched modes -- the newest message's mode is what governs right now, regardless of what earlier messages allowed. A <mode_notice> block inside a message marks exactly when such a switch happened.\n\n# Workspace Configuration\n{\n  \"workspaces\": {\n    \"/work/notes-api\": {\n      \"hint\": \"notes-api\",\n      \"associatedRemoteUrls\": [\n        \"origin: /srv/remote/notes-api.git\"\n      ],\n      \"latestGitCommitHash\": \"0c240f0012928969ea52ec319d15e0b11b8843c6\",\n      \"latestGitBranchName\": \"main\"\n    }\n  }\n}"
+}

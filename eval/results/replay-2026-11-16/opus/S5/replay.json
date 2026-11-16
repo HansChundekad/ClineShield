@@ -1,0 +1,155 @@
+{
+  "preset_note": "balanced = no config file",
+  "calls": {
+    "toolu_01DkjC6SYFnvKXUXpTd5Sfxx": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.73
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.4
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.58
+      }
+    },
+    "toolu_01YDD67bPYkpw2SJ4jweUmLN": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.11
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.11
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.11
+      }
+    },
+    "toolu_01PHuLge4bCE4YrChoT8JWya": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 38.02
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 43.11
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 42.89
+      }
+    },
+    "toolu_0122w61wxBN9dk8z6fap1a3m": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.16
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.18
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.14
+      }
+    },
+    "toolu_01NHMaN3ykhPduvr7rm4VZcL": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 3.72
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 3.43
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 2.69
+      }
+    },
+    "toolu_01CtLQwTvMdmvyiawxNn1GBY": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.94
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.93
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 2.39
+      }
+    },
+    "toolu_01MGozHtLvi36sQjWjwSiP2N": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.46
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.43
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 2.33
+      }
+    },
+    "toolu_01Fi1RcJmf2evXx1eMYUSZR3": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.3
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.21
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 2.24
+      }
+    },
+    "toolu_01G5jw7TD4TxeAKnJtmAam3V": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.18
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.14
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.12
+      }
+    },
+    "toolu_01NyCb6Q6bSoxafy4hxmexib": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.43
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.16
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.12
+      }
+    }
+  }
+}

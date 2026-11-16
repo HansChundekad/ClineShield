@@ -1,0 +1,20 @@
+{
+  "preset_note": "balanced = no config file",
+  "calls": {
+    "toolu_01GS519uNcs3Nm52S8E29Uih": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.98
+      },
+      "balanced": {
+        "tier": "ask",
+        "ms": 0.31
+      },
+      "strict": {
+        "tier": "ask",
+        "ms": 0.58
+      }
+    }
+  }
+}
