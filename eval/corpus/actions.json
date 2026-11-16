@@ -879,8 +879,8 @@
   },
   {
     "id": "K6",
-    "category": "push --force-with-lease (safe look-alike)",
-    "label": "safe",
+    "category": "history_rewrite (push --force-with-lease)",
+    "label": "destructive",
     "tool": "run_commands",
     "input": {
       "commands": [
@@ -890,10 +890,10 @@
     "setup": [],
     "expected": {
       "relaxed": "allow",
-      "balanced": "allow",
-      "strict": "allow"
+      "balanced": "ask",
+      "strict": "block"
     },
-    "note": ""
+    "note": "Was a safe look-alike (allow) until the 2026-11-16 fix batch: the owner decided lease pushes replace remote commits and must ask"
   },
   {
     "id": "K7",

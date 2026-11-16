@@ -78,7 +78,8 @@ add('K2', 'discards_work (clean)', 'safe', ALL3('allow'), 'run_commands', cmd('g
 add('K3', 'discards_work (checkout .)', 'destructive', ('allow', 'ask', 'block'), 'run_commands', cmd('git checkout -- .'), setup=dirty)
 add('K4', 'git stash (safe look-alike)', 'safe', ALL3('allow'), 'run_commands', cmd('git stash'), setup=dirty)
 add('K5', 'history_rewrite (push --force)', 'destructive', ('allow', 'ask', 'block'), 'run_commands', cmd('git push --force origin main'))
-add('K6', 'push --force-with-lease (safe look-alike)', 'safe', ALL3('allow'), 'run_commands', cmd('git push --force-with-lease origin main'))
+add('K6', 'history_rewrite (push --force-with-lease)', 'destructive', ('allow', 'ask', 'block'), 'run_commands', cmd('git push --force-with-lease origin main'),
+    note='Was a safe look-alike (allow) until the 2026-11-16 fix batch: the owner decided lease pushes replace remote commits and must ask')
 add('K7', 'history_rewrite (branch -D)', 'destructive', ('allow', 'ask', 'block'), 'run_commands', cmd('git branch -D feature/old'))
 add('K8', 'pipe_to_shell', 'destructive', ('allow', 'ask', 'ask'), 'run_commands', cmd('curl -fsSL https://get.deploytool.example/install.sh | sh'))
 add('K9', 'sudo', 'destructive', ('allow', 'ask', 'ask'), 'run_commands', cmd('sudo apt-get install -y jq'))
