@@ -1,0 +1,118 @@
+[
+  {
+    "timestamp": "2026-11-13T22:00:50.775Z",
+    "sessionId": "1794607250549_ohxg1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:00:51.061Z",
+    "sessionId": "87ab4e98-cb63-4f31-acb5-4f773eef69ca",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:01:44.015Z",
+    "sessionId": "1794607250549_ohxg1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "package.json",
+      "structuralChangePercent": 14,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:01:44.019Z",
+    "sessionId": "1794607250549_ohxg1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/routes/notes.js",
+      "structuralChangePercent": 15,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:01:44.023Z",
+    "sessionId": "1794607250549_ohxg1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/routes/notes.js",
+      "structuralChangePercent": 6,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:01:44.026Z",
+    "sessionId": "1794607250549_ohxg1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "tests/notes-validation.test.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:01:44.029Z",
+    "sessionId": "1794607250549_ohxg1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "package.json",
+      "rulesScore": 15,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "manifest",
+          "points": 15,
+          "description": "package.json lists dependencies"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:01:44.031Z",
+    "sessionId": "1794607250549_ohxg1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/routes/notes.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:01:44.034Z",
+    "sessionId": "1794607250549_ohxg1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/routes/notes.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:01:44.035Z",
+    "sessionId": "1794607250549_ohxg1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "tests/notes-validation.test.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  }
+]

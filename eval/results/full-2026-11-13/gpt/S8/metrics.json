@@ -1,0 +1,46 @@
+[
+  {
+    "timestamp": "2026-11-13T21:54:59.048Z",
+    "sessionId": "1794606898282_yqa2v",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:54:59.510Z",
+    "sessionId": "6a003a80-f93d-4102-88c5-65eca95eb5da",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:55:21.585Z",
+    "sessionId": "1794606898282_yqa2v",
+    "type": "edit-allowed",
+    "data": {
+      "file": "README.md",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:55:21.602Z",
+    "sessionId": "1794606898282_yqa2v",
+    "type": "risk-assessed",
+    "data": {
+      "file": "README.md",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  }
+]

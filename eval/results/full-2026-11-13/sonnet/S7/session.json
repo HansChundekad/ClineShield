@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "session_id": "1794604046871_ghpp6",
+  "source": "cli",
+  "pid": 93,
+  "started_at": "2026-11-13T21:07:26.946Z",
+  "ended_at": "2026-11-13T21:07:41.307Z",
+  "exit_code": 0,
+  "status": "completed",
+  "interactive": false,
+  "provider": "cline",
+  "model": "anthropic/claude-sonnet-5.5",
+  "cwd": "/work/notes-api",
+  "workspace_root": "/work/notes-api",
+  "team_name": "team-OqsYg",
+  "enable_tools": true,
+  "enable_spawn": true,
+  "enable_teams": true,
+  "prompt": "Add a /health endpoint that returns the app version.",
+  "metadata": {
+    "sessionHistoryOrigin": {
+      "mode": "user",
+      "version": "3.0.74"
+    },
+    "git": {
+      "url": "/srv/remote/notes-api.git",
+      "branch": "main"
+    },
+    "checkpoint": {
+      "latest": {
+        "ref": "feb3db888f9a80e7fe68e44d08dbc089d2cf3a1d",
+        "createdAt": 1794604048676,
+        "runCount": 1,
+        "kind": "commit"
+      },
+      "history": [
+        {
+          "ref": "feb3db888f9a80e7fe68e44d08dbc089d2cf3a1d",
+          "createdAt": 1794604048676,
+          "runCount": 1,
+          "kind": "commit"
+        }
+      ]
+    },
+    "title": "Add a /health endpoint that returns the app version.",
+    "totalCost": 0.0580227,
+    "aggregatedAgentsCost": 0.0580227,
+    "usage": {
+      "inputTokens": 59909,
+      "outputTokens": 1146,
+      "cacheReadTokens": 43177,
+      "cacheWriteTokens": 16722,
+      "totalCost": 0.0580227
+    },
+    "aggregateUsage": {
+      "inputTokens": 59909,
+      "outputTokens": 1146,
+      "cacheReadTokens": 43177,
+      "cacheWriteTokens": 16722,
+      "totalCost": 0.0580227
+    }
+  },
+  "messages_path": "/home/eval/.cline/data/sessions/1794604046871_ghpp6/1794604046871_ghpp6.messages.json"
+}

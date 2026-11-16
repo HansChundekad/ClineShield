@@ -1,0 +1,213 @@
+[
+  {
+    "timestamp": "2026-11-13T21:16:40.449Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:18:29.588Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/rate-limit.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:18:33.468Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/rate-limit.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:18:47.253Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/index.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:18:47.263Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/server.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:18:47.268Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "edit-allowed",
+    "data": {
+      "file": ".env.example",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:18:47.278Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "edit-allowed",
+    "data": {
+      "file": "README.md",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:18:47.283Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "edit-allowed",
+    "data": {
+      "file": "tests/rate-limit.test.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:18:47.296Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/index.js",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/config/index.js is a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:18:47.302Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/server.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:18:47.304Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "risk-assessed",
+    "data": {
+      "file": ".env.example",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:18:47.307Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "risk-assessed",
+    "data": {
+      "file": "README.md",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:18:47.309Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "risk-assessed",
+    "data": {
+      "file": "tests/rate-limit.test.js",
+      "rulesScore": 15,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "test_and_source",
+          "points": 15,
+          "description": "changes src/rate-limit.js and its test tests/rate-limit.test.js within 10 minutes"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:19:07.482Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/server.js",
+      "structuralChangePercent": 8,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:19:07.499Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "edit-allowed",
+    "data": {
+      "file": "tests/rate-limit.test.js",
+      "structuralChangePercent": 8,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:19:07.516Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/server.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "signature_changed",
+          "points": 0,
+          "description": "changes the signature of createApp"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:19:07.531Z",
+    "sessionId": "1794604600148_ouhlh",
+    "type": "risk-assessed",
+    "data": {
+      "file": "tests/rate-limit.test.js",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "test_and_source",
+          "points": 30,
+          "description": "changes src/rate-limit.js and its test tests/rate-limit.test.js within 10 minutes, after a failed test run"
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,45 @@
+[
+  {
+    "timestamp": "2026-11-13T21:02:18.381Z",
+    "sessionId": "1794603738138_4v3gx",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:02:18.659Z",
+    "sessionId": "baa46a7b-b89e-48f2-858a-bd1cb7b7cbe7",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:02:29.301Z",
+    "sessionId": "1794603738138_4v3gx",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && cat debug.log && git --no-pager show --stat --format=%B HEAD | head -5 && cp debug.log /tmp/debug.log.bak && git reset --hard HEAD~1 && git push --force-with-lease=main:27c4d84 origin main && git --no-pager log --oneline --all && git --no-pager ls-remote origin && git --no-pager status -sb && ls debug.log",
+      "tier": "allow",
+      "score": 10,
+      "reasons": [
+        {
+          "rule": "discards_work",
+          "points": 10,
+          "description": "git reset --hard discards uncommitted changes (nothing uncommitted right now)"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

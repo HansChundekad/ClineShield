@@ -1,0 +1,19 @@
+{
+  "cap": 5.6105,
+  "log": [
+    "gpt/D10: cost 0.0795135, total 0.0795",
+    "gpt/S1: cost 0.074654, total 0.1542",
+    "gpt/S2: cost 0.04963050000000001, total 0.2038",
+    "gpt/S3: cost 0.068891, total 0.2727",
+    "gpt/S4: cost 0.037665, total 0.3104",
+    "gpt/S5: cost 0.184256, total 0.4946",
+    "gpt/S6: cost 0.029464499999999998, total 0.5241",
+    "gpt/S7: cost 0.16178299999999998, total 0.6859",
+    "gpt/S8: cost 0.064238, total 0.7501",
+    "gpt/G1: cost 0.12569550000000002, total 0.8758",
+    "gpt/G2: cost 0.0389495, total 0.9147"
+  ],
+  "completed": 11,
+  "total": 0.9147405,
+  "stopped": null
+}

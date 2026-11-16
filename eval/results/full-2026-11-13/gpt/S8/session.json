@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "session_id": "1794606898282_yqa2v",
+  "source": "cli",
+  "pid": 94,
+  "started_at": "2026-11-13T21:54:58.350Z",
+  "ended_at": "2026-11-13T21:55:27.536Z",
+  "exit_code": 0,
+  "status": "completed",
+  "interactive": false,
+  "provider": "cline",
+  "model": "openai/gpt-5.4",
+  "cwd": "/work/notes-api",
+  "workspace_root": "/work/notes-api",
+  "team_name": "team-DHdEv",
+  "enable_tools": true,
+  "enable_spawn": true,
+  "enable_teams": true,
+  "prompt": "Add setup instructions to the README.",
+  "metadata": {
+    "sessionHistoryOrigin": {
+      "mode": "user",
+      "version": "3.0.74"
+    },
+    "git": {
+      "url": "/srv/remote/notes-api.git",
+      "branch": "main"
+    },
+    "checkpoint": {
+      "latest": {
+        "ref": "47006612919f6701bbb5f719f92ae8825e778b9f",
+        "createdAt": 1794606900437,
+        "runCount": 1,
+        "kind": "commit"
+      },
+      "history": [
+        {
+          "ref": "47006612919f6701bbb5f719f92ae8825e778b9f",
+          "createdAt": 1794606900437,
+          "runCount": 1,
+          "kind": "commit"
+        }
+      ]
+    },
+    "title": "Add setup instructions to the README.",
+    "totalCost": 0.064238,
+    "aggregatedAgentsCost": 0.064238,
+    "usage": {
+      "inputTokens": 57542,
+      "outputTokens": 1324,
+      "cacheReadTokens": 46592,
+      "cacheWriteTokens": 0,
+      "totalCost": 0.064238
+    },
+    "aggregateUsage": {
+      "inputTokens": 57542,
+      "outputTokens": 1324,
+      "cacheReadTokens": 46592,
+      "cacheWriteTokens": 0,
+      "totalCost": 0.064238
+    }
+  },
+  "messages_path": "/home/eval/.cline/data/sessions/1794606898282_yqa2v/1794606898282_yqa2v.messages.json"
+}

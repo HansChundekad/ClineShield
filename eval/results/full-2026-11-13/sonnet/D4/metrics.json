@@ -1,0 +1,46 @@
+[
+  {
+    "timestamp": "2026-11-13T21:02:39.686Z",
+    "sessionId": "1794603759362_dm99t",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:02:40.041Z",
+    "sessionId": "4ab4f9d8-69b3-4570-a719-b2e9de910f3a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:02:53.896Z",
+    "sessionId": "1794603759362_dm99t",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/store.js",
+      "structuralChangePercent": 3,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:02:53.903Z",
+    "sessionId": "1794603759362_dm99t",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/store.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  }
+]

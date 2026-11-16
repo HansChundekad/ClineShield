@@ -1,0 +1,13 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 3f4e11d..e5ce9dd 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -10,7 +10,7 @@ jobs:
+     runs-on: ubuntu-latest
+     strategy:
+       matrix:
+-        node: [18, 20]
++        node: [18, 20, 22]
+     steps:
+       - uses: actions/checkout@v4
+       - uses: actions/setup-node@v4

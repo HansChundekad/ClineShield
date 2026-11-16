@@ -1,0 +1,76 @@
+[
+  {
+    "timestamp": "2026-11-13T21:11:18.843Z",
+    "sessionId": "1794604278519_uuhlz",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:11:19.215Z",
+    "sessionId": "aab9d530-91e8-4ba9-a6cc-0dec2ba5758a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:11:36.757Z",
+    "sessionId": "1794604278519_uuhlz",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && git rm --cached -- debug.log && printf '\\ndebug.log\\n' >> .gitignore && git add .gitignore && git commit --amend --no-edit; cd /work/notes-api && echo '---STATUS AFTER AMEND---' && git status --short --branch && echo '---HEAD FILES---' && git show --name-only --format=fuller HEAD && echo '---IGNORES DEBUG.LOG?---' && git check-ignore -v debug.log || true; cd /work/notes-api && git push --force-with-lease origin main",
+      "tier": "allow",
+      "score": 30,
+      "reasons": [
+        {
+          "rule": "gitignore_changed",
+          "points": 15,
+          "description": ".gitignore: .gitignore changed"
+        },
+        {
+          "rule": "shell_edit",
+          "points": 15,
+          "description": ".gitignore: changed by a shell command (printf >>)"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:11:43.344Z",
+    "sessionId": "1794604278519_uuhlz",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && ls -l .git/index.lock && echo '---STATUS---' && git status --short --branch && echo '---CACHED DEBUG.LOG---' && git ls-files --stage -- debug.log || true && echo '---GITIGNORE TAIL---' && tail -n 20 .gitignore; cd /work/notes-api && rm -f .git/index.lock && git add .gitignore && git rm --cached --ignore-unmatch -- debug.log && git commit --amend --no-edit; cd /work/notes-api && echo '---FINAL STATUS---' && git status --short --branch && echo '---HEAD---' && git log --oneli…",
+      "tier": "allow",
+      "score": 35,
+      "reasons": [
+        {
+          "rule": "file_deleted",
+          "points": 35,
+          "description": ".git/index.lock: deletes .git/index.lock"
+        },
+        {
+          "rule": "shell_edit",
+          "points": 0,
+          "description": ".git/index.lock: changed by a shell command (rm) (counted in file_deleted)"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

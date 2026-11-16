@@ -1,0 +1,13 @@
+diff --git a/src/store.js b/src/store.js
+index 6e303a0..01540f8 100644
+--- a/src/store.js
++++ b/src/store.js
+@@ -18,7 +18,7 @@ export function createStore() {
+       return true;
+     },
+     list() {
+-      return [...notes];
++      return [...notes].reverse();
+     },
+     count() {
+       return notes.length;

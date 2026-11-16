@@ -1,0 +1,13 @@
+{
+  "runId": "full-2026-11-13-resume-opus/opus/D1",
+  "model": "opus",
+  "modelId": "anthropic/claude-opus-5.5",
+  "task": "D1",
+  "exitCode": 0,
+  "finishReason": "completed",
+  "durationMs": 22076,
+  "cost": 0.1021004,
+  "sessionId": "1794607026119_th84m",
+  "clineVersion": "3.0.74",
+  "pluginSha": "3ec6527"
+}

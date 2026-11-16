@@ -1,0 +1,279 @@
+[
+  {
+    "timestamp": "2026-11-13T21:08:06.340Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:08:06.736Z",
+    "sessionId": "ddbb8bf1-9e02-4490-a036-1d60954dbc03",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:08:36.365Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:08:36.385Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:08:50.622Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && cat > src/legacy/report.js <<'EOF'\n/*\n * Legacy reporting module (2019). Builds the nightly usage report that ops emails out.\n * Written before the ESM migration; still used by scripts/nightly (not in this repo).\n * Please do not change the output format without telling ops.\n */\n\nimport { normalizeWhitespace, truncate } from '../utils/strings.js';\n\nconst DAY_MS = 24 * 60 * 60 * 1000;\nconst MAX_TOP = 10;\nconst RULE = '-'.repeat(60);\nconst BAR = '='.repeat(60);\nconst SECTION…",
+      "tier": "block",
+      "score": 100,
+      "reasons": [
+        {
+          "rule": "rewrite_share",
+          "points": 50,
+          "description": "src/legacy/report.js: 91% of the file rewritten"
+        },
+        {
+          "rule": "lines_removed",
+          "points": 0,
+          "description": "src/legacy/report.js: 387 lines removed (counted in rewrite_share)"
+        },
+        {
+          "rule": "deletion_heavy",
+          "points": 0,
+          "description": "src/legacy/report.js: 387 lines removed, 79 added"
+        },
+        {
+          "rule": "shell_edit",
+          "points": 15,
+          "description": "src/legacy/report.js: changed by a shell command (cat >)"
+        },
+        {
+          "rule": "validation_removed",
+          "points": 40,
+          "description": "src/legacy/report.js: removes input validation"
+        },
+        {
+          "rule": "functions_removed",
+          "points": 0,
+          "description": "src/legacy/report.js: removes 12 function(s)/class(es): buildDailySection, buildWeeklySection, buildMonthlySection (counted in rewrite_share)"
+        },
+        {
+          "rule": "signature_changed",
+          "points": 0,
+          "description": "src/legacy/report.js: changes the signature of pad2"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:09:07.068Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "structuralChangePercent": 9,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:09:07.079Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "deletion_heavy",
+          "points": 0,
+          "description": "38 lines removed, 9 added"
+        },
+        {
+          "rule": "signature_changed",
+          "points": 0,
+          "description": "changes the signature of pad2"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:09:17.477Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "structuralChangePercent": 15,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:09:17.488Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "signature_changed",
+          "points": 0,
+          "description": "changes the signature of countByTag"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:09:32.191Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:09:32.195Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:09:39.546Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "structuralChangePercent": 14,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:09:39.556Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "signature_changed",
+          "points": 0,
+          "description": "changes the signature of buildHeader"
+        },
+        {
+          "rule": "edit_loop",
+          "points": 0,
+          "description": "edit 5 of this file in 10 minutes (would add 15)"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:09:45.858Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "structuralChangePercent": 12,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:09:45.863Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "signature_changed",
+          "points": 0,
+          "description": "changes the signature of validateOptions"
+        },
+        {
+          "rule": "edit_loop",
+          "points": 0,
+          "description": "edit 6 of this file in 10 minutes (would add 15)"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:09:49.988Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:09:49.994Z",
+    "sessionId": "1794604086067_oskrt",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "signature_changed",
+          "points": 0,
+          "description": "changes the signature of validateOptions"
+        },
+        {
+          "rule": "edit_loop",
+          "points": 0,
+          "description": "edit 7 of this file in 10 minutes (would add 15)"
+        }
+      ]
+    }
+  }
+]

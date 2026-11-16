@@ -1,0 +1,68 @@
+diff --git a/README.md b/README.md
+index a33212c..45566e4 100644
+--- a/README.md
++++ b/README.md
+@@ -11,6 +11,62 @@ A small notes service: create, list and delete notes, with session auth and an a
+ | DELETE | /notes/:id | session |
+ | GET | /admin/stats | admin |
+ 
++## Setup
++
++### Prerequisites
++
++- Node.js 18 or newer
++- npm
++- Python 3 (only needed for `npm run seed`)
++- Docker (optional, for running the container)
++
++### Install and configure
++
++```sh
++npm ci
++cp .env.example .env
++```
++
++Edit `.env` and set real values for `SESSION_SECRET` and `ADMIN_TOKEN`. Both default to empty if unset, and the `change-me` placeholders are not safe to use.
++
++| Variable | Default | Description |
++|---|---|---|
++| `PORT` | `3000` | Port the server listens on |
++| `DATABASE_URL` | `sqlite:./data/dev.db` | Database connection string |
++| `SESSION_SECRET` | _(empty)_ | Secret used for session auth |
++| `ADMIN_TOKEN` | _(empty)_ | Token for the admin endpoints |
++| `STAGING_API_URL` | `https://staging.notes.internal` | Staging API base URL |
++
++### Run
++
++```sh
++npm start        # start the server
++npm run dev      # start with auto-reload on file changes
++```
++
++The server listens on `http://localhost:3000` by default.
++
++### Seed sample data (optional)
++
++```sh
++npm run seed
++```
++
++This writes 25 sample notes to `data/seed.json`, which is git-ignored.
++
++### Tests
++
++```sh
++npm test
++```
++
++### Docker
++
++```sh
++docker build -t notes-api .
++docker run --env-file .env -p 3000:3000 notes-api
++```
++
+ ## Development
+ 
+-Copy `.env.example` to `.env`, then run `npm start`.
++Use `npm run dev` for local development. See Setup above for configuration.

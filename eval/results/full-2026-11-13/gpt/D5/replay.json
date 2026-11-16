@@ -1,0 +1,125 @@
+{
+  "preset_note": "balanced = no config file",
+  "calls": {
+    "call_3g9rPDrK1nKMgt7Lunl4pcmb": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 1.07
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.45
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 1
+      }
+    },
+    "call_HKos8kqoqO7kJMS3SRopdWJR": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.34
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.33
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.68
+      }
+    },
+    "call_u60O4reA2Q79qSXECH1VMbyP": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 4.18
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.71
+      },
+      "strict": {
+        "tier": "ask",
+        "ms": 3.93
+      }
+    },
+    "call_WArJM0UfNMrI2noeRs1Eoqd7": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 7.76
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.83
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 2.3
+      }
+    },
+    "call_FeWIRhMxeShJjIY1ejKZSdme": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.66
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.25
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 2.13
+      }
+    },
+    "call_2v7v4fxNrc0ojtgzCLaIHksn": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.08
+      },
+      "balanced": {
+        "tier": "ask",
+        "ms": 2.32
+      },
+      "strict": {
+        "tier": "ask",
+        "ms": 2.04
+      }
+    },
+    "call_gJQGRiPAY0IAovYuuT72BBwk": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.02
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.33
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 1.83
+      }
+    },
+    "call_8Aqvs6LSKmJg57gBAZa8Xpct": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.53
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.28
+      },
+      "strict": {
+        "tier": "ask",
+        "ms": 4.65
+      }
+    }
+  }
+}

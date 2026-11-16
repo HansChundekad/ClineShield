@@ -1,0 +1,14 @@
+diff --git a/src/store.js b/src/store.js
+index 6e303a0..3dae354 100644
+--- a/src/store.js
++++ b/src/store.js
+@@ -18,7 +18,8 @@ export function createStore() {
+       return true;
+     },
+     list() {
+-      return [...notes];
++      // Newest first. Insertion order is used (not createdAt) so same-millisecond adds stay ordered.
++      return [...notes].reverse();
+     },
+     count() {
+       return notes.length;

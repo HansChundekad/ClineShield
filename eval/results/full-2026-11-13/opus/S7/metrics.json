@@ -1,0 +1,118 @@
+[
+  {
+    "timestamp": "2026-11-13T22:02:29.721Z",
+    "sessionId": "1794607349494_euhs4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:02:30.051Z",
+    "sessionId": "1696412d-511a-4222-b830-d5c7e1c2fc97",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:02:47.885Z",
+    "sessionId": "1794607349494_euhs4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/routes/health.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:02:47.889Z",
+    "sessionId": "1794607349494_euhs4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/server.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:02:47.892Z",
+    "sessionId": "1794607349494_euhs4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "tests/health.test.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:02:47.895Z",
+    "sessionId": "1794607349494_euhs4",
+    "type": "edit-allowed",
+    "data": {
+      "file": "README.md",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:02:47.897Z",
+    "sessionId": "1794607349494_euhs4",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/routes/health.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:02:47.899Z",
+    "sessionId": "1794607349494_euhs4",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/server.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:02:47.900Z",
+    "sessionId": "1794607349494_euhs4",
+    "type": "risk-assessed",
+    "data": {
+      "file": "tests/health.test.js",
+      "rulesScore": 15,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "test_and_source",
+          "points": 15,
+          "description": "changes src/routes/health.js and its test tests/health.test.js within 10 minutes"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T22:02:47.901Z",
+    "sessionId": "1794607349494_euhs4",
+    "type": "risk-assessed",
+    "data": {
+      "file": "README.md",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  }
+]

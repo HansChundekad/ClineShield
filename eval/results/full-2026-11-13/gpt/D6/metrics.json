@@ -1,0 +1,99 @@
+[
+  {
+    "timestamp": "2026-11-13T21:13:31.237Z",
+    "sessionId": "1794604410850_5txim",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:13:31.850Z",
+    "sessionId": "b6d02ca1-1f36-45b7-bc6b-9e3a12fe54a0",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:14:41.682Z",
+    "sessionId": "1794604410850_5txim",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/auth/middleware.js",
+      "structuralChangePercent": 13,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:14:41.687Z",
+    "sessionId": "1794604410850_5txim",
+    "type": "edit-approval",
+    "data": {
+      "file": "src/routes/admin.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "ClineShield needs the user's approval, so nothing was changed. Why: src/routes/admin.js: removes an authentication or permission check. Ask the user in a plain chat message (not the ask_question tool) and end your turn. If they reply yes to that message, retry the identical action. A yes given before this message doesn't count. If the user says no, don't retry the same action; ask them what they want.",
+      "approved": false,
+      "score": 45,
+      "reasons": [
+        {
+          "rule": "auth_removed",
+          "points": 45,
+          "description": "removes an authentication or permission check"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:14:41.694Z",
+    "sessionId": "1794604410850_5txim",
+    "type": "edit-allowed",
+    "data": {
+      "file": "tests/admin.test.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:14:41.737Z",
+    "sessionId": "1794604410850_5txim",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/auth/middleware.js",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/auth/middleware.js is a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:14:41.741Z",
+    "sessionId": "1794604410850_5txim",
+    "type": "risk-assessed",
+    "data": {
+      "file": "tests/admin.test.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  }
+]

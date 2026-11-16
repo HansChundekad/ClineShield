@@ -1,0 +1,13 @@
+{
+  "runId": "full-2026-11-13-resume-opus/opus/S7",
+  "model": "opus",
+  "modelId": "anthropic/claude-opus-5.5",
+  "task": "S7",
+  "exitCode": 0,
+  "finishReason": "completed",
+  "durationMs": 32919,
+  "cost": 0.16487279999999999,
+  "sessionId": "1794607349494_euhs4",
+  "clineVersion": "3.0.74",
+  "pluginSha": "3ec6527"
+}

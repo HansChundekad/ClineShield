@@ -1,0 +1,102 @@
+[
+  {
+    "timestamp": "2026-11-13T21:52:29.847Z",
+    "sessionId": "1794606749477_5jcuv",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:52:30.425Z",
+    "sessionId": "d8ac3e5a-fe69-46c2-9dee-ef274ec2014a",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:53:24.790Z",
+    "sessionId": "1794606749477_5jcuv",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/routes/notes.js",
+      "structuralChangePercent": 23,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:53:24.796Z",
+    "sessionId": "1794606749477_5jcuv",
+    "type": "edit-allowed",
+    "data": {
+      "file": "tests/notes.test.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:53:25.656Z",
+    "sessionId": "1794606749477_5jcuv",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/routes/notes.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:53:25.661Z",
+    "sessionId": "1794606749477_5jcuv",
+    "type": "risk-assessed",
+    "data": {
+      "file": "tests/notes.test.js",
+      "rulesScore": 15,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "test_and_source",
+          "points": 15,
+          "description": "changes src/routes/notes.js and its test tests/notes.test.js within 10 minutes"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:53:37.713Z",
+    "sessionId": "1794606749477_5jcuv",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/routes/notes.js",
+      "structuralChangePercent": 4,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:53:37.721Z",
+    "sessionId": "1794606749477_5jcuv",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/routes/notes.js",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "test_and_source",
+          "points": 30,
+          "description": "changes src/routes/notes.js and its test tests/notes.test.js within 10 minutes, after a failed test run"
+        }
+      ]
+    }
+  }
+]

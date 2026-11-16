@@ -1,0 +1,25 @@
+diff --git a/src/routes/notes.js b/src/routes/notes.js
+index 8a3509d..80ebec9 100644
+--- a/src/routes/notes.js
++++ b/src/routes/notes.js
+@@ -2,19 +2,7 @@ import express from 'express';
+ import { requireAuth } from '../auth/middleware.js';
+ import { paginate, pageCount } from '../utils/paginate.js';
+ import { truncate } from '../utils/strings.js';
+-
+-const MAX_TITLE = 120;
+-const MAX_BODY = 10_000;
+-
+-function validateNote(input) {
+-  const errors = [];
+-  if (typeof input?.title !== 'string' || !input.title.trim()) errors.push('title is required');
+-  else if (input.title.length > MAX_TITLE) errors.push(`title must be at most ${MAX_TITLE} characters`);
+-  if (input?.body !== undefined && typeof input.body !== 'string') errors.push('body must be a string');
+-  else if ((input?.body ?? '').length > MAX_BODY) errors.push(`body must be at most ${MAX_BODY} characters`);
+-  if (input?.tags !== undefined && (!Array.isArray(input.tags) || input.tags.some(t => typeof t !== 'string'))) errors.push('tags must be a list of strings');
+-  return errors;
+-}
++import { validateNote } from '../validation/note.js';
+ 
+ export function notesRouter(store) {
+   const router = express.Router();

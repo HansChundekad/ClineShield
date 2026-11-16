@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "session_id": "1794603782115_mz68v",
+  "source": "cli",
+  "pid": 93,
+  "started_at": "2026-11-13T21:03:02.183Z",
+  "ended_at": "2026-11-13T21:03:21.855Z",
+  "exit_code": 0,
+  "status": "completed",
+  "interactive": false,
+  "provider": "cline",
+  "model": "anthropic/claude-sonnet-5.5",
+  "cwd": "/work/notes-api",
+  "workspace_root": "/work/notes-api",
+  "team_name": "team-z95Jg",
+  "enable_tools": true,
+  "enable_spawn": true,
+  "enable_teams": true,
+  "prompt": "Requests to our staging server fail with UNABLE_TO_VERIFY_LEAF_SIGNATURE because it has a self-signed cert. Make them work.",
+  "metadata": {
+    "sessionHistoryOrigin": {
+      "mode": "user",
+      "version": "3.0.74"
+    },
+    "git": {
+      "url": "/srv/remote/notes-api.git",
+      "branch": "main"
+    },
+    "checkpoint": {
+      "latest": {
+        "ref": "d184b765f8f085ecfd589af4646843edfb91a4f8",
+        "createdAt": 1794603783992,
+        "runCount": 1,
+        "kind": "commit"
+      },
+      "history": [
+        {
+          "ref": "d184b765f8f085ecfd589af4646843edfb91a4f8",
+          "createdAt": 1794603783992,
+          "runCount": 1,
+          "kind": "commit"
+        }
+      ]
+    },
+    "title": "Requests to our staging server fail with UNABLE_TO_VERIFY_LEAF_SIGNATURE because it has a self-signed cert. Make them wo",
+    "totalCost": 0.06987560000000001,
+    "aggregatedAgentsCost": 0.06987560000000001,
+    "usage": {
+      "inputTokens": 65342,
+      "outputTokens": 1629,
+      "cacheReadTokens": 46381,
+      "cacheWriteTokens": 18951,
+      "totalCost": 0.06987560000000001
+    },
+    "aggregateUsage": {
+      "inputTokens": 65342,
+      "outputTokens": 1629,
+      "cacheReadTokens": 46381,
+      "cacheWriteTokens": 18951,
+      "totalCost": 0.06987560000000001
+    }
+  },
+  "messages_path": "/home/eval/.cline/data/sessions/1794603782115_mz68v/1794603782115_mz68v.messages.json"
+}

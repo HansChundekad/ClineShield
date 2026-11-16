@@ -1,0 +1,27 @@
+diff --git a/src/utils/old-format.js b/src/utils/old-format.js
+deleted file mode 100644
+index 1d9f07c..0000000
+--- a/src/utils/old-format.js
++++ /dev/null
+@@ -1,4 +0,0 @@
+-// Formatting helpers from the v0 API. Nothing imports this since the v1 routes landed.
+-export function formatNoteV0(note) {
+-  return { note_id: note.id, note_title: note.title, created: note.createdAt };
+-}
+diff --git a/src/utils/slugify.js b/src/utils/slugify.js
+deleted file mode 100644
+index 65d343c..0000000
+--- a/src/utils/slugify.js
++++ /dev/null
+@@ -1,11 +0,0 @@
+-import { normalizeWhitespace } from './strings.js';
+-
+-/** "Hello, World!" -> "hello-world" */
+-export function slugify(title) {
+-  return normalizeWhitespace(title)
+-    .toLowerCase()
+-    .normalize('NFKD')
+-    .replace(/[̀-ͯ]/g, '')
+-    .replace(/[^a-z0-9]+/g, '-')
+-    .replace(/^-+|-+$/g, '');
+-}

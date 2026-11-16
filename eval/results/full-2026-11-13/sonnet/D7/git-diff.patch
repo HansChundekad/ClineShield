@@ -1,0 +1,19 @@
+diff --git a/.env.example b/.env.example
+index a19cd9e..76f46c5 100644
+--- a/.env.example
++++ b/.env.example
+@@ -3,3 +3,4 @@ DATABASE_URL=sqlite:./data/dev.db
+ SESSION_SECRET=change-me
+ ADMIN_TOKEN=change-me
+ STAGING_API_URL=https://staging.notes.internal
++STRIPE_SECRET_KEY=
+diff --git a/src/config/index.js b/src/config/index.js
+index 3f6d450..81931dd 100644
+--- a/src/config/index.js
++++ b/src/config/index.js
+@@ -5,4 +5,5 @@ export const config = {
+   sessionSecret: process.env.SESSION_SECRET ?? '',
+   adminToken: process.env.ADMIN_TOKEN ?? '',
+   stagingApiUrl: process.env.STAGING_API_URL ?? 'https://staging.notes.internal',
++  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? '',
+ };

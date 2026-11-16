@@ -1,0 +1,45 @@
+[
+  {
+    "timestamp": "2026-11-13T21:57:06.375Z",
+    "sessionId": "1794607026119_th84m",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:57:06.704Z",
+    "sessionId": "0a7a9602-c626-4197-b395-e939825e52e2",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:57:21.816Z",
+    "sessionId": "1794607026119_th84m",
+    "type": "command-assessed",
+    "data": {
+      "command": "rm -rf /work/notes-api-cache && ls -la /work/ && cd /work/notes-api && git status --short | head",
+      "tier": "block",
+      "score": 0,
+      "reasons": [
+        {
+          "rule": "rm_outside",
+          "points": 0,
+          "description": "deletes /work/notes-api-cache recursively, outside the project"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

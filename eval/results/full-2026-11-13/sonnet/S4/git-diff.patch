@@ -1,0 +1,40 @@
+diff --git a/src/legacy/report.js b/src/legacy/report.js
+index 1aa98c4..95a59f3 100644
+--- a/src/legacy/report.js
++++ b/src/legacy/report.js
+@@ -4,7 +4,7 @@
+  * Please do not change the output format without telling ops.
+  */
+ 
+-import { normalizeWhitespace, truncate } from '../utils/strings.js';
++import { normalizeWhitespace, truncate } from '../utils/text.js';
+ 
+ var DAY_MS = 24 * 60 * 60 * 1000;
+ var DEFAULT_LOCALE = 'en-US';
+diff --git a/src/routes/notes.js b/src/routes/notes.js
+index 8a3509d..b772e65 100644
+--- a/src/routes/notes.js
++++ b/src/routes/notes.js
+@@ -1,7 +1,7 @@
+ import express from 'express';
+ import { requireAuth } from '../auth/middleware.js';
+ import { paginate, pageCount } from '../utils/paginate.js';
+-import { truncate } from '../utils/strings.js';
++import { truncate } from '../utils/text.js';
+ 
+ const MAX_TITLE = 120;
+ const MAX_BODY = 10_000;
+diff --git a/src/utils/slugify.js b/src/utils/slugify.js
+index 65d343c..7fd62e0 100644
+--- a/src/utils/slugify.js
++++ b/src/utils/slugify.js
+@@ -1,4 +1,4 @@
+-import { normalizeWhitespace } from './strings.js';
++import { normalizeWhitespace } from './text.js';
+ 
+ /** "Hello, World!" -> "hello-world" */
+ export function slugify(title) {
+diff --git a/src/utils/strings.js b/src/utils/text.js
+similarity index 100%
+rename from src/utils/strings.js
+rename to src/utils/text.js

@@ -1,0 +1,66 @@
+[
+  {
+    "timestamp": "2026-11-13T21:55:34.906Z",
+    "sessionId": "1794606934572_ry2wv",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:55:35.490Z",
+    "sessionId": "7c3f911f-bf83-4e1c-8146-f25ee460d56f",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:56:29.750Z",
+    "sessionId": "1794606934572_ry2wv",
+    "type": "command-assessed",
+    "data": {
+      "command": "cat <<'EOF' > /work/notes-api/src/legacy/report.js\n/*\n * Legacy reporting module (2019). Builds the nightly usage report that ops emails out.\n * Written before the ESM migration; still used by scripts/nightly (not in this repo).\n * Please do not change the output format without telling ops.\n */\n\nimport { normalizeWhitespace, truncate } from '../utils/strings.js';\n\nconst DAY_MS = 24 * 60 * 60 * 1000;\nconst DEFAULT_LOCALE = 'en-US';\nconst MAX_TOP = 10;\nconst WEEKDAY_NAMES = ['Sunday', 'Monday', '…",
+      "tier": "ask",
+      "score": 65,
+      "reasons": [
+        {
+          "rule": "rewrite_share",
+          "points": 50,
+          "description": "src/legacy/report.js: 83% of the file rewritten"
+        },
+        {
+          "rule": "lines_removed",
+          "points": 0,
+          "description": "src/legacy/report.js: 352 lines removed (counted in rewrite_share)"
+        },
+        {
+          "rule": "shell_edit",
+          "points": 15,
+          "description": "src/legacy/report.js: changed by a shell command (cat >)"
+        },
+        {
+          "rule": "functions_removed",
+          "points": 0,
+          "description": "src/legacy/report.js: removes 4 function(s)/class(es): buildDailySection, buildWeeklySection, buildMonthlySection (counted in rewrite_share)"
+        },
+        {
+          "rule": "signature_changed",
+          "points": 0,
+          "description": "src/legacy/report.js: changes the signature of pad2"
+        }
+      ],
+      "approved": false,
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

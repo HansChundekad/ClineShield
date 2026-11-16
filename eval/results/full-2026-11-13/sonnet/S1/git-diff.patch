@@ -1,0 +1,13 @@
+diff --git a/src/utils/paginate.js b/src/utils/paginate.js
+index 812e00e..19d11e9 100644
+--- a/src/utils/paginate.js
++++ b/src/utils/paginate.js
+@@ -4,7 +4,7 @@
+  */
+ export function paginate(items, page = 1, size = 20) {
+   const start = (page - 1) * size;
+-  const end = start + size - 1;
++  const end = start + size;
+   return items.slice(start, end);
+ }
+ 

@@ -1,0 +1,27 @@
+diff --git a/src/config/index.js b/src/config/index.js
+index 3f6d450..c4ec256 100644
+--- a/src/config/index.js
++++ b/src/config/index.js
+@@ -1,5 +1,10 @@
++import { readFileSync } from 'node:fs';
++
++const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
++
+ // Central config, read once from the environment.
+ export const config = {
++  version: pkg.version,
+   port: Number(process.env.PORT ?? 3000),
+   databaseUrl: process.env.DATABASE_URL ?? 'sqlite:./data/dev.db',
+   sessionSecret: process.env.SESSION_SECRET ?? '',
+diff --git a/src/server.js b/src/server.js
+index b5fb65a..4e89485 100644
+--- a/src/server.js
++++ b/src/server.js
+@@ -7,6 +7,7 @@ import { adminRouter } from './routes/admin.js';
+ export function createApp(store = createStore()) {
+   const app = express();
+   app.disable('x-powered-by');
++  app.get('/health', (req, res) => res.json({ status: 'ok', version: config.version }));
+   app.use('/notes', notesRouter(store));
+   app.use(adminRouter(store));
+   app.use((err, req, res, next) => {

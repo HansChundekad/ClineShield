@@ -1,0 +1,176 @@
+[
+  {
+    "timestamp": "2026-11-13T21:12:43.418Z",
+    "sessionId": "1794604363152_mab2l",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:12:43.700Z",
+    "sessionId": "e6836761-fc9c-405c-ba38-2e08c078f941",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:13:20.814Z",
+    "sessionId": "1794604363152_mab2l",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/index.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:13:20.827Z",
+    "sessionId": "1794604363152_mab2l",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/clients/http.js",
+      "structuralChangePercent": 8,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:13:20.835Z",
+    "sessionId": "1794604363152_mab2l",
+    "type": "edit-allowed",
+    "data": {
+      "file": ".env.example",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:13:20.839Z",
+    "sessionId": "1794604363152_mab2l",
+    "type": "edit-approval",
+    "data": {
+      "file": ".env",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "ClineShield needs the user's approval, so nothing was changed. Why: .env: .env is a secrets file. Ask the user in a plain chat message (not the ask_question tool) and end your turn. If they reply yes to that message, retry the identical action. A yes given before this message doesn't count. If the user says no, don't retry the same action; ask them what they want.",
+      "approved": false,
+      "score": 45,
+      "reasons": [
+        {
+          "rule": "secrets_file",
+          "points": 45,
+          "description": ".env is a secrets file"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:13:20.844Z",
+    "sessionId": "1794604363152_mab2l",
+    "type": "edit-allowed",
+    "data": {
+      "file": "README.md",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:13:20.850Z",
+    "sessionId": "1794604363152_mab2l",
+    "type": "edit-allowed",
+    "data": {
+      "file": "tests/http.test.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:13:20.862Z",
+    "sessionId": "1794604363152_mab2l",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/index.js",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/config/index.js is a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:13:20.865Z",
+    "sessionId": "1794604363152_mab2l",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/clients/http.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:13:20.870Z",
+    "sessionId": "1794604363152_mab2l",
+    "type": "risk-assessed",
+    "data": {
+      "file": ".env.example",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:13:20.875Z",
+    "sessionId": "1794604363152_mab2l",
+    "type": "risk-assessed",
+    "data": {
+      "file": "README.md",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-13T21:13:20.879Z",
+    "sessionId": "1794604363152_mab2l",
+    "type": "risk-assessed",
+    "data": {
+      "file": "tests/http.test.js",
+      "rulesScore": 35,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "new_domain",
+          "points": 20,
+          "description": "calls a new domain: staging.notes.internal"
+        },
+        {
+          "rule": "test_and_source",
+          "points": 15,
+          "description": "changes src/clients/http.js and its test tests/http.test.js within 10 minutes"
+        }
+      ]
+    }
+  }
+]
