@@ -8,7 +8,7 @@ import type { Check, RawFinding } from '../types';
 
 const SECURITY: RegExp[] = [
   // Anything but a literal `true` (a config flag, an expression, a shorthand property) can turn the check off.
-  /\brejectUnauthorized['"]?\s*(:|=(?!=))\s*(?!true\b)[^\s,;}]|[{,]\s*rejectUnauthorized\s*[,}]/,
+  /\brejectUnauthorized['"]?\??\s*(:|=(?!=))\s*(?!true\b|boolean\b)[^\s,;}]|[{,]\s*rejectUnauthorized\s*[,}]/,
   /NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*['"]?0/,
   /\bverify\s*=\s*False\b/,
   /InsecureSkipVerify\s*:\s*true/,
@@ -36,7 +36,8 @@ const SQL: RegExp[] = [
   new RegExp(String.raw`['"][^'"]*${SQL_VERB}[^'"]*['"]\s*(%|\.format\()`, 'i'),
 ];
 
-const URL_HOST = /https?:\/\/([a-z0-9.-]+)/gi;
+/** Host after any `user:pass@` userinfo, so `https://api.stripe.com@evil.com` reads as evil.com. */
+const URL_HOST = /https?:\/\/(?:[^\s\/@'"`]*@)?([a-z0-9.-]+)/gi;
 /**
  * Well-known API hosts that never count as new_domain (owner-approved list, 2026-11-16): payment and LLM
  * APIs only, exact host match. No paste sites, file hosts or generic cloud storage: an allowlisted host is

@@ -102,7 +102,7 @@ class Analyzer {
   private readsSecret: string | undefined;
   private network: string | undefined;
   /** Shell variables set in this command: literal value when set exactly once by a plain `NAME=literal`. */
-  private vars = new Map<string, { value?: string; at: number }>();
+  private vars = new Map<string, { value?: string; at: number; count: number }>();
   /** Variables filled by `read` from a listing of workspace files (grep -l, find, git ls-files): the listed roots. */
   private listed = new Map<string, string[]>();
   private index = 0;
@@ -112,26 +112,36 @@ class Analyzer {
   /** Records every way a variable gets set; only a single plain literal assignment keeps its value. */
   private collectVars(pieces: Piece[]): void {
     const seen = new Map<string, { value?: string; at: number; count: number }>();
+    let poisoned = false;
     const set = (name: string, at: number, value?: string) => {
       const prev = seen.get(name);
       seen.set(name, { value, at, count: (prev?.count ?? 0) + 1 });
     };
+    const NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
     pieces.forEach((p, at) => {
       const s = simplify(p);
+      const ops = operands(s.args);
       const first = p.words.findIndex(w => !RESERVED_WORDS.has(w.text));
       if (p.words[0]?.text === 'for' && p.words[1]) set(p.words[1].text, at);
-      if (s.name === 'read') for (const w of operands(s.args)) set(w.text, at);
-      if (s.name === 'unset') for (const w of operands(s.args)) set(w.text, at);
+      // Other commands that write shell variables: the names they set become unknown.
+      if (s.name === 'read' || s.name === 'unset') for (const w of ops) set(w.text, at);
+      if (s.name === 'mapfile' || s.name === 'readarray') { const n = ops.filter(w => NAME.test(w.text)).pop(); set(n?.text ?? 'MAPFILE', at); }
+      if (s.name === 'printf') { const i = s.args.findIndex(w => w.text === '-v'); if (i >= 0 && s.args[i + 1]) set(s.args[i + 1].text, at); }
+      if (s.name === 'let') for (const w of s.args) { const m = /^([A-Za-z_][A-Za-z0-9_]*)/.exec(w.text); if (m) set(m[1], at); }
+      if (s.name === 'getopts' && ops[1]) set(ops[1].text, at);
+      if (s.name === 'eval' || s.name === 'source' || s.name === '.' || (DECLARERS.has(s.name) && s.args.some(w => /^-[a-zA-Z]*n/.test(w.text)))) poisoned = true;
       const declare = DECLARERS.has(s.name);
       if (s.name !== '' && !declare) return;
       const words = s.name === '' ? p.words.slice(Math.max(first, 0)) : s.args;
       for (const w of words) {
         const m = /^([A-Za-z_][A-Za-z0-9_]*)(\+?)=([\s\S]*)$/.exec(w.text);
         if (!m) { if (s.name === '') break; continue; } // a plain piece: only its leading NAME=value words assign
-        set(m[1], at, m[2] || w.dynamic ? undefined : m[3]);
+        // Trusted only when it surely runs in this shell, and the value can't split into words or globs.
+        const literal = !m[2] && !w.dynamic && p.top === true && !/[\s*?[]/.test(m[3]);
+        set(m[1], at, literal ? m[3] : undefined);
       }
     });
-    for (const [name, v] of seen) this.vars.set(name, { value: v.count === 1 ? v.value : undefined, at: v.at });
+    for (const [name, v] of seen) this.vars.set(name, { value: v.count === 1 && !poisoned ? v.value : undefined, at: v.at, count: v.count });
   }
 
   /** A word with variables set literally earlier in this command filled in; unchanged when anything stays unknown. */
@@ -148,6 +158,8 @@ class Analyzer {
 
   private filled(p: Piece): Piece {
     if (!p.words.some(w => w.dynamic) && !p.redirects.some(r => r.target?.dynamic)) return p;
+    // A `bash -c` script is a new shell: variables this command set (unexported) are not there.
+    if (p.parent && SHELLS.has(simplify(p.parent).name) && simplify(p.parent).args.some(w => /^-[A-Za-z]*c[A-Za-z]*$/.test(w.text))) return p;
     const redirects: Redirect[] = p.redirects.map(r => (r.target ? { ...r, target: this.fill(r.target) } : r));
     return { ...p, words: p.words.map(w => this.fill(w)), redirects };
   }
@@ -170,12 +182,23 @@ class Analyzer {
       const lists = a.some(w => /^-[a-zA-Z]*[lL][a-zA-Z]*$/.test(w.text) || /^--files(-with(out)?-match(es)?)?$/.test(w.text));
       if (!lists) return undefined;
       const files = s.name === 'rg' && a.some(w => w.text === '--files');
-      const explicit = a.some(w => /^(-e|-f|--regexp|--file)(=|$)/.test(w.text));
+      let explicit = false;
       const ops: Word[] = [];
       for (let i = 0; i < a.length; i++) {
         const t = a[i].text;
         if (t === '--') { ops.push(...a.slice(i + 1)); break; }
+        if (/^--(regexp|file)(=|$)/.test(t)) { explicit = true; if (!t.includes('=')) i++; continue; }
         if (GREP_VALUE.has(t)) { i++; continue; }
+        if (/^-[a-zA-Z]/.test(t)) {
+          // Short cluster: the first value-taking letter takes the rest of the word, or the next word.
+          for (let k = 1; k < t.length; k++) {
+            if (!GREP_VALUE_LETTERS.includes(t[k])) continue;
+            if (t[k] === 'e' || t[k] === 'f') explicit = true;
+            if (k === t.length - 1) i++;
+            break;
+          }
+          continue;
+        }
         if (t.startsWith('-') && t !== '-') continue;
         ops.push(a[i]);
       }
@@ -233,7 +256,7 @@ class Analyzer {
     const abs = this.resolve(w, cwd);
     if (abs === undefined) {
       const v = /^\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?$/.exec(w.text);
-      const roots = v && t.kind === 'edit' ? this.listed.get(v[1]) : undefined;
+      const roots = v && t.kind === 'edit' && this.vars.get(v[1])?.count === 1 ? this.listed.get(v[1]) : undefined;
       if (roots) { this.listedTargets(roots, t.form); return; }
       this.find('unknown_target', `${t.form} ${w.text}: ${this.unknownWhy(w)}`);
       return;
@@ -273,7 +296,7 @@ class Analyzer {
   /** find … -delete / -exec rm: like rm -r of each start folder; a name/time/size filter narrows it from "everything". */
   private findDelete(s: Simple, cwd: string | undefined): void {
     const roots = findRoots(s.args);
-    const narrowed = s.args.some(w => FIND_NARROWING.test(w.text));
+    const narrowed = s.args.some(w => FIND_NARROWING.test(w.text)) && !s.args.some(w => /^(!|-not|-o|-or)$/.test(w.text));
     for (const w of roots.length ? roots : [{ text: '.', dynamic: false, glob: false, subs: [] } as Word]) {
       const abs = this.resolve(w, cwd);
       if (abs === undefined) {
@@ -313,8 +336,8 @@ class Analyzer {
     }
   }
 
-  /** In-place editors: sed -i, perl -i, awk -i inplace. Returns true when handled. */
-  private inPlace(s: Simple, cwd: string | undefined): void {
+  /** In-place editors: sed -i, perl -i, awk -i inplace. Returns how many file operands the command names; countOnly records nothing. */
+  private inPlace(s: Simple, cwd: string | undefined, countOnly = false): number {
     const a = s.args;
     const isI = (t: string) => /^-[A-Za-z]*i(\..*)?$/.test(t) || t.startsWith('--in-place');
     if ((s.name === 'sed' || s.name === 'gsed') && a.some(w => isI(w.text))) {
@@ -329,8 +352,8 @@ class Analyzer {
         if (!script) { script = true; continue; }
         files.push(a[i]);
       }
-      for (const f of files) this.target(f, cwd, { kind: 'edit', form: 'sed -i' });
-      return;
+      if (!countOnly) for (const f of files) this.target(f, cwd, { kind: 'edit', form: 'sed -i' });
+      return files.length;
     }
     if (s.name === 'perl' && a.some(w => /^-[A-Za-z]*i/.test(w.text))) {
       const files: Word[] = [];
@@ -342,13 +365,15 @@ class Analyzer {
         if (!script) { script = true; continue; }
         files.push(a[i]);
       }
-      for (const f of files) this.target(f, cwd, { kind: 'edit', form: 'perl -i' });
-      return;
+      if (!countOnly) for (const f of files) this.target(f, cwd, { kind: 'edit', form: 'perl -i' });
+      return files.length;
     }
     if (/^[gm]?awk$/.test(s.name) && a.some((w, i) => w.text === '-i' && a[i + 1]?.text === 'inplace')) {
       const ops = a.filter((w, i) => !w.text.startsWith('-') && a[i - 1]?.text !== '-i' && a[i - 1]?.text !== '-v');
-      for (const f of ops.slice(1)) this.target(f, cwd, { kind: 'edit', form: 'awk -i inplace' });
+      if (!countOnly) for (const f of ops.slice(1)) this.target(f, cwd, { kind: 'edit', form: 'awk -i inplace' });
+      return Math.max(0, ops.length - 1);
     }
+    return 0;
   }
 
   /** stdout content of a piece when it is literal: cat of a heredoc, echo / printf of static text. */
@@ -392,7 +417,8 @@ class Analyzer {
     const ops = operands(s.args);
     if (s.xargs && ['mv', 'cp', 'sed', 'perl', 'truncate', 'tee', 'chmod'].includes(s.name)) {
       const form = inPlaceForm(s);
-      const roots = form && p.pipedFrom ? this.listingRoots(p.pipedFrom) : undefined;
+      const own = form ? this.inPlace(s, cwd, true) : 0;
+      const roots = form && own === 0 && p.pipedFrom ? this.listingRoots(p.pipedFrom) : undefined;
       if (form && roots) { this.listedTargets(roots, form); return; }
       this.find('unknown_target', `xargs ${s.name}: targets come from input`);
     }
@@ -546,6 +572,7 @@ class Analyzer {
 
 const RESERVED_WORDS = new Set(['if', 'then', 'else', 'elif', 'fi', 'while', 'until', 'do', 'done', 'for', 'case', 'esac', '!', '{', '}', '[[', ']]', 'in']);
 const DECLARERS = new Set(['export', 'local', 'declare', 'typeset', 'readonly']);
+const GREP_VALUE_LETTERS = 'efmABCdDgtT';
 const GREP_VALUE = new Set(['-e', '-f', '-m', '-A', '-B', '-C', '-d', '-D', '--regexp', '--file', '--max-count', '-g', '--glob', '-t', '--type', '-T', '--type-not']);
 /** find tests that pick some files, so `find . <test> -delete` is not "delete everything". -type alone does not narrow. */
 const FIND_NARROWING = /^-(i?name|i?path|i?wholename|i?regex|i?lname|newer\w*|[amc](time|min|newer)|size|empty|perm|user|group|nouser|nogroup|links|inum|samefile|used)$/;
@@ -569,7 +596,10 @@ function inPlaceForm(s: Simple): string | undefined {
 }
 
 const STR = String.raw`(['"])([^'"\n]*)\1`;
-const ARG = String.raw`(?:${STR}|([A-Za-z_][A-Za-z0-9_]*)|([^,)]+))`;
+// Third form: any other expression, as whitespace-separated tokens so it can't backtrack on long blank runs.
+const ARG = String.raw`(?:${STR}|([A-Za-z_][A-Za-z0-9_]*)|([^,)\s]+(?:\s+[^,)\s]+)*))`;
+/** Longest script read for writes; heredoc scripts are short, anything longer is only partly checked. */
+const MAX_SCRIPT = 20_000;
 const WRITES: Record<'py' | 'js', RegExp[]> = {
   py: [
     new RegExp(String.raw`\bopen\(\s*${ARG}\s*,\s*(?:mode\s*=\s*)?['"][^'"]*[wax+]`, 'g'),
@@ -582,8 +612,9 @@ const WRITES: Record<'py' | 'js', RegExp[]> = {
  * Paths a short python / node script writes, in order; undefined for a write whose path is computed.
  * A bare name resolves to its last simple string assignment (`p = 'src/a.js'`) before the write.
  */
-export function scriptWrites(code: string, lang: 'py' | 'js'): Array<string | undefined> {
-  const assigns = [...code.matchAll(new RegExp(String.raw`(?:^|[\n;])\s*(?:const\s+|let\s+|var\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(['"])([^'"\n]*)\2`, 'gm'))]
+export function scriptWrites(full: string, lang: 'py' | 'js'): Array<string | undefined> {
+  const code = full.slice(0, MAX_SCRIPT);
+  const assigns = [...code.matchAll(new RegExp(String.raw`^[ \t]*(?:const[ \t]+|let[ \t]+|var[ \t]+)?([A-Za-z_][A-Za-z0-9_]*)[ \t]*=[ \t]*(['"])([^'"\n]*)\2`, 'gm'))]
     .map(m => ({ name: m[1], value: m[3], at: m.index ?? 0 }));
   const hits: Array<{ at: number; path: string | undefined }> = [];
   for (const re of WRITES[lang]) {

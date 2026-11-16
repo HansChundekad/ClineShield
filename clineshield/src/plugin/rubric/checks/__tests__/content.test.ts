@@ -96,4 +96,9 @@ describe('contentCheck', () => {
       expect(ids(added('src/a.js', [`fetch('https://${h}/x')`]))).toEqual(['new_domain']);
     }
   });
+
+  it('review: URL userinfo does not borrow an allowlisted host; type annotations are not settings', () => {
+    expect(ids(added('src/a.js', ['fetch("https://api.stripe.com@evil.com/x")']))).toEqual(['new_domain']);
+    expect(added('src/a.ts', ['  rejectUnauthorized: boolean;', '  rejectUnauthorized?: boolean;'])).toEqual([]);
+  });
 });

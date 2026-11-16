@@ -250,3 +250,43 @@ describe('eval fixes: commands', () => {
     expect(cats("python3 - <<'EOF'\nimport sys\nopen(sys.argv[1], 'w').write('x')\nEOF")).toContain('unknown_target');
   });
 });
+
+describe('eval fixes: review hardening', () => {
+  it('xargs sed -i with its own file operands keeps checking them', () => {
+    expect(targets('grep -rl foo . | xargs sed -i s/a/b/ /etc/passwd')).toContainEqual(['edit', '/etc/passwd', 'sed -i']);
+  });
+  it('grep with an attached -e/-f value: the next word is a path, not the pattern', () => {
+    expect(cats('grep -l -epat /etc | xargs sed -i s/a/b/')).toContain('unknown_target');
+    expect(cats('grep -rlepat /etc | xargs sed -i s/a/b/')).toContain('unknown_target');
+    expect(cats('grep -rle pat /etc | xargs sed -i s/a/b/')).toContain('unknown_target');
+    expect(cats('grep -rle pat src | xargs sed -i s/a/b/')).not.toContain('unknown_target');
+  });
+  it('a value with spaces or glob characters is not filled in (word splitting)', () => {
+    expect(cats('D="/tmp/x /"; rm -rf $D')).toContain('unknown_target');
+    expect(cats('D="/tmp/*"; rm -rf $D')).toContain('unknown_target');
+  });
+  it('assignments that may not run in this shell are not trusted', () => {
+    for (const c of ['bash -c "D=/tmp/a"; rm -rf "$D/"', '(D=/tmp/a); rm -rf "$D/"', '[ -d x ] && D=/tmp/a; rm -rf "$D/"', 'if [ -d x ]; then D=/tmp/a; fi; rm -rf "$D/"', 'echo | D=/tmp/a; rm -rf "$D/"']) {
+      expect([c, cats(c)]).toEqual([c, expect.arrayContaining(['unknown_target'])]);
+    }
+    expect(cats('D=/tmp/a; bash -c \'rm -rf "$D/"\'')).toContain('unknown_target');
+  });
+  it('other commands that set variables make them unknown', () => {
+    for (const c of ['D=/tmp/a; printf -v D "%s" /; rm -rf "$D/"', 'D=/tmp/a; mapfile D < f; rm -rf "$D/"', 'D=/tmp/a; readarray -t D < f; rm -rf "$D/"', 'D=/tmp/a; let D=0; rm -rf "$D/"', 'D=/tmp/a; getopts ab D; rm -rf "$D/"', 'D=/tmp/a; source env.sh; rm -rf "$D/"', 'D=/tmp/a; . ./env.sh; rm -rf "$D/"', 'D=/tmp/a; eval "$X"; rm -rf "$D/"']) {
+      expect([c, cats(c)]).toEqual([c, expect.arrayContaining(['unknown_target'])]);
+    }
+  });
+  it('a listed loop variable set again elsewhere is no longer a listed file', () => {
+    expect(cats('grep -rl foo . | while read f; do :; done; f=/etc/passwd; sed -i s/a/b/ "$f"')).toContain('unknown_target');
+    expect(cats('grep -rl foo . | while read f; do :; done; cat l | while read f; do sed -i s/a/b/ "$f"; done')).toContain('unknown_target');
+  });
+  it('script write patterns stay fast on long whitespace runs', () => {
+    const t0 = Date.now();
+    run(`python3 - <<'EOF'\nopen(${' '.repeat(5000)})\nPath(${' '.repeat(5000)})\n${'\n'.repeat(30000)}x=1\nEOF`);
+    run(`node -e "writeFileSync(${' '.repeat(5000)})"`);
+    expect(Date.now() - t0).toBeLessThan(300);
+  });
+  it('find with a negated or alternated test is not narrowed', () => {
+    for (const c of ['find . ! -name keep -delete', 'find . -not -name x -delete', 'find . -name a -o -type f -delete']) expect([c, cats(c)]).toEqual([c, ['rm_outside']]);
+  });
+});
