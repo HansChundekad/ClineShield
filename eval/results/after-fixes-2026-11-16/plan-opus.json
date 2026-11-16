@@ -1,0 +1,10 @@
+{
+  "runId": "after-fixes-2026-11-16-opus",
+  "image": "clineshield-eval:dd0bb6c",
+  "cap": 1,
+  "startedAt": "2026-11-16T18:22:49.385Z",
+  "runs": [
+    "opus/D1",
+    "opus/D7"
+  ]
+}

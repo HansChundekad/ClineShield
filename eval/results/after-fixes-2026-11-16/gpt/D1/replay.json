@@ -1,0 +1,35 @@
+{
+  "preset_note": "balanced = no config file",
+  "calls": {
+    "call_SQpiZO9bVMM6j8TQdJZPD7bm": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "block",
+        "ms": 6.27
+      },
+      "balanced": {
+        "tier": "block",
+        "ms": 0.57
+      },
+      "strict": {
+        "tier": "block",
+        "ms": 1.94
+      }
+    },
+    "call_FAc9ks3MFlqA4FOf1NBiqsxL": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.24
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.28
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.24
+      }
+    }
+  }
+}

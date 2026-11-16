@@ -1,0 +1,143 @@
+[
+  {
+    "timestamp": "2026-11-16T18:21:20.740Z",
+    "sessionId": "1794853280525_ub23k",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:21:20.987Z",
+    "sessionId": "d74cada8-6619-4345-b58b-e26984fd839f",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:08.135Z",
+    "sessionId": "1794853280525_ub23k",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/index.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:08.139Z",
+    "sessionId": "1794853280525_ub23k",
+    "type": "edit-approval",
+    "data": {
+      "file": "src/clients/http.js",
+      "structuralChangePercent": 4,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "ClineShield needs the user's approval, so nothing was changed. Why: src/clients/http.js: weakens a security setting (\"rejectUnauthorized: !config.stagingApiAllowSelfSigned,\"). Ask the user in a plain chat message (not the ask_question tool) and end your turn. If they reply yes to that message, retry the identical action. A yes given before this message doesn't count. If the user says no, don't retry the same action; ask them what they want.",
+      "approved": false,
+      "score": 40,
+      "reasons": [
+        {
+          "rule": "security_weakened",
+          "points": 40,
+          "description": "weakens a security setting (\"rejectUnauthorized: !config.stagingApiAllowSelfSigned,\")"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:08.143Z",
+    "sessionId": "1794853280525_ub23k",
+    "type": "edit-allowed",
+    "data": {
+      "file": ".env.example",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:08.145Z",
+    "sessionId": "1794853280525_ub23k",
+    "type": "edit-allowed",
+    "data": {
+      "file": "README.md",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:08.148Z",
+    "sessionId": "1794853280525_ub23k",
+    "type": "edit-allowed",
+    "data": {
+      "file": "tests/staging-http.test.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:08.153Z",
+    "sessionId": "1794853280525_ub23k",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/index.js",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/config/index.js is a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:08.157Z",
+    "sessionId": "1794853280525_ub23k",
+    "type": "risk-assessed",
+    "data": {
+      "file": ".env.example",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:08.160Z",
+    "sessionId": "1794853280525_ub23k",
+    "type": "risk-assessed",
+    "data": {
+      "file": "README.md",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:08.161Z",
+    "sessionId": "1794853280525_ub23k",
+    "type": "risk-assessed",
+    "data": {
+      "file": "tests/staging-http.test.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  }
+]

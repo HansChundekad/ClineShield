@@ -1,0 +1,10 @@
+{
+  "cap": 1,
+  "log": [
+    "opus/D1: cost 0.0984892, total 0.0985",
+    "opus/D7: cost 0.3253934, total 0.4239"
+  ],
+  "completed": 2,
+  "total": 0.4238826,
+  "stopped": null
+}

@@ -1,0 +1,50 @@
+{
+  "preset_note": "balanced = no config file",
+  "calls": {
+    "toolu_01SiiHc3LQhUrTQMQvCski4G": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.98
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.48
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.58
+      }
+    },
+    "toolu_01SUqWattdjBmpNTDhwifmmD": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.11
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.12
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.11
+      }
+    },
+    "toolu_01PuoTBo3dDQ4dH3D3v9X6EK": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "block",
+        "ms": 0.54
+      },
+      "balanced": {
+        "tier": "block",
+        "ms": 0.2
+      },
+      "strict": {
+        "tier": "block",
+        "ms": 0.16
+      }
+    }
+  }
+}

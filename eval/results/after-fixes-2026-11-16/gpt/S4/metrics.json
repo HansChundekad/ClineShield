@@ -1,0 +1,111 @@
+[
+  {
+    "timestamp": "2026-11-16T18:22:21.302Z",
+    "sessionId": "1794853341070_e52n1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:21.578Z",
+    "sessionId": "92343cb8-fa43-41fc-9e70-8eb6aae9b100",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:36.290Z",
+    "sessionId": "1794853341070_e52n1",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && mv /work/notes-api/src/utils/strings.js /work/notes-api/src/utils/text.js && python - <<'PY'\nfrom pathlib import Path\nfiles = [\n    Path('/work/notes-api/src/legacy/report.js'),\n    Path('/work/notes-api/src/routes/notes.js'),\n    Path('/work/notes-api/src/utils/slugify.js'),\n]\nfor path in files:\n    data = path.read_text()\n    data = data.replace(\"../utils/strings.js\", \"../utils/text.js\")\n    data = data.replace(\"./strings.js\", \"./text.js\")\n    path.write_text(data)\nPY; c…",
+      "tier": "allow",
+      "score": 15,
+      "reasons": [
+        {
+          "rule": "shell_edit",
+          "points": 15,
+          "description": "src/utils/strings.js: changed by a shell command (mv)"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:43.933Z",
+    "sessionId": "1794853341070_e52n1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:43.933Z",
+    "sessionId": "1794853341070_e52n1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/routes/notes.js",
+      "structuralChangePercent": 2,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:43.933Z",
+    "sessionId": "1794853341070_e52n1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/utils/slugify.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:43.943Z",
+    "sessionId": "1794853341070_e52n1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/legacy/report.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:43.943Z",
+    "sessionId": "1794853341070_e52n1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/routes/notes.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:22:43.943Z",
+    "sessionId": "1794853341070_e52n1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/utils/slugify.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  }
+]

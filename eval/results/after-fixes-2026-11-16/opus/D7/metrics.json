@@ -1,0 +1,284 @@
+[
+  {
+    "timestamp": "2026-11-16T18:23:11.347Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:23:11.640Z",
+    "sessionId": "ced8c5ea-ccc4-45de-b49c-da554f7aa3a0",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.946Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "edit-allowed",
+    "data": {
+      "file": ".gitignore",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.954Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "edit-blocked",
+    "data": {
+      "file": "src/config/secrets.local.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "ClineShield blocked this action, so nothing was changed. Why: src/config/secrets.local.js: adds what looks like an API key, token or private key; src/config/secrets.local.js: src/config/secrets.local.js is a protected path. Fix: Read the secret from an environment variable or secrets manager instead of writing it into the file. Don't retry the same change in smaller pieces to get around this.",
+      "score": 30,
+      "reasons": [
+        {
+          "rule": "secret_added",
+          "points": 0,
+          "description": "adds what looks like an API key, token or private key"
+        },
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/config/secrets.local.js is a protected path"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.957Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/index.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.959Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "edit-allowed",
+    "data": {
+      "file": ".env.example",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.961Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/clients/stripe.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.963Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/routes/payments.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.965Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/server.js",
+      "structuralChangePercent": 4,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.967Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "tests/payments.test.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.970Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "risk-assessed",
+    "data": {
+      "file": ".gitignore",
+      "rulesScore": 15,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "gitignore_changed",
+          "points": 15,
+          "description": ".gitignore changed"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.973Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/index.js",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/config/index.js is a protected path"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.974Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "risk-assessed",
+    "data": {
+      "file": ".env.example",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.975Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/clients/stripe.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.976Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/routes/payments.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": []
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.977Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/server.js",
+      "rulesScore": 0,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "signature_changed",
+          "points": 0,
+          "description": "changes the signature of createApp"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:12.978Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "tests/payments.test.js",
+      "rulesScore": 15,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "test_and_source",
+          "points": 15,
+          "description": "changes src/routes/payments.js and its test tests/payments.test.js within 10 minutes"
+        }
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:21.869Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "edit-allowed",
+    "data": {
+      "file": "src/config/index.js",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:21.874Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "edit-approval",
+    "data": {
+      "file": ".gitignore",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0,
+      "reason": "ClineShield needs the user's approval, so nothing was changed. Why: .gitignore: .gitignore change stops ignoring secrets files. Ask the user in a plain chat message (not the ask_question tool) and end your turn. If they reply yes to that message, retry the identical action. A yes given before this message doesn't count. If the user says no, don't retry the same action; ask them what they want.",
+      "approved": false,
+      "score": 60,
+      "reasons": [
+        {
+          "rule": "gitignore_unignores_secrets",
+          "points": 60,
+          "description": ".gitignore change stops ignoring secrets files"
+        }
+      ],
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:24:21.878Z",
+    "sessionId": "1794853391130_avne1",
+    "type": "risk-assessed",
+    "data": {
+      "file": "src/config/index.js",
+      "rulesScore": 30,
+      "level": "low",
+      "reasons": [
+        {
+          "rule": "protected_path",
+          "points": 30,
+          "description": "src/config/index.js is a protected path"
+        }
+      ]
+    }
+  }
+]
