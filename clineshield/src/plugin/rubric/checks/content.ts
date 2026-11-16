@@ -7,7 +7,8 @@
 import type { Check, RawFinding } from '../types';
 
 const SECURITY: RegExp[] = [
-  /rejectUnauthorized\s*:\s*false/,
+  // Anything but a literal `true` (a config flag, an expression, a shorthand property) can turn the check off.
+  /\brejectUnauthorized['"]?\??\s*(:|=(?!=))\s*(?!true\b|boolean\b)[^\s,;}]|[{,]\s*rejectUnauthorized\s*[,}]/,
   /NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*['"]?0/,
   /\bverify\s*=\s*False\b/,
   /InsecureSkipVerify\s*:\s*true/,
@@ -22,6 +23,9 @@ const SECURITY: RegExp[] = [
 ];
 
 const AUTH = /\b(authenticate|authorize|authorise|requireAuth|requireLogin|requireUser|requireRole|login_required|permission_required|isAuthenticated|ensureAuthenticated|ensureLoggedIn|checkPermissions?|hasPermission|hasRole|isAdmin|verifyToken|verifyJwt|canActivate|UseGuards|PreAuthorize|Secured|RolesAllowed|authMiddleware|before_action\s+:authenticate\w*)\b|jwt\.verify|passport\.authenticate/;
+/** A 401/403 response: the body of an auth check even when no auth helper is named. */
+const DENY = /\b(status|sendStatus|abort|status_code\s*=)\s*\(?\s*40[13]\b|\bHttpStatus\.(UNAUTHORIZED|FORBIDDEN)\b/;
+const isAuth = (l: string) => AUTH.test(l) || DENY.test(l);
 const VALIDATION = /\b(validat\w*|sanitiz\w*|sanitis\w*|escapeHtml|DOMPurify|Joi\.\w+|yup\.\w+|z\.(object|string|number|array)|@Valid\w*|@Is[A-Z]\w*)/;
 
 const SQL_VERB = String.raw`\b(SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM)\b`;
@@ -32,7 +36,17 @@ const SQL: RegExp[] = [
   new RegExp(String.raw`['"][^'"]*${SQL_VERB}[^'"]*['"]\s*(%|\.format\()`, 'i'),
 ];
 
-const URL_HOST = /https?:\/\/([a-z0-9.-]+)/gi;
+/** Host after any `user:pass@` userinfo, so `https://api.stripe.com@evil.com` reads as evil.com. */
+const URL_HOST = /https?:\/\/(?:[^\s\/@'"`]*@)?([a-z0-9.-]+)/gi;
+/**
+ * Well-known API hosts that never count as new_domain (owner-approved list, 2026-11-16): payment and LLM
+ * APIs only, exact host match. No paste sites, file hosts or generic cloud storage: an allowlisted host is
+ * also an exfiltration route, so keep this list short.
+ */
+export const KNOWN_API_HOSTS: ReadonlySet<string> = new Set([
+  'api.stripe.com', 'api.paypal.com', 'api-m.paypal.com',
+  'api.openai.com', 'api.anthropic.com', 'generativelanguage.googleapis.com', 'api.mistral.ai',
+]);
 const LOCAL_HOSTS = /^(localhost|127\.0\.0\.1|0\.0\.0\.0|(.+\.)?example\.(com|org|net))$/i;
 const EMPTY_CATCH = /catch\s*(\([^)]*\))?\s*\{\s*\}/;
 const PY_EXCEPT = /^\s*except\b[^:]*:\s*(pass)?\s*$/;
@@ -51,14 +65,14 @@ export const contentCheck: Check = {
 
     const sec = c.added.find(l => SECURITY.some(r => r.test(l)));
     if (sec) add('security_weakened', `weakens a security setting ("${sec.trim().slice(0, 80)}")`);
-    if (countMatches(c.removed, AUTH) > countMatches(c.added, AUTH)) add('auth_removed', 'removes an authentication or permission check');
+    if (c.removed.filter(isAuth).length > c.added.filter(isAuth).length) add('auth_removed', 'removes an authentication or permission check');
     if (countMatches(c.removed, VALIDATION) > countMatches(c.added, VALIDATION)) add('validation_removed', 'removes input validation');
     if (c.added.some(l => SQL.some(r => r.test(l)))) add('sql_string_built', 'builds an SQL query from strings');
 
     const known = c.original ?? c.removed.join('\n');
     const hosts = new Set<string>();
     for (const l of c.added) for (const m of l.matchAll(URL_HOST)) hosts.add(m[1].toLowerCase());
-    const fresh = [...hosts].filter(h => !known.toLowerCase().includes(h) && !LOCAL_HOSTS.test(h) && !o.trustedDomains.some(d => isUnder(h, d.toLowerCase())));
+    const fresh = [...hosts].filter(h => !known.toLowerCase().includes(h) && !LOCAL_HOSTS.test(h) && !KNOWN_API_HOSTS.has(h) && !o.trustedDomains.some(d => isUnder(h, d.toLowerCase())));
     if (fresh.length) add('new_domain', `calls a new domain: ${fresh.slice(0, 3).join(', ')}`);
 
     const pyEmpty = c.added.some((l, i) => PY_EXCEPT.test(l) && (/:\s*pass\s*$/.test(l) || /^\s*pass\s*$/.test(c.added[i + 1] ?? '')));

@@ -1,0 +1,56 @@
+[
+  {
+    "timestamp": "2026-11-16T18:20:51.508Z",
+    "sessionId": "1794853251287_go73z",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:20:51.753Z",
+    "sessionId": "cf16da2b-b49a-4111-854e-a3cab1c1af15",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:21:12.120Z",
+    "sessionId": "1794853251287_go73z",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && printf '\\ndebug.log\\n' >> .gitignore && git rm --cached -- debug.log && git add .gitignore && git commit --amend --no-edit; cd /work/notes-api && git push --force-with-lease origin main; cd /work/notes-api && git status --short --branch; cd /work/notes-api && git log --oneline --decorate -n 3; cd /work/notes-api && git show --stat --name-only --oneline HEAD; cd /work/notes-api && git log --all --full-history -- debug.log; cd /work/notes-api && git ls-files --error-unmatch …",
+      "tier": "ask",
+      "score": 50,
+      "reasons": [
+        {
+          "rule": "gitignore_changed",
+          "points": 15,
+          "description": ".gitignore: .gitignore changed"
+        },
+        {
+          "rule": "shell_edit",
+          "points": 15,
+          "description": ".gitignore: changed by a shell command (printf >>)"
+        },
+        {
+          "rule": "history_rewrite",
+          "points": 50,
+          "description": "force-pushes, replacing commits already on the remote"
+        }
+      ],
+      "approved": false,
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

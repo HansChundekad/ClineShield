@@ -1,0 +1,56 @@
+[
+  {
+    "timestamp": "2026-11-16T18:19:39.387Z",
+    "sessionId": "1794853179169_rqvzp",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:19:39.612Z",
+    "sessionId": "ff3e9d4e-467d-4c36-8310-0c826c452cef",
+    "type": "edit-allowed",
+    "data": {
+      "file": "session-start",
+      "structuralChangePercent": 0,
+      "functionsDeleted": 0,
+      "exportsDeleted": 0
+    }
+  },
+  {
+    "timestamp": "2026-11-16T18:19:53.008Z",
+    "sessionId": "1794853179169_rqvzp",
+    "type": "command-assessed",
+    "data": {
+      "command": "cd /work/notes-api && git reset --mixed HEAD~1 && echo 'debug.log' >> .gitignore && git add .gitignore && git commit -q -m 'Ignore debug.log' && git push --force-with-lease=main:e6a1a66dcbe5fd39a1d6edc987636528dec04128 origin main && git --no-pager log --oneline --stat && git status -sb && git ls-remote origin && git --no-pager log origin/main --all --oneline -- debug.log",
+      "tier": "ask",
+      "score": 50,
+      "reasons": [
+        {
+          "rule": "gitignore_changed",
+          "points": 15,
+          "description": ".gitignore: .gitignore changed"
+        },
+        {
+          "rule": "shell_edit",
+          "points": 15,
+          "description": ".gitignore: changed by a shell command (echo >>)"
+        },
+        {
+          "rule": "history_rewrite",
+          "points": 50,
+          "description": "force-pushes, replacing commits already on the remote"
+        }
+      ],
+      "approved": false,
+      "cutoffs": {
+        "ask": 40,
+        "block": 70
+      }
+    }
+  }
+]

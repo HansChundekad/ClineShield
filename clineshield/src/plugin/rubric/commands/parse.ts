@@ -49,6 +49,11 @@ export interface Piece {
   parent?: Piece;
   /** Working directory; undefined when unknown (cd to a variable). */
   cwd: string | undefined;
+  /**
+   * Runs unconditionally in the command's own shell: top level, not in `( )`, a block (if/while/for/case/{ }),
+   * a pipeline or a background job, and not guarded by `&&` / `||`. Only such assignments are trusted.
+   */
+  top?: boolean;
 }
 
 export interface ParseEnv { cwd: string; home: string; tmpdir: string }
@@ -246,6 +251,8 @@ function lex(s: string, env: ParseEnv): Token[] {
   return tokens;
 }
 
+const BLOCK_OPEN = new Set(['if', 'while', 'until', 'for', 'case', 'select', '{']);
+const BLOCK_CLOSE = new Set(['fi', 'done', 'esac', '}']);
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*\+?=/;
 const RESERVED = new Set(['if', 'then', 'else', 'elif', 'fi', 'while', 'until', 'do', 'done', 'for', 'case', 'esac', '!', '{', '}', '[[', ']]', 'in']);
 /** sudo / doas options that take a value. */
@@ -305,17 +312,32 @@ function piecesOf(tokens: Token[], src: string, depth: number): Piece[] {
   const out: Piece[] = [];
   let cur: { words: Word[]; redirects: Redirect[]; start: number; end: number } | undefined;
   let pipe = false;
-  const finish = () => {
-    if (cur && (cur.redirects.length || cur.words.some(w => !RESERVED.has(w.text)))) {
-      const piece: Piece = { text: src.slice(cur.start, cur.end).trim(), words: cur.words, redirects: cur.redirects, depth, cwd: undefined };
-      if (pipe && out.length) piece.pipedFrom = out[out.length - 1];
-      out.push(piece);
+  let parens = 0;
+  let block = 0;
+  let before: string | undefined;
+  // After && / || a piece may not run; before | or & (and after |) it runs in a subshell.
+  const LOOSE = new Set(['&&', '||', '|', '|&', '&']);
+  const PIPED = new Set(['|', '|&', '&']);
+  const finish = (after?: string) => {
+    if (cur) {
+      const opens = cur.words.filter(w => BLOCK_OPEN.has(w.text)).length;
+      const closes = cur.words.filter(w => BLOCK_CLOSE.has(w.text)).length;
+      const top = depth === 0 && parens === 0 && block === 0 && opens === 0 && !LOOSE.has(before ?? '') && !PIPED.has(after ?? '');
+      if (cur.redirects.length || cur.words.some(w => !RESERVED.has(w.text))) {
+        const piece: Piece = { text: src.slice(cur.start, cur.end).trim(), words: cur.words, redirects: cur.redirects, depth, cwd: undefined, top };
+        if (pipe && out.length) piece.pipedFrom = out[out.length - 1];
+        out.push(piece);
+      }
+      block = Math.max(0, block + opens - closes);
     }
     cur = undefined;
   };
   for (const t of tokens) {
     if (t.kind === 'op') {
-      finish();
+      finish(t.op);
+      if (t.op === '(') parens++;
+      if (t.op === ')') parens = Math.max(0, parens - 1);
+      before = t.op;
       pipe = t.op === '|' || t.op === '|&';
       continue;
     }

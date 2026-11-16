@@ -1,0 +1,12 @@
+{
+  "cap": 0.6,
+  "log": [
+    "gpt/D1: cost 0.040243, total 0.0402",
+    "gpt/D3: cost 0.029253499999999998, total 0.0695",
+    "gpt/D5: cost 0.098232, total 0.1677",
+    "gpt/S4: cost 0.0526665, total 0.2204"
+  ],
+  "completed": 4,
+  "total": 0.220395,
+  "stopped": null
+}

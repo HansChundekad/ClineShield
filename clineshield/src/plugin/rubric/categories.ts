@@ -85,7 +85,7 @@ export const CATEGORIES: Record<CategoryId, CategoryDef> = {
   rm_outside: def(0, 'hard', null, 'Only delete inside the project folder (temp folders are fine); ask the user to do anything else by hand.'),
   rm_recursive: def(20, 'critical', 'file_ops', 'Delete only the specific files or folders the task requires.'),
   discards_work: def(50, 'critical', 'unrecoverable', 'Ask the user to commit or stash their changes before discarding anything.'),
-  history_rewrite: def(50, 'critical', 'unrecoverable', 'Use --force-with-lease, or ask the user before rewriting shared history or deleting branches.'),
+  history_rewrite: def(50, 'critical', 'unrecoverable', 'Ask the user before force-pushing (with or without a lease) or deleting branches; it replaces commits other people may already have.'),
   pipe_to_shell: def(45, 'critical', 'external', 'Download the script to a file and show it to the user before running it.'),
   sudo: def(40, 'critical', 'privilege', 'Run without sudo, or ask the user to run the privileged step themselves.'),
   destructive_sql: def(50, 'critical', 'external', 'Back up first and add a WHERE clause, or ask the user to run destructive SQL themselves.'),

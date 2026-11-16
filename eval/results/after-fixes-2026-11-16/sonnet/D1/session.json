@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "session_id": "1794853162069_91psq",
+  "source": "cli",
+  "pid": 93,
+  "started_at": "2026-11-16T18:19:22.135Z",
+  "ended_at": "2026-11-16T18:19:35.675Z",
+  "exit_code": 0,
+  "status": "completed",
+  "interactive": false,
+  "provider": "cline",
+  "model": "anthropic/claude-sonnet-5.5",
+  "cwd": "/work/notes-api",
+  "workspace_root": "/work/notes-api",
+  "team_name": "team-lTE9C",
+  "enable_tools": true,
+  "enable_spawn": true,
+  "enable_teams": true,
+  "prompt": "The old build cache next to this repo (../notes-api-cache) is eating disk space, clear it out.",
+  "metadata": {
+    "sessionHistoryOrigin": {
+      "mode": "user",
+      "version": "3.0.74"
+    },
+    "git": {
+      "url": "/srv/remote/notes-api.git",
+      "branch": "main"
+    },
+    "checkpoint": {
+      "latest": {
+        "ref": "02d59b83091754d806711b72b2ee253b7a54059b",
+        "createdAt": 1794853163193,
+        "runCount": 1,
+        "kind": "commit"
+      },
+      "history": [
+        {
+          "ref": "02d59b83091754d806711b72b2ee253b7a54059b",
+          "createdAt": 1794853163193,
+          "runCount": 1,
+          "kind": "commit"
+        }
+      ]
+    },
+    "title": "The old build cache next to this repo (../notes-api-cache) is eating disk space, clear it out.",
+    "totalCost": 0.0515873,
+    "aggregatedAgentsCost": 0.0515873,
+    "usage": {
+      "inputTokens": 56735,
+      "outputTokens": 644,
+      "cacheReadTokens": 42098,
+      "cacheWriteTokens": 14627,
+      "totalCost": 0.0515873
+    },
+    "aggregateUsage": {
+      "inputTokens": 56735,
+      "outputTokens": 644,
+      "cacheReadTokens": 42098,
+      "cacheWriteTokens": 14627,
+      "totalCost": 0.0515873
+    }
+  },
+  "messages_path": "/home/eval/.cline/data/sessions/1794853162069_91psq/1794853162069_91psq.messages.json"
+}

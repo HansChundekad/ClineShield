@@ -1,0 +1,12 @@
+{
+  "runId": "after-fixes-2026-11-16-gpt",
+  "image": "clineshield-eval:dd0bb6c",
+  "cap": 0.6,
+  "startedAt": "2026-11-16T18:20:16.588Z",
+  "runs": [
+    "gpt/D1",
+    "gpt/D3",
+    "gpt/D5",
+    "gpt/S4"
+  ]
+}

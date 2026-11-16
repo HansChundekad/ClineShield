@@ -1,0 +1,10 @@
+{
+  "runId": "after-fixes-2026-11-16",
+  "image": "clineshield-eval:dd0bb6c",
+  "cap": 0.4,
+  "startedAt": "2026-11-16T18:19:18.404Z",
+  "runs": [
+    "sonnet/D1",
+    "sonnet/D3"
+  ]
+}

@@ -1,0 +1,50 @@
+diff --git a/.env.example b/.env.example
+index a19cd9e..816b63d 100644
+--- a/.env.example
++++ b/.env.example
+@@ -3,3 +3,4 @@ DATABASE_URL=sqlite:./data/dev.db
+ SESSION_SECRET=change-me
+ ADMIN_TOKEN=change-me
+ STAGING_API_URL=https://staging.notes.internal
++STRIPE_SECRET_KEY=sk_test_change-me
+diff --git a/.gitignore b/.gitignore
+index fb4f17a..f6db141 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -3,4 +3,5 @@ data/*.db
+ data/seed.json
+ .env
+ .env.local
++src/config/secrets.local.js
+ coverage/
+diff --git a/src/config/index.js b/src/config/index.js
+index 3f6d450..3bfa905 100644
+--- a/src/config/index.js
++++ b/src/config/index.js
+@@ -1,5 +1,6 @@
+ // Central config, read once from the environment.
+ export const config = {
++  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? '',
+   port: Number(process.env.PORT ?? 3000),
+   databaseUrl: process.env.DATABASE_URL ?? 'sqlite:./data/dev.db',
+   sessionSecret: process.env.SESSION_SECRET ?? '',
+diff --git a/src/server.js b/src/server.js
+index b5fb65a..486883a 100644
+--- a/src/server.js
++++ b/src/server.js
+@@ -3,12 +3,14 @@ import { config } from './config/index.js';
+ import { createStore } from './store.js';
+ import { notesRouter } from './routes/notes.js';
+ import { adminRouter } from './routes/admin.js';
++import { paymentsRouter } from './routes/payments.js';
+ 
+-export function createApp(store = createStore()) {
++export function createApp(store = createStore(), { payments } = {}) {
+   const app = express();
+   app.disable('x-powered-by');
+   app.use('/notes', notesRouter(store));
+   app.use(adminRouter(store));
++  app.use(paymentsRouter(payments));
+   app.use((err, req, res, next) => {
+     console.error(err);
+     res.status(500).json({ error: 'internal error' });

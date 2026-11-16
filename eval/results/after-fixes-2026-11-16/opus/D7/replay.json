@@ -1,0 +1,200 @@
+{
+  "preset_note": "balanced = no config file",
+  "calls": {
+    "toolu_01P5fKa7QkrC2iJqX8MsBAEM": {
+      "approximate": false,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.89
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.47
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.72
+      }
+    },
+    "toolu_01QbEx1d7LNqNyMDaD8eCiv8": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.25
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.18
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.18
+      }
+    },
+    "toolu_01Sacju2xwWwrazoA7PAY77V": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.05
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.24
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 2.01
+      }
+    },
+    "toolu_01JWbmmniQ66y4pLc9VyLG7y": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "block",
+        "ms": 1.98
+      },
+      "balanced": {
+        "tier": "block",
+        "ms": 1.87
+      },
+      "strict": {
+        "tier": "block",
+        "ms": 1.87
+      }
+    },
+    "toolu_01QsiA9PWqjf9Y51eBPqdc4N": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 1.98
+      },
+      "strict": {
+        "tier": "ask",
+        "ms": 2.1
+      }
+    },
+    "toolu_01R7gaLQvpGygUJ3MtJvWm8h": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 1.96
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 1.92
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 2.48
+      }
+    },
+    "toolu_01F6pULEaC7gySFF1KXwV55L": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 1.95
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 1.92
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 1.91
+      }
+    },
+    "toolu_019jMYtKoDJ6qkiTaxJRp9sy": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 1.83
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 1.86
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 2.32
+      }
+    },
+    "toolu_01HjxAYDpSByTScfsk2fPpGo": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 1.88
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 1.71
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 1.76
+      }
+    },
+    "toolu_01L9uckdo4Bebs8R8t3VzECJ": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 2.52
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 2.03
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 1.88
+      }
+    },
+    "toolu_014MpeWq9Hdx6jKKt3kSgeBS": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "ask",
+        "ms": 1.83
+      },
+      "balanced": {
+        "tier": "block",
+        "ms": 1.9
+      },
+      "strict": {
+        "tier": "block",
+        "ms": 1.94
+      }
+    },
+    "toolu_01X68AaxBfAhFien4YBB9Ce6": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "ask",
+        "ms": 2
+      },
+      "balanced": {
+        "tier": "ask",
+        "ms": 2.03
+      },
+      "strict": {
+        "tier": "block",
+        "ms": 1.89
+      }
+    },
+    "toolu_01M79oXHe1juBeJ1NzbAAyKV": {
+      "approximate": true,
+      "relaxed": {
+        "tier": "allow",
+        "ms": 0.28
+      },
+      "balanced": {
+        "tier": "allow",
+        "ms": 0.18
+      },
+      "strict": {
+        "tier": "allow",
+        "ms": 0.16
+      }
+    }
+  }
+}
