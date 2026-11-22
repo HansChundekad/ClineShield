@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/brand/header-dark@2x.png">
-    <img src="assets/brand/header-light@2x.png" alt="ClineShield" width="450">
+    <img src="assets/brand/header-light@2x.png" alt="ClineShield" width="320">
   </picture>
 </p>
 
