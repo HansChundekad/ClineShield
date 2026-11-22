@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "description": "Safety guardrails for Cline AI coding assistant",
   "publisher": "clineshield",
+  "icon": "images/icon-128.png",
   "engines": {
     "vscode": "^1.109.0",
     "node": ">=18.0.0"
