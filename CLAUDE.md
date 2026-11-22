@@ -63,8 +63,7 @@ clineshield/
     ├── config/                   // configView.ts (read-only config line), setup.ts (plugin check, Create config)
     ├── sidebar/                  // dashboard.ts (pure model), MetricsSidebarProvider.ts, metrics.html
     ├── changeMap/                // aggregate.ts (pure), ChangeMapProvider.ts
-    ├── extension/riskAnalysis/   // explain.ts, llmAnalyzer.ts (Gemini, on click)
-    └── hooks/clineshield-analyze.js  // standalone 1.x AST prototype, unused
+    └── extension/riskAnalysis/   // explain.ts, llmAnalyzer.ts (Gemini, on click)
 ```
 
 ## Testing Requirements
