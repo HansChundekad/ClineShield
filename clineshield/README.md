@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/HansChundekad/ClineShield/main/assets/brand/header-light@2x.png" alt="ClineShield" width="320">
+  <img src="https://raw.githubusercontent.com/HansChundekad/ClineShield/main/assets/brand/clineshield-header.png" alt="ClineShield" width="600">
 </p>
 
 **A live dashboard for [ClineShield](https://github.com/HansChundekad/ClineShield), the safety plugin for Cline.**

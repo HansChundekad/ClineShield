@@ -9,12 +9,13 @@ and config guide; eval results quoted exactly from eval/REPORT.md (headline 50 r
 **Anti-goals:** numbers that don't match REPORT.md; claiming it runs in Cline inside VS Code; showing a real config or API key.
 
 **Decided with the owner (2026-11-21):**
-- Logo: the owner's kit (`~/Downloads/clineshield-brand`, BRAND.md). PNG headers via `<picture>` (SVG headers need Geist). Icon
+- Logo: the owner's v2 kit (`~/Downloads/clineshield-brand-v2`, BRAND.md, 2026-11-23; replaced the orange v1). One header for both
+  themes: `assets/brand/clineshield-header.gif` (blinking "i"), PNG on the Marketplace README. Purple shield icon
   `images/icon-128.png` in clineshield/package.json (only that field changes there).
 - License: MIT, © 2026 Hans Chundekad, root and clineshield/LICENSE agree.
 - Terminal GIF: the real vhs recording, trimmed 52 s → 36 s; tape wait 35 s → 20 s.
 - Screenshots: the owner captures them from a shot list; placeholders stay commented until the files exist.
-- Credit line: the owner gives the teammate's name; stays a comment until then.
+- Credit line: "ClineShield 1.0 was built with Satvik Gudipati and won at DeveloperWeek 2026.", at the bottom under License.
 - Layout: Install has two steps: 1. plugin (does the guarding), 2. VS Code extension, "optional, highly recommended", with what it
   shows and that it shows the install command if the plugin is missing; Marketplace / Open VSX / VSIX. Then the "where it runs"
   alert, What you'll see, then the extension details. "Built on the Cline SDK" moves below the extension details.

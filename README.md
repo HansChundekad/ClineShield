@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/header-dark@2x.png">
-    <img src="assets/brand/header-light@2x.png" alt="ClineShield" width="320">
-  </picture>
+  <img src="assets/brand/clineshield-header.gif" alt="ClineShield" width="600">
 </p>
 
 <p align="center">
