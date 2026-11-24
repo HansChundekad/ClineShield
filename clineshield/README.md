@@ -16,9 +16,7 @@ what it decided, as it happens.
 > The plugin runs in the Cline CLI, SDK and Kanban, not in Cline inside VS Code. Details in the
 > [main README](https://github.com/HansChundekad/ClineShield#install).
 
-<!-- SCREENSHOT PLACEHOLDER: uncomment once assets/screenshots/sidebar.png is on main
-<p align="center"><img src="https://raw.githubusercontent.com/HansChundekad/ClineShield/main/assets/screenshots/sidebar.png" alt="ClineShield sidebar" width="380"></p>
--->
+<p align="center"><img src="https://raw.githubusercontent.com/HansChundekad/ClineShield/main/assets/screenshots/sidebar.png" alt="ClineShield sidebar: an ask waiting on you, totals and recent activity" width="300"></p>
 
 ## What it shows
 

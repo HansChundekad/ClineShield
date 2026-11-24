@@ -78,9 +78,7 @@ That output stays in your terminal and never enters the conversation.
 
 Everything is also logged to `.cline-shield/metrics.json` in your project, and the VS Code extension shows it live:
 
-<!-- SCREENSHOT PLACEHOLDER: assets/screenshots/sidebar.png
-<p align="center"><img src="assets/screenshots/sidebar.png" alt="ClineShield sidebar: Waiting on you, totals and recent actions" width="380"></p>
--->
+<p align="center"><img src="assets/screenshots/sidebar.png" alt="ClineShield sidebar: an ask waiting on you with its score and a Gemini explanation, totals and recent activity" width="300"></p>
 
 ## VS Code extension
 
@@ -93,9 +91,7 @@ The plugin does all the guarding; the extension is a live dashboard for the same
 - **Settings:** your preset, mode and config file, with Open config / Create config.
 - **Change map:** every file Cline touched, coloured by its worst risk; files with a blocked attempt are marked.
 
-<!-- SCREENSHOT PLACEHOLDER: assets/screenshots/change-map.png
-<p align="center"><img src="assets/screenshots/change-map.png" alt="ClineShield change map" width="380"></p>
--->
+<p align="center"><img src="assets/screenshots/change-map.png" alt="ClineShield change map: files Cline touched, coloured by risk, with a blocked file marked" width="300"></p>
 
 **Explanations (opt-in).** Run **ClineShield: Set Gemini API Key**, then click **Explain** on an action for a
 plain-English explanation from Gemini. Nothing is sent until you click; the key is kept in VS Code's secret storage
