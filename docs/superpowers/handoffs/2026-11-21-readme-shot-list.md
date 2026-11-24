@@ -22,5 +22,5 @@ once the file is on main). Check that no API key, real path or private repo name
 - [ ] Open both listings (`clineshield.clineshield` on the VS Code Marketplace and Open VSX) and the
       [latest release](https://github.com/HansChundekad/ClineShield/releases/latest); the VSIX must be attached.
 - [ ] Search "ClineShield" in the Extensions view of VS Code and of Cursor/VSCodium; it should come up.
-- [ ] Upload `~/Downloads/clineshield-brand/png/social-preview-1280x640.png` in repo Settings → General → Social preview.
+- [ ] Upload `~/Downloads/clineshield-brand-v2/social/social-preview-1280x640.png` in repo Settings → General → Social preview.
 - [ ] Demo video: if you record one, replace the `DEMO VIDEO PLACEHOLDER` comment; otherwise delete it.

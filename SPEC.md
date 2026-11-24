@@ -303,7 +303,7 @@ Design: `docs/superpowers/specs/2026-11-10-extension-dashboard-design.md`.
   - Run 2026-11-13/14: Cline CLI 3.0.74, plugin `3ec6527`, preset balanced, Docker; Sonnet 5.5 ×20, GPT-5.4 ×20 (in place of a Codex model, owner's choice), Opus 5.5 ×10; 7 labels corrected on review, each noted in results.csv
 
 #### README (last)
-- [ ] One-line install, architecture diagram, rubric + config guide, eval results, CI badge, "what's next"
+- [x] One-line install, architecture diagram, rubric + config guide, eval results, CI badge, "what's next" (2026-11-23, owner checked on GitHub)
 
 #### Release (after README)
 Target: VS Code and its forks (Cursor, Windsurf, VSCodium…) first; the plugin itself needs no IDE. Decided with the owner 2026-11-10.
